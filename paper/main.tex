@@ -1,0 +1,178 @@
+\documentclass{dissert}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+
+\usepackage{fullpage}
+\usepackage{lastpage}
+\usepackage{enumerate}
+\usepackage{svg}
+
+\usepackage[all]{xy}
+% colors
+\usepackage{xcolor}
+\definecolor{darkgreen}{rgb}{0.0, 0.2, 0.13}
+\definecolor{darkcyan}{rgb}{0.0, 0.55, 0.55}
+
+\usepackage{geometry}
+\geometry{left=2.5cm}
+\geometry{right=1.0cm}
+\geometry{top=2.0cm}
+\geometry{bottom=2.0cm}
+\renewcommand{\baselinestretch}{1.2}
+
+\newcommand{\paragraph}[1]{\noindent\textbf{#1}\quad}
+
+%https://tex.stackexchange.com/questions/163451/total-number-of-citations
+\usepackage{totcount}
+\newtotcounter{citnum} %From the package documentation
+\def\oldbibitem{} \let\oldbibitem=\bibitem
+\def\bibitem{\stepcounter{citnum}\oldbibitem}
+
+\makeatletter
+\long\def\@makecaption#1#2{%
+  \vskip\abovecaptionskip
+  \sbox\@tempboxa{#1.~#2}%
+  \ifdim \wd\@tempboxa >\hsize
+    #1.~#2\par
+  \else
+    \global \@minipagefalse
+    \hb@xt@\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \vskip\belowcaptionskip}
+\makeatother
+
+\reversemarginpar
+
+\renewcommand{\contentsname}{Содержание}
+\renewcommand{\contentsdesc}{Стр.}
+\renewcommand{\chaptername}{Глава}
+
+%%% Библиография %%%
+\makeatletter
+\bibliographystyle{utf8gost71u}     % Оформляем библиографию по ГОСТ 7.1 (ГОСТ Р 7.0.11-2011, 5.6.7)
+\makeatother
+
+\usepackage{silence}
+\WarningFilter*{latex}{Text page \thepage\space contains only floats}
+
+% Нужные мне пакеты
+\usepackage[hidelinks]{hyperref}
+\usepackage{booktabs}
+\usepackage{diagbox}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{color}
+\usepackage{bm}
+\usepackage{tabularx}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{indentfirst}
+
+\newtheorem{theorem}{Теорема}
+\newtheorem{lemma}[theorem]{Лемма}
+\newtheorem{definition}{Определение}
+\newtheorem{assumption}{Предположение}
+\newtheorem{property}{Свойство}
+\newtheorem{corollary}{Следствие}
+\newtheorem{remark}{Замечание}
+\newtheorem{hypothesis}{Гипотеза}
+
+% \usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[ruled,vlined]{algorithm2e}
+\SetKwInOut{KwIn}{Input}
+\SetKwInOut{KwOut}{Output}
+\SetKwFor{ForEach}{for each}{do}{end}
+
+
+\usepackage{comment}
+\usepackage{rotating}
+
+\usepackage{autonum}
+
+\begin{document}
+
+% Титульный лист
+\input{title}
+% Нумерация должна начинаться со второй страницы
+\setcounter{page}{2}
+
+% Оглавление
+\newpage
+\tableofcontents
+
+% Введение
+\newpage{}
+\chapter*{Введение}
+\addcontentsline{toc}{chapter}{Введение}
+\input{intro}
+
+% Первая глава
+\clearpage
+\chapter{Множество оптимальных параметров модели и проблема достаточности выборки}\label{chapter-1}
+\input{chapter-1}
+
+% Вторая глава
+\clearpage
+\chapter{Распределение оптимальных параметров в линейных моделях машинного обучения}\label{chapter-2}
+\input{chapter-2}
+
+% Третья глава
+\clearpage
+\chapter{Оптимизационная поверхность нейросетевых моделей и матрица Гессе как инструмент ее анализа}\label{chapter-3}
+\input{chapter-3}
+
+% Четвертая глава
+\clearpage
+\chapter{Сходимость поверхности функции потерь при увеличении числа обучающих данных}\label{chapter-4}
+\input{chapter-4}
+
+% Пятая глава
+\clearpage
+\chapter{Методы оценки достаточного размера выборки}\label{chapter-5}
+\input{chapter-5}
+
+% Шестая глава
+\clearpage
+\chapter{Вычислительные эксперименты и применения}\label{chapter-6}
+\input{chapter-6}
+
+% Выводы
+\clearpage
+\chapter*{Заключение}
+\addcontentsline{toc}{chapter}{Заключение}
+\input{conclusion}
+
+% \clearpage
+% \chapter*{Общие свойства и определения}
+% \addcontentsline{toc}{chapter}{Общие свойства и определения}
+% \input{external}
+
+% \clearpage
+% \chapter*{Дополнительные Леммы и утверждения}
+% \addcontentsline{toc}{chapter}{Дополнительные Леммы и утверждения}
+% \input{extralemmas}
+
+\clearpage 
+\addcontentsline{toc}{chapter}{Список иллюстраций}
+\listoffigures
+
+\clearpage
+\addcontentsline{toc}{chapter}{Список таблиц}
+\listoftables
+
+\clearpage
+\addcontentsline{toc}{chapter}{Список литературы}
+\renewcommand{\bibname}{Список литературы}
+
+\nocite{*}
+\bibliography{references}
+
+\end{document}

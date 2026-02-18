@@ -1,0 +1,433 @@
+%Version 3 October 2023
+% See section 11 of the User Manual for version history
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%                                                                 %%
+%% Please do not use \input{...} to include other tex files.       %%
+%% Submit your LaTeX manuscript as one .tex document.              %%
+%%                                                                 %%
+%% All additional figures and files should be attached             %%
+%% separately and not embedded in the \TeX\ document itself.       %%
+%%                                                                 %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%\documentclass[referee,sn-basic]{sn-jnl}% referee option is meant for double line spacing
+
+%%=======================================================%%
+%% to print line numbers in the margin use lineno option %%
+%%=======================================================%%
+
+%%\documentclass[lineno,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+
+%%======================================================%%
+%% to compile with pdflatex/xelatex use pdflatex option %%
+%%======================================================%%
+
+%%\documentclass[pdflatex,sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+
+
+%%Note: the following reference styles support Namedate and Numbered referencing. By default the style follows the most common style. To switch between the options you can add or remove Numbered in the optional parenthesis. 
+%%The option is available for: sn-basic.bst, sn-vancouver.bst, sn-chicago.bst%  
+ 
+%%\documentclass[sn-nature]{sn-jnl}% Style for submissions to Nature Portfolio journals
+%%\documentclass[sn-basic]{sn-jnl}% Basic Springer Nature Reference Style/Chemistry Reference Style
+\documentclass[sn-mathphys-num]{sn-jnl}% Math and Physical Sciences Numbered Reference Style 
+%%\documentclass[sn-mathphys-ay]{sn-jnl}% Math and Physical Sciences Author Year Reference Style
+%%\documentclass[sn-aps]{sn-jnl}% American Physical Society (APS) Reference Style
+%%\documentclass[sn-vancouver,Numbered]{sn-jnl}% Vancouver Reference Style
+%%\documentclass[sn-apa]{sn-jnl}% APA Reference Style 
+%%\documentclass[sn-chicago]{sn-jnl}% Chicago-based Humanities Reference Style
+
+%%%% Standard Packages
+%%<additional latex packages if required can be included here>
+
+\input{preamble}
+
+\usepackage{graphicx}%
+\usepackage{multirow}%
+\usepackage{amsmath,amssymb,amsfonts}%
+\usepackage{amsthm}%
+\usepackage{mathrsfs}%
+\usepackage[title]{appendix}%
+\usepackage{xcolor}%
+\usepackage{textcomp}%
+\usepackage{manyfoot}%
+\usepackage{booktabs}%
+\usepackage{algorithm}%
+\usepackage{algorithmicx}%
+\usepackage{algpseudocode}%
+\usepackage{listings}%
+%%%%
+
+%%%%%=============================================================================%%%%
+%%%%  Remarks: This template is provided to aid authors with the preparation
+%%%%  of original research articles intended for submission to journals published 
+%%%%  by Springer Nature. The guidance has been prepared in partnership with 
+%%%%  production teams to conform to Springer Nature technical requirements. 
+%%%%  Editorial and presentation requirements differ among journal portfolios and 
+%%%%  research disciplines. You may find sections in this template are irrelevant 
+%%%%  to your work and are empowered to omit any such section if allowed by the 
+%%%%  journal you intend to submit to. The submission guidelines and policies 
+%%%%  of the journal take precedence. A detailed User Manual is available in the 
+%%%%  template package for technical guidance.
+%%%%%=============================================================================%%%%
+
+%% as per the requirement new theorem styles can be included as shown below
+%\theoremstyle{thmstyleone}%
+\newtheorem{theorem}{Theorem}%  meant for continuous numbers
+%%\newtheorem{theorem}{Theorem}[section]% meant for sectionwise numbers
+%% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
+\newtheorem{proposition}[theorem]{Proposition}% 
+%%\newtheorem{proposition}{Proposition}% to get separate numbers for theorem and proposition etc.
+
+%theoremstyle{thmstyletwo}%
+\newtheorem{example}{Example}%
+\newtheorem{remark}{Remark}%
+
+%\theoremstyle{thmstylethree}%
+\newtheorem{definition}{Definition}%
+
+\raggedbottom
+%%\unnumbered% uncomment this for unnumbered level heads
+
+\begin{document}
+
+\title[Sample Size Determination: Posterior Distributions Proximity]{Sample Size Determination: Posterior Distributions Proximity}
+
+%%=============================================================%%
+%% GivenName	-> \fnm{Joergen W.}
+%% Particle	-> \spfx{van der} -> surname prefix
+%% FamilyName	-> \sur{Ploeg}
+%% Suffix	-> \sfx{IV}
+%% \author*[1,2]{\fnm{Joergen W.} \spfx{van der} \sur{Ploeg} 
+%%  \sfx{IV}}\email{iauthor@gmail.com}
+%%=============================================================%%
+
+\author*[1]{\fnm{Nikita} \sur{Kiselev}}\email{kiselev.ns@phystech.edu}
+
+\author[1]{\fnm{Andrey} \sur{Grabovoy}}\email{grabovoy.av@phystech.edu}
+
+\affil[1]{\orgname{Moscow Institute of Physics and Technology}, \orgaddress{\city{Dolgoprudny}, \country{Russia}}}
+
+%%==================================%%
+%% Sample for unstructured abstract %%
+%%==================================%%
+
+\abstract{The issue of sample size determination is crucial for constructing an effective machine learning model. However, the existing methods for determining a sufficient sample size are either not strictly proven, or relate to the specific statistical hypothesis about the distribution of model parameters. In this paper we present two approaches based on the proximity of posterior distributions of model parameters on similar subsamples. We show that these two methods are valid for the model with normal posterior distribution of parameters. Computational experiments demonstrate the convergence of the proposed functions as the sample size increases. We also compare the proposed methods with other approaches on different datasets.}
+
+\keywords{Sufficient sample size, Posterior distributions proximity, Normal posterior distribution, Linear regression}
+
+%%\pacs[JEL Classification]{D8, H51}
+
+%%\pacs[MSC Classification]{35A01, 65L10, 65L12, 65L20, 65L70}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:introduction}
+The task of supervised machine learning involves selecting a predictive model from a parametric family. This choice is usually based on certain statistical hypotheses, such as maximizing a quality functional. A model that satisfies these statistical hypotheses is called an \textit{adequate} model \cite{bies2006genetic,cawley2010over,raschka2018model}.
+
+When planning a computational experiment, it is necessary to estimate the minimum sample size~--- the number of objects required to build an adequate model. The sample size required to build an adequate predictive model is called \textit{sufficient} \cite{byrd2012sample,figueroa2012predicting,balki2019sample}. 
+
+This work addresses the issue of determining the sufficient sample size. There are numerous studies dedicated to this topic, with approaches classified into statistical, Bayesian, and heuristic methods.
+
+Some of the early researches on this topic \cite{Adcock1988,Joseph1995} formulate a specific statistical criterion, where the sample size estimation method associated with this criterion guarantees achieving a fixed statistical power with a Type I error not exceeding a specified value. Statistical methods include the Lagrange multipliers test \cite{self1988power}, the Likelihood ratio test \cite{shieh2000power}, the Wald statistic \cite{shieh2005power}. Statistical methods have certain limitations associated with their practical application. They allow for estimating the sample size based on assumptions about the data distribution and information about the agreement of observed values with the assumptions of the null hypothesis.
+
+The Bayesian approach also has a place in this problem. In the work \cite{Lindley1997} the sufficient sample size is determined based on maximizing the expected utility function. This may explicitly include parameter distribution functions and penalties for increasing the sample size. This work also considers alternative approaches based on constraining a certain quality criterion for estimating model parameters. Among these criteria, the Average Posterior Variance Criterion (APVC), Average Coverage Criterion (ACC), Average Length Criterion (ALC), and Effective Sample Size Criterion (ESC) stand out. These criteria have been further developed in other works, for example, \cite{PhamGia1997} and \cite{Gelfand2002}. Over time, the authors of \cite{Cao2009} conducted a theoretical and practical comparison of methods from \cite{Adcock1988,Joseph1995,Lindley1997}.
+
+Authors like \cite{Brutti2014}, as well as \cite{Pezeshk2008}, discuss the differences between Bayesian and frequentist approaches in determining sample size. They also propose robust methods for the Bayesian approach and provide illustrative examples for some probabilistic models.
+
+In the paper \cite{Grabovoy2022}, various methods for estimating sample size in generalized linear models are considered, including statistical, heuristic, and Bayesian methods. Methods such as Lagrange Multiplier Test, Likelihood Ratio Test, Wald Test, Cross-Validation, Bootstrap, Kullback-Leibler Criterion, Average Posterior Variance Criterion, Average Coverage Criterion, Average Length Criterion, and Utility Maximization are analyzed. The authors point out the potential development of combining Bayesian and statistical approaches to estimate sample size for insufficient available sample sizes, which is a pre hoc sample size estimation.
+
+In \cite{MOTRENKO2014743} a method for determining sample size in logistic regression is discussed, using cross-validation and Kullback-Leibler divergence between posterior distributions of model parameters on similar subsamples. Similar subsamples are those that can be obtained from each other by adding, removing, or replacing one object.
+
+In this paper, we present two approaches for determining sufficient sample sizes based on the distance between posterior distributions of model parameters. Our methods involve comparing the posterior distributions over two similar subsamples. If the sample size is adequate, these posterior distributions should be close to each other. To quantify this proximity, we propose using the Kullback-Leibler (KL) divergence~\cite{MOTRENKO2014743} and the s-score model comparison function~\cite{Aduenko2017}. We also encourage readers to explore our experimental code\footnote{\href{https://github.com/kisnikser/Posterior-Distributions-Proximity}{https://github.com/kisnikser/Posterior-Distributions-Proximity}} for a deeper understanding of our methods and results.
+
+The key contributions of our work are as follows:
+\begin{enumerate}
+    \item \textbf{Methodological Innovation:} We introduce two novel methods for assessing the sufficiency of sample sizes by examining the proximity of posterior distributions. These methods leverage the KL-divergence and the s-score similarity function to provide interpretable results. Comparing to existing approaches, our methods do not rely on the specific hypothesis about the model parameters as the statistical ones, and have a proved correctness in contrast to heuristic techniques. 
+    \item \textbf{Theoretical Validation:} We prove the correctness of our proposed methods. Specifically, we demonstrate that for a given model, the respective functions converge to zero as the sample size increases. This convergence provides a solid foundation for selecting an appropriate sample size based on the descent of these functions. Our proofs are established within a probabilistic framework assuming a normal posterior distribution of parameters. Additionally, for the linear regression model, we prove a theorem regarding the moments of the limit posterior distribution of parameters.
+    \item \textbf{Empirical Analysis:} Through a detailed empirical study, we compare our methods with existing approaches. This comparison highlights the unique characteristics of our proposed methods. Notably, we find that the KL-sufficient sample size is typically the largest, while the s-score sufficient sample size is the smallest. This disparity arises from the different functions used to compare probability distributions.
+\end{enumerate}
+
+\section{Problem statement}
+An object is defined as a pair $(\mathbf{x}, y)$, where $\mathbf{x} \in \mathbb{X} \subseteq \mathbb{R}^n$ is the feature vector, and $y \in \mathbb{Y}$ is the target variable. In regression problems $\mathbb{Y} = \mathbb{R}$, and in $K$-class classification problems $\mathbb{Y} = \{1, \ldots, K\}$.
+
+The feature-object matrix for a sample $\mathfrak{D}_m = \left\{ (\mathbf{x}_i, y_i) \right\}, i \in \mathcal{I} = \{ 1, \ldots, m \}$ of size $m$ is called the matrix $\mathbf{X}_m = \left[ \mathbf{x}_1, \ldots, \mathbf{x}_m \right]\T \in \mathbb{R}^{m \times n}$.
+
+The target variable vector for a sample $\mathfrak{D}_m = \left\{ (\mathbf{x}_i, y_i) \right\}, i \in \mathcal{I} = \{ 1, \ldots, m \}$ of size $m$ is denoted by $\mathbf{y}_m = \left[ y_1, \ldots, y_m \right]\T \in \mathbb{Y}^m$.
+
+A model is a parametric family of functions $f$, mapping the Cartesian product of the set of feature vector values $\mathbb{X}$ and the set of parameter values $\mathbb{W}$ to the set of target variable values $\mathbb{Y}$: 
+\[ f: \mathbb{X} \times \mathbb{W} \to \mathbb{Y}. \]
+
+A probabilistic model is a joint distribution
+\[ p(y, \mathbf{w} | \mathbf{x}) = p(y | \mathbf{x}, \mathbf{w}) p(\mathbf{w}): \mathbb{Y} \times \mathbb{W} \times \mathbb{X} \to \mathbb{R}^+, \]
+where $\mathbf{w} \in \mathbb{W}$ is the set of model parameters, $p(y | \mathbf{x}, \mathbf{w})$ specifies the likelihood of an object, and $p(\mathbf{w})$ represents the prior distribution of parameters.
+
+The task is to determine the sufficient sample size $m^*$. Let a criterion $T$ be given. E.g. it can be constructed based on heuristics regarding the behaviour of model parameters.
+\begin{definition}
+    The sample size $m^*$ is called \textbf{sufficient} according to the criterion $T$, if $T$ holds for all $k \geqslant m^*$.
+\end{definition}
+
+Specifically, the criterion may include information about the quality of the resulting model. For instance, the Accuracy metric might take a value greater than 80\%, or the criterion could be based on a certain degree of stability in the set of optimal parameters obtained. This aspect is explored in our subsequent work, as stability is understood here in terms of a minor change in the posterior distribution of model parameters.
+
+\section{Proposed sample size determination methods}
+In \cite{MOTRENKO2014743}, it is suggested to use the Kullback-Leibler divergence to estimate a sufficient sample size in a binary classification problem. The idea is based on the fact that if two subsamples differ from each other by one object, then the posterior distributions obtained from them should be close. This proximity is determined by the Kullback-Leibler divergence. 
+
+In this paper, the question of the correctness of this approach is considered. The method is studied in an arbitrary probabilistic model. As a measure of proximity, it is proposed to use not only the Kullback-Leibler divergence, but also the s-score similarity function from \cite{Aduenko2017}.
+
+Consider two subsamples $\mathfrak{D}^1\subseteq\mathfrak{D}_m$ and $\mathfrak{D}^2\subseteq\mathfrak{D}_m$. Let $\mathcal{I}_1 \subseteq \mathcal{I} = \{1, \ldots, m\}$ and $\mathcal{I}_2 \subseteq \mathcal{I} =\{1, \ldots,m\}$~--- corresponding to them subsets of indexes.
+
+\begin{definition}
+    Subsamples $\mathfrak{D}^1$ and $\mathfrak{D}^2$ are called \textbf{similar} if $\mathcal{I}_2$ can be obtained from $\mathcal{I}_1$ by deleting, replacing or adding one element, that is
+    \[ \left| \mathcal{I}_1 \triangle \mathcal{I}_2 \right| = \left| \left( \mathcal{I}_1 \setminus \mathcal{I}_2 \right) \cup \left( \mathcal{I}_2 \setminus \mathcal{I}_1 \right) \right| = 1. \]
+\end{definition}
+
+Consider two similar subsamples $\mathfrak{D}_k = (\mathbf{X}_k,\mathbf{y}_k)$ and $\mathfrak{D}_{k+1} = (\mathbf{X}_{k+1}, \mathbf{y}_{k+1})$ of sizes $k$ and $k+1$, respectively. This means that the larger one is obtained by adding one element to the smaller one. Let's find the posterior distribution of the model parameters over these subsamples:
+\[p_j(\mathbf{w}) = p(\mathbf{w} | \mathfrak{D}_j) = \frac{p(\mathfrak{D}_j | \mathbf{w}) p(\mathbf{w})}{p(\mathfrak{D}_j)} \propto p(\mathfrak{D}_j | \mathbf{w}) p(\mathbf{w}), \quad j = k, k+1. \]
+
+\begin{definition}
+    Let's fix some positive number $\varepsilon > 0$. The sample size $m^*$ is called \textbf{KL-sufficient} if for all $k\geqslant m^*$
+    \[ KL(k) = D_{KL}(p_k \| p_{k+1}) = \int p_k(\mathbf{w}) \log{\frac{p_k(\mathbf{w})}{p_{k+1}(\mathbf{w})}} d\mathbf{w} \leqslant \varepsilon. \]
+\end{definition}
+
+For a pair of normal distributions, the Kullback-Leibler divergence has a fairly simple form. Assume that the posterior distribution is normal, that is, $p_k(\mathbf{w}) = \mathcal{N}\left(\mathbf{w}|\mathbf{m}_k, \mathbf{\Sigma}_k\right)$. Guided by the heuristic that the convergence of the moments of such a distribution should entail the proximity of posterior distributions on similar subsamples, the following statement can be formulated. The proof is provided in the Appendix~\ref{app:theorem1}.
+
+\begin{theorem}\label{theorem1}
+    Let $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ and $\|\mathbf{\Sigma}_{k+1} - \mathbf{\Sigma}_k\|_{F}\to 0$ as $k\to \infty$. Then, in a model with a normal posterior distribution of parameters, the definition of a KL-sufficient sample size is correct. Namely, for any $\varepsilon > 0$, there is such a $m^*$ that for all $k\geqslant m^*$ $KL(k)\leqslant\varepsilon$ is satisfied.
+\end{theorem}
+
+This statement implies that the distance between two gaussian distributions approaches zero as their mean vectors and covariance matrices converge. This allows us to delve deeper into the issue of the convergence of the Kullback–Leibler divergence by examining analytical expressions for expectations and variances.
+
+In this paper, it is proposed to use the s-score similarity function from \cite{Aduenko2017} as a measure of proximity of distributions:
+\[\text{s-score}(g_1, g_2) = \frac{\int_{\mathbf{w}} g_1(\mathbf{w}) g_2(\mathbf{w}) d\mathbf{w}}{\max_{\mathbf{b}} \int_{\mathbf{w}} g_1(\mathbf{w} - \mathbf{b}) g_2(\mathbf{w}) d\mathbf{w}}. \]
+
+\begin{definition}
+    Let's fix some positive number $\varepsilon > 0$. The sample size $m^*$ is called \textbf{S-sufficient} if for all $k\geqslant m^*$
+    \[ S(k) = \text{s-score}(p_k, p_{k+1}) \geqslant 1-\varepsilon. \]
+\end{definition}
+
+As in the case of a KL-sufficient sample size, in a model with a normal posterior distribution, it is possible to write an expression for the criterion used. Thus, one more statement can be formulated. The proof is again provided in the Appendix~\ref{app:theorem2}.
+
+\begin{theorem}\label{theorem2}
+    Let $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2\to 0$ as $k \to \infty$. Then, in a model with a normal posterior distribution of parameters, the definition of an S-sufficient sample size is correct. Namely, for any $\varepsilon > 0$, there is such a $m^*$ that for all $k\geqslant m^*$, $S(k)\geqslant 1-\varepsilon$ is satisfied.
+\end{theorem}
+
+The significance of this theorem is similar to that of Theorem~\ref{theorem1}. In essence, the closeness of normal distributions in terms of the s-score similarity function reduces to the convergence of their means. Notably, unlike Theorem~\ref{theorem1}, convergence of the covariance matrices is not necessary here.
+
+Let the linear regression model have a normal prior distribution of parameters. By the conjugacy property of the prior distribution and likelihood, the posterior distribution is also normal. Thus, we come to one of the simplest examples of a model for which the theorems presented above are valid. In fact, simpler statements can be formulated for linear regression. The proof is provided in the Appendix~\ref{app:theorem3}.
+
+\begin{theorem}\label{theorem3}
+    Let the sets of values of the features and the target variable be bounded, that is, $\exists M\in \mathbb{R}:$ $\|\mathbf{x}\|_2\leqslant M$ and $|y|\leqslant M$. If $\lambda_{\min}\left(\mathbf{X}\T_k \mathbf{X}_k \right) = \omega(\sqrt{k})$ for $k\to \infty$, then in a linear regression model with a normal prior distribution of parameters $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2\to 0$ and $\|\mathbf{\Sigma}_{k+1} - \mathbf{\Sigma}_k\|_{F}\to 0$ as $k\to \infty$.
+\end{theorem}
+
+This theorem is of primary importance in this paper. Its distinctive feature is that, under mild and straightforward assumptions, it implies the convergence of the moments of the posterior distribution of parameters.
+
+The first assumption in Theorem~\ref{theorem3} relates to the restriction on the range of values for the features and target variable. This is common in practical applications, so it serves primarily for theoretical analysis purposes.
+
+The second condition of Theorem~\ref{theorem3} is of greater interest, as it delves into the behavior of the minimum eigenvalue of the sample covariance matrix of features. We denote $\omega(\sqrt{k})$ as a growth rate that is asymptotically faster than $\sqrt{k}$, ensuring that the smallest eigenvalue of $\mathbf{X}\T_k \mathbf{X}_k$ does not decay too quickly. Unfortunately, this paper does not provide theoretical guarantees for this convergence, although it is verified through experiments. This can be regarded as a limitation, so we will try to reveal this in the future work.
+
+\section{Computational experiment}
+
+This section provides an extensive empirical study of the proposed methods. Experiments consist of several parts. In the first one, we verify the convergences obtained through the theoretical analysis. Further, we make size estimations for various sample sets using different approaches. Finally, we study the dependence of the sufficient sample size on available sample set.
+
+\subsection{Convergence verification}
+
+Here we study whether the theoretical convergences we have obtained are actually observed in practice. Namely, first we look at the behavior of the minimum eigenvalue of the matrix $\mathbf{X}_k^\top \mathbf{X}_k$ as the sample size increases. Then we investigate the convergence of the proposed functions $KL(k)$ and $S(k)$. Finally, the dependence of sufficient sample size of the threshold parameters is studied. The experiment is conducted on two datasets: synthetic regression and Liver Disorders. 
+
+Synthetic data is generated from a linear regression model. The number of objects is 500, the number of features is 10. To generate a synthetic regression dataset, we have sampled original features, model parameters, and noise residuals from the standard normal distribution. The prior distribution of parameters was set to standard normal too, both for synthetic regression and Liver Disorders datasets, which has 345 objects and 5 features.  We have preprocessed the input features using standard scaler.
+
+One object is sequentially removed from the given sample until the number of objects in the subsample is equal to the number of features. For each sample size $k$ we calculate the minimum eigenvalue of the matrix $\mathbf{X}_k\T \mathbf{X}_k$. Also, the values of $KL(k)$ and $S(k)$ are calculated. This process is repeated $B=100$ times.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{eigvals}
+    \caption{Minimum eigenvalue versus the available sample set size. The estimated graph, which is blue, for large sample sizes is higher than the orange graph of the power function. This asymptotic behavior of minimum eigenvalue corresponds to the second assumption in the Theorem~\ref{theorem3}.}
+    \label{eigvals}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{synthetic-regression}
+    \caption{Synthetic regression dataset provides results for the convergence of the proposed sample size estimation functions. The left one corresponds to the Kullback-Leibler divergence, and tends to zero, while the right one tends to one, exhibiting the behavior of s-score similarity function.}
+    \label{synthetic-regression}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{liver-disorders}
+    \caption{Liver Disorders dataset provides results for the convergence of the proposed sample size estimation functions. On the left, we have the Kullback-Leibler divergence, which tends towards zero as the sample size increases. On the right, we have the s-score similarity function, which tends to one as the sample size approaches infinity.}
+    \label{liver-disorders}
+\end{figure}
+
+Fig.~\ref{eigvals} shows the asymptotic behavior of the minimum eigenvalue of the matrix $\mathbf{X}_k\T \mathbf{X}_k$. We see that when the sample size tends to infinity, the minimum eigenvalue also tends to infinity. Meanwhile, as is necessary for the Theorem~\ref{theorem3}, the graph is higher than $\sqrt{k}$.
+
+In the Fig.~\ref{synthetic-regression}, we can observe the obtained dependencies between the available sample size $k$ and the proposed functions $KL(k)$ and $S(k)$ for the synthetic regression dataset. At the same time, in the Fig.~\ref{liver-disorders}, we see the same plots for the Liver Disorders dataset. It can be seen that in both cases, the value of $KL(k)$ approaches zero as the sample size increases, and $S(k)$ tends towards one. These empirical results confirm the theoretical ones obtained earlier.
+
+For the definitions of KL-sufficiency and S-sufficiency, there is a hyperparameter $\varepsilon$, which corresponds to the threshold for a sufficient sample size $m^*$. In order to study the dependence between them, we introduce Fig.~\ref{sufficient-vs-threshold}, which shows what sample sizes can be chosen to provide a certain level of confidence.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{sufficient-vs-threshold}
+    \caption{Sufficient sample size versus the threshold parameter. S-sufficient sample size requires lower threshold values. Thus, it turns out to be more demanding of this value.}
+    \label{sufficient-vs-threshold}
+\end{figure}
+
+\subsection{Sample size estimation for various datasets}
+
+To compare our proposed methods with baselines, we used the following experiment setup. The machine learning model is linear regression. We have chosen 4 open-source datasets with regression task: Boston, Diabetes, Forestfires, and Servo. Their descriprive statistics are provided in the Table~\ref{table:descr}. We have applied 9 different baseline methods of sample size estimation on them: Lagrange Multipliers Test, Likelihood Ratio Test, Wald Test, Cross Validation, Bootstrap, Average Posterior Variance Criterion (APVC), Average Coverage Criterion (ACC), Average Length Criterion (ALC), and Utility function. They were analyzed in detail in \cite{Grabovoy2022}. Default parameters values of these methods were used. All these methods were utilized with the help of the corresponding library\footnote{\href{https://github.com/andriygav/SampleSizeLib}{https://github.com/andriygav/SampleSizeLib}}. 
+
+As for our methods, we slightly changed the definitions of sufficiency, transferring them to terms of relative change. Namely, we consider the sample size to be sufficient if the $KL(k)$ function has a relative deviation from its value in the entire sample of no more than $\varepsilon$. Similarly with the $S(k)$ function. We fixed $\varepsilon=0.05$ and got the resulting sample sizes. This value was chosen, because other methods, especially statistical, use $0.05$ as a value of type~I error.
+
+\begin{table}[ht]
+    \centering
+    \caption{Descriptive statistics of the sample sets.}\label{table:descr}
+    \begin{tabular}{lcc}
+    \hline
+        \toprule
+        Sample set & Number of features, $n$ & Size of sample set, $m$ \\ 
+        \midrule
+        Boston Housing & 14 & 506 \\ 
+        Diabetes & 10 & 576 \\ 
+        Forest Fires & 13 & 517 \\ 
+        Servo & 4 & 167 \\ 
+        \botrule
+    \end{tabular}
+\end{table}
+
+\begin{table}[ht]
+    \centering
+    \caption{Experimental estimation of sample size for various sample sets.}\label{table:results}
+    \begin{tabular}{lcccc}
+    \hline
+        \toprule
+        Methods and sample sets & Boston & Diabetes & Forest Fires & Servo \\ 
+        \midrule
+        Lagrange Multipliers Test & 18 & 25 & 44 & 38 \\
+        Likelihood Ratio Test & 17 & 25 & 43 & 18 \\
+        Wald Test & 66 & 51 & 46 & 76 \\ 
+        Cross Validation & 178 & 441 & 171 & 120 \\ 
+        Bootstrap & 113 & 117 & 86 & 60 \\ 
+        APVC & 98 & 167 & 351 & 20 \\ 
+        ACC & 228 & 441 & 346 & 65 \\ 
+        ALC & 98 & 267 & 516 & 25 \\ 
+        Utility function & 148 & 172 & 206 & 105 \\ 
+        \midrule
+        KL (ours) & 493 & 437 & 86 & 165 \\ 
+        S (ours) & 28 & 22 & 26 & 10 \\
+        \botrule
+    \end{tabular}
+\end{table}
+
+The results in Table~\ref{table:results} indicate that the KL-divergence criterion is more conservative, requiring a larger sample size, whereas the S-sufficiency criterion suggests that a minimal sample size is sufficient. We believe this is a typical outcome for the s-score similarity function, which was designed for comparing different machine learning models, particularly in cases with uninformative distributions. If the distributions have high variance, the proximity function approaches one, leading the criterion to consider even a small sample size as sufficient.
+
+\subsection{Dependence of sufficient sample size on available datasets}
+
+This part includes the most comprehensive analysis of the various sample size determination methods. We analyse how the sufficient sample size depends on the available sample set. Particularly, we increase the sample size, and calculate the sufficient one, based on the different methods. Thus, we get the Figure~\ref{dependence_on_available_sample_set}, which allows us to compare the above methods in terms of their conservatism. 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{dependence_on_available_sample_set.pdf}
+    \caption{Estimated sample size $m^*$ versus the available sample size $m$ for each method. The KL-divergence criterion is more conservative and requires a larger sample size. The S-sufficiency criterion, on the other hand, suggests that a minimal sample size may be sufficient.}
+    \label{dependence_on_available_sample_set}
+\end{figure}
+
+One can see that S-sufficient sample size is often the minimum one. We have already discussed the reason of it in the previous subsection. Also, the KL-sufficient sample size tends to require an almost total sample. In our opinion, this is due to the fact that the Kullback-Leibler divergence is extremely sensitive to changes in the mean and variance of the distributions being compared. Thus, the stabilization of the distance between them occurs quite late.
+
+\section{Conclusion}
+
+In this paper, we proposed methods for determining sufficient sample sizes by examining the proximity of posterior distributions of model parameters across subsamples. We proved the validity of these methods under certain model restrictions and demonstrated their effectiveness through computational experiments. A key assumption in our work was that the posterior distribution of model parameters is gaussian. This assumption allowed us to significantly simplify the theoretical calculations, enabling us to derive explicit formulas for the Kullback-Leibler divergence and the s-score similarity function. However, this assumption also limits the generalizability of our results. Future research will need to explore scenarios with non-normal posterior distributions to address this limitation.
+
+In our experiments, we used the proposed methods in a relative manner, calculating the relative deviation from the value on the entire dataset. We suggest adopting this approach in practice, with the choice of the threshold left to the researcher. We recommend using small values, such as $0.05$ or $0.1$, for practical applications.
+
+A potential challenge in applying our methods lies in the calculation of the Kullback-Leibler divergence and the s-score similarity function, both of which involve the inversion of the covariance matrix. The computational complexity of this operation increases with the number of features in the dataset, making these approaches less suitable for very large models, particularly neural network models. We plan to develop research in this direction to address these computational challenges.
+
+Regarding the comparison between KL-divergence and s-score similarity, we discussed this issue in detail in the experiments section. If a more conservative estimate is desired, we recommend using KL-divergence. Conversely, if a more optimistic estimate is required, the s-score similarity function is more appropriate.
+
+We hope that our results will serve as a foundation for further research in this area, particularly in the context of more complicated machine learning models. Our future work will aim to relax the assumption of a gaussian posterior distribution and explore alternative methods to handle the computational complexities associated with large-scale models.
+
+\newpage
+\begin{appendices}
+
+\section{Proof of Theorem \ref{theorem1}}\label{app:theorem1}
+\begin{proof}
+The Kullback-Leibler divergence for a pair of normal posterior distributions has the form
+    \[ D_{\text{KL}}\left( p_k \| p_{k+1} \right) = \dfrac{1}{2} \left( \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) + (\mathbf{m}_{k+1} - \mathbf{m}_k)\T \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) - n + \log{\left( \dfrac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} \right). \]
+    Let's express $\mathbf{\Sigma}_{k+1}$ as $\mathbf{\Sigma}_{k+1} = \mathbf{\Sigma}_k + \Delta\mathbf{\Sigma}$. Let's consider each term separately.
+    \[ \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) = \mathrm{tr}\left(\left(\mathbf{\Sigma}_k + \Delta \mathbf{\Sigma} \right)^{-1} \mathbf{\Sigma}_k \right) \to \mathrm{tr}\mathbf{I}_n=n\text{ as } \| \Delta \mathbf{\Sigma} \|_F \to 0, \]
+    \[ \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)\T\mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant\| \mathbf{m}_{k+1} -\mathbf{m}_k\|_2^2\|\mathbf{\Sigma}_{k+1}^{-1} \|_2 \to 0 \text{ as } \| \mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0, \]
+    \[ \log{\left( \dfrac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} = \log{\left( \dfrac{\det \left( \mathbf{\Sigma}_k + \Delta \mathbf{\Sigma} \right)}{\det\mathbf{\Sigma}_{k}} \right)} \to \log \det\mathbf{I}_n = \log 1 = 0 \text{ as } \| \Delta \mathbf{\Sigma} \|_F\to 0, \]
+    from where we have the required.
+\end{proof}
+
+\section{Proof of Theorem \ref{theorem2}}\label{app:theorem2}
+\begin{proof}
+Let's use the s-score expression for a pair of normal posterior distributions from~\cite{Aduenko2017}:
+\[\text{s-score}(p_k, p_{k+1}) = \exp{\left( -\dfrac{1}{2} (\mathbf{m}_{k+1} - \mathbf{m}_k)\T \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right)}. \]
+Because
+    \[ \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)\T \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} \|_2 \to 0 \]
+    if $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2\to 0$, then the value of the quadratic form inside the exponent tends to zero. Therefore, $\text{s-score}(p_k, p_{k+1}) \to 1$ as $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2\to 0$.
+\end{proof}
+
+\section{Proof of Theorem \ref{theorem3}}\label{app:theorem3}
+\begin{proof}
+Let be a normal prior distribution of parameters $p(\mathbf{w})=\mathcal{N}\left(\mathbf{w}|\mathbf{0}, \alpha^{-1}\mathbf{I}\right)$. In a linear regression model, likelihood is normal, namely
+    \[ p(\mathbf{y} | \mathbf{X}, \mathbf{w}) = \mathcal{N}\left(\mathbf{y} |\mathbf{X}\mathbf{w}, \sigma^2\mathbf{I}\right) =\left( 2\pi\sigma^2\right)^{-m/2} \exp\left( -\dfrac{1}{2\sigma^2} \|\mathbf{y} - \mathbf{X}\mathbf{w}\|_2^2\right). \]
+Using the conjugacy of the prior distribution and likelihood, it is easy to find the parameters of the posterior distribution:
+    \[ p(\mathbf{w} | \mathbf{X}, \mathbf{y}) = \mathcal{N}\left(\mathbf{w} | \mathbf{m}, \mathbf{\Sigma} \right), \]
+where
+    \[ \mathbf{\Sigma} = \left( \alpha \mathbf{I} + \dfrac{1}{\sigma^2} \mathbf{X}\T \mathbf{X} \right)^{-1}, \qquad \mathbf{m} = \left( \mathbf{X}\T \mathbf{X} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}\T \mathbf{y}. \]
+Consider the expression $\|\mathbf{\Sigma}_{k+1} - \mathbf{\Sigma}_k\|_2$ norms of difference of covariance matrices for subsamples of size $k$ and $k+1$. Let's introduce the notation $\mathbf{A}_k = \dfrac{1}{\sigma^2}\mathbf{X}\T_k\mathbf{X}_k$. Given the formulas above, we have
+    \[ \| \mathbf{\Sigma}_{k+1} - \mathbf{\Sigma}_k \|_2 = \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} - \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 = \]
+    \[ = \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \left( \mathbf{A}_{k+1} - \mathbf{A}_k \right) \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \leqslant \]
+    Let's use the submultiplicativity of the spectral matrix norm.
+    \[ \leqslant \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \right\|_2 \left\| \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 = \]
+    Now let's use the expression of the spectral matrix norm in terms of the maximum eigenvalue.
+    \[ = \dfrac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)} \dfrac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \leqslant \]
+    \[ \leqslant \dfrac{1}{\lambda_{\min}\left( \mathbf{A}_{k+1} \right)} \dfrac{1}{\lambda_{\min}\left( \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 = \]
+    \[ = \sigma^2  \dfrac{1}{\lambda_{\min}\left( \mathbf{X}\T_{k+1} \mathbf{X}_{k+1} \right)} \dfrac{1}{\lambda_{\min}\left( \mathbf{X}\T_k \mathbf{X}_k \right)} \left\| \mathbf{X}\T_{k+1} \mathbf{X}_{k+1} - \mathbf{X}\T_k \mathbf{X}_k \right\|_2. \]
+Further, since by the condition $\|\mathbf{x}\|_2 \leqslant M$, then
+    \[ \left\| \mathbf{X}\T_{k+1} \mathbf{X}_{k+1} - \mathbf{X}\T_k \mathbf{X}_k \right\|_2 = \left\| \sum\limits_{i=1}^{k+1} \mathbf{x}_i \mathbf{x}_i\T - \sum\limits_{i=1}^{k} \mathbf{x}_i \mathbf{x}_i\T \right\|_2 = \left\| \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right\|_2 = \lambda_{\max}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right) = \]
+    A matrix of unit rank has a single nonzero eigenvalue.
+    \[= \mathbf{x}_{k+1}\T \mathbf{x}_{k+1} = \| \mathbf{x}_{k+1}\|_2^2 \leqslant M^2. \]
+By condition $\lambda_{\min}\left(\mathbf{X}\T_k\mathbf{X}_k \right) = \omega(\sqrt{k})$, then $\|\mathbf{\Sigma}_{k+1} - \mathbf{\Sigma}_k\|_2 = o(k^{-1})$ as $k\to \infty$. Next, we will use the equivalence of matrix norms, namely
+    \[ \|\mathbf{\Sigma}_{k+1} - \mathbf{\Sigma}_k \|_F \leqslant\sqrt{k}\|\mathbf{\Sigma}_{k+1} - \mathbf{\Sigma}_k\|_2 = o(k^{-1/2}) \text{ as } k\to \infty, \]
+    which was exactly what needed to be proved. Now let's estimate the norm of the difference in mathematical expectations.
+    \[ \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 = \left\| \left( \mathbf{X}_{k+1}\T \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_{k+1}\T \mathbf{y}_{k+1} - \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k\T \mathbf{y}_k \right\|_2 = \]
+    Consider that $\mathbf{X}_{k+1}\T = [\mathbf{X}_k\T,\mathbf{x}_{k+1}]$ and $\mathbf{y}_{k+1} = [\mathbf{y}_k, y_{k+1}]\T$, then $\mathbf{X}_{k+1}\T\mathbf{X}_{k+1} = \mathbf{X}_k\T \mathbf{X}_k +\mathbf{x}_{k+1} \mathbf{x}_{k+1}\T$ and $\mathbf{X}_{k+1}\T\mathbf{y}_{k+1} = \mathbf{X}_k\T \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1}$.
+    \[ = \left\| \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} + \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)^{-1} \left( \mathbf{X}_k\T \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1} \right) - \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k\T \mathbf{y}_k \right\|_2 = \]
+    Let's take out the multiplier in the first term:
+\[\left(\mathbf{X}_k\T \mathbf{X}_k+ \alpha\sigma^2 \mathbf{I} +\mathbf{x}_{k+1}\mathbf{x}_{k+1}\T\right)^{-1}= \left(\mathbf{I} + \left( \mathbf{X}_k\T\mathbf{X}_k +\alpha \sigma^2 \mathbf{I}\right)^{-1}\mathbf{x}_{k+1}\mathbf{x}_{k+1}\T\right)^{-1} \left(\mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I}\right)^{-1}.\]
+Next, we will take out the common multiplier for both terms.
+    \begin{multline*}
+        = \Bigg\| \left[ \left( \mathbf{I} + \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)^{-1} - \mathbf{I} \right] \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k\T \mathbf{y}_k + \\ + \left( \mathbf{X}_{k+1}\T \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} y_{k+1} \Bigg\|_2 =
+    \end{multline*}
+    Let's use the triangle inequality, as well as the consistency and submultiplicativity property of the spectral norm.
+    \begin{multline*}
+        \leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)^{-1} - \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k\T \mathbf{y}_k \right\|_2 + \\ + \left\| \left( \mathbf{X}_{k+1}\T \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2
+    \end{multline*}
+    Let's evaluate each term separately. In the first multiplier of the first term, we apply the formula for the difference of inverse matrices, as we did with covariance matrices.
+    \[ \left\| \left( \mathbf{I} + \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)^{-1} - \mathbf{I} \right\|_2 \leqslant \]
+    \[ \leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)^{-1} \right\|_2 \cdot \left\| \mathbf{I} \right\|_2 \cdot \left\| \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right\|_2 \leqslant \]
+    Again, we use submultiplicativity, as well as an expression for the norm of a matrix of unit rank.
+    \[ \leqslant \dfrac{1}{\lambda_{\min}\left( \mathbf{I} + \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)} \dfrac{\left\| \mathbf{x}_{k+1} \right\|_2^2}{\lambda_{\min}\left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)} \leqslant \]
+    \[ \leqslant \dfrac{1}{1 + \lambda_{\min}\left(\left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)} \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_k\T \mathbf{X}_k \right)} \leqslant \]
+    The minimum eigenvalue of the product of matrices is estimated by the product of their minimum eigenvalues. In addition, the minimum eigenvalue of the matrix of unit rank $\mathbf{x}_{k+1}\mathbf{x}_{k+1}\T$ is zero.
+    \[ \leqslant \dfrac{1}{1 + \lambda_{\max}\left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right) \lambda_{\min}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}\T \right)} \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_k\T \mathbf{X}_k \right)} = \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_k\T \mathbf{X}_k \right)}. \]
+The second and third multipliers of the first term are evaluated as follows.
+    \[ \left\| \left( \mathbf{X}_k\T \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k\T \mathbf{y}_k \right\|_2 \leqslant \dfrac{\left\| \mathbf{X}_k\T \mathbf{y}_k \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k\T \mathbf{X}_k \right)} = \dfrac{\left\| \sum\limits_{i=1}^{k} \mathbf{x}_i y_i \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k\T \mathbf{X}_k \right)} \leqslant \dfrac{k M^2}{\lambda_{\min}\left( \mathbf{X}_k\T \mathbf{X}_k \right)} \]
+    Finally, let's evaluate the second term.
+    \[ \left\| \left( \mathbf{X}_{k+1}\T \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \leqslant \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}\T \mathbf{X}_{k+1} \right)} \]
+    In total, we have the following estimate.
+    \[ \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \leqslant \dfrac{k M^3}{\lambda_{\min}^2\left( \mathbf{X}_k\T \mathbf{X}_k \right)} + \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}\T \mathbf{X}_{k+1} \right)} = k\cdot o(k^{-1}) + o(k^{-1/2}) = o(1) \text{ as } k\to \infty\]
+    Thus, we obtained the required convergence.
+\end{proof}
+
+\end{appendices}
+
+\bibliography{references}% common bib file
+%% if required, the content of .bbl file can be included here once bbl is generated
+%%\input sn-article.bbl
+
+
+\end{document}

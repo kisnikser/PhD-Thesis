@@ -1,0 +1,432 @@
+\documentclass{article}
+\input{preamble}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+
+\usepackage{dan2e}
+\usepackage[numbers,sort,compress]{natbib}
+
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{amsthm}
+\usepackage{mathrsfs}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{manyfoot}
+\usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{listings}
+
+\theoremstyle{definition}
+\newtheorem{defi}{Определение}
+\newtheorem{corollary}{Следствие}
+\theoremstyle{plain}
+\newtheorem{assumption}{Предположение}
+\newtheorem{lemma}{Лемма}
+\newtheorem{remark}{Замечание}
+\newtheorem{theorem}{Теорема}
+\newtheorem{OldTheorem}{Теорема}
+\renewcommand{\theOldTheorem}{\Alph{OldTheorem}}
+
+\newtheorem{Theorem}{Теорема}
+\renewcommand{\theTheorem}{\arabic{theorem}$^\prime$}
+
+
+\begin{document}
+
+\Volume{}
+\Year{2025}
+\Pages{}
+\udk{519.21}
+
+\title{Достаточный размер выборки: бутстрапирование правдоподобия}
+
+\author{Н.\,С.~Киселев\Addressmark[1]\Emailmark[1], А.\,В.~Грабовой\Addressmark[1]\Emailmark[2]}
+
+\Addresstext[1]{Московский физико-технический институт, Москва, Россия}
+
+\Emailtext[1]{kiselev.ns@phystech.edu}
+\Emailtext[2]{grabovoy.av@phystech.edu}
+
+\markboth{КИСЕЛЕВ, ГРАБОВОЙ}{Достаточный размер выборки: бутстрапирование правдоподобия}
+
+\dateA{06.10.2024}
+\dateB{06.10.2024}
+\dateC{10.11.2024}
+
+\maketitle
+
+% \doi{10.31857/S2686954322040117}
+
+\begin{abstract}
+Определение подходящего размера выборки имеет решающее значение для построения эффективных моделей машинного обучения. Существующие методы часто либо не имеют строгого теоретического обоснования, либо привязаны к конкретным статистическим гипотезам о параметрах модели. В настоящей работе представляются два новых метода, основанных на значениях правдоподобия на бутстрапированных подвыборках. Демонстрируется корректность одного из этих методов на в модели линейной регрессии. Вычислительные эксперименты как с синтетическими, так и с реальными наборами данных показывают, что предложенные функции сходятся по мере увеличения размера выборки, что подчеркивает практическую полезность подхода.
+\end{abstract}
+
+\begin{keywords}
+достаточный размер выборки, бутстрапирование правдоподобия, линейная регрессия, вычислительная линейная алгебра.
+\end{keywords}
+
+\begin{altabstract}
+The loss landscape of neural networks is a critical aspect of their training, and understanding its properties is essential for improving their performance. In this paper, we investigate how the loss surface changes when the sample size increases, a previously unexplored issue. We theoretically analyze the convergence of the loss landscape in a fully connected neural network and derive upper bounds for the difference in loss function values when adding a new object to the sample. Our empirical study confirms these results on various datasets, demonstrating the convergence of the loss function surface for image classification tasks. Our findings provide insights into the local geometry of neural loss landscapes and have implications for the development of sample size determination techniques.	
+\end{altabstract}
+
+\begin{altkeywords}
+neural networks, loss function landscape, Hessian matrix, convergence analysis, image classification
+\end{altkeywords}
+
+\makeatletter
+
+\section{Введение}
+Задача машинного обучения с учителем предполагает выбор предсказательной модели из некоторого параметрического семейства. Обычно такой выбор связан с некоторыми статистическими гипотезами, например, максимизацией некоторого функционала качества. Модель, которая соответствует этим статистическим гипотезам, называется \textit{адекватной} моделью \cite{bies2006genetic,cawley2010over}.
+
+При планировании вычислительного эксперимента требуется оценить минимальный размер выборки~--- количество объектов, необходимое для построения адекватной модели. Размер выборки, необходимый для построения адекватной модели прогнозирования, называется \textit{достаточным} \cite{byrd2012sample,figueroa2012predicting,balki2019sample}. 
+
+В работе рассматривается проблема определения достаточного размера выборки. Этой теме посвящено большое число работ. Используемые в них подходы можно разделить на статистические, байесовские и эвристические.
+
+Одни из первых исследований по данной теме \cite{Adcock1988,Joseph1995} формулируют определенный статистический критерий, где связанный с данным критерием метод оценки размера выборки гарантирует достижение фиксированной статистической мощности с величиной ошибки I рода, не превышающей заданного значения. К статистическим методам относятся метод множителей Лагранжа \cite{self1988power}, метод проверки отношения правдоподобия \cite{shieh2000power}, метод Вальда \cite{shieh2005power}. Статистические методы имеют ряд ограничений, которые связаны с их применением на практике. Они позволяют оценить размер выборки, исходя из предположений о распределении данных и информации о соответствии наблюдаемых величин предположениям нулевой гипотезы.
+
+Байесовский подход тоже имеет место в данной проблеме. В работе \cite{Lindley1997} достаточный размер выборки определяется исходя из максимизации ожидаемой функции полезности. Она может включать в себя в явном виде функции распределения параметров и штрафы за увеличение размера выборки. Также в этой работе рассматриваются альтернативные подходы, основанные на ограничении некоторого критерия качества оценки параметров модели. Среди таких критериев можно выделить критерий средней апостериорной дисперсии (APVC), критерий среднего покрытия (ACC), критерий средней длины (ALC) и критерий эффективного объема выборки (ESC). Эти критерии получили свое развитие в других работах, например, \cite{PhamGia1997} и \cite{Gelfand2002}. Спустя время, в \cite{Cao2009} было проведено теоретическое и практическое сравнение методов из \cite{Adcock1988,Joseph1995,Lindley1997}.
+
+В работе \cite{Brutti2014}, как и в \cite{Pezeshk2008}, рассматриваются различия между байесовским и частотным подходами при определении размера выборки. Также предлагаются робастные методы для байесовского подхода и приводятся наглядные примеры для некоторых вероятностных моделей.
+
+В работе \cite{Grabovoy2022} рассматриваются различные методы оценки размера выборки в обобщенных линейных моделях, включая статистические, эвристические и байесовские методы. Анализируются такие методы, как тест на множители Лагранжа, тест на отношение правдоподобия, статистика Вальда, кросс-валидация, бутстрап, критерий Кульбака--Лейблера, критерий средней апостериорной дисперсии, критерий среднего охвата, критерий средней длины и максимизация полезности. Указывается на возможное развитие темы, которое заключается в поиске метода, сочетающего байесовский и статистический подходы для оценки размера выборки для недостаточного доступного размера выборки.
+
+В \cite{MOTRENKO2014743} рассматривается метод определения размера выборки в логистической регрессии, использующий кросс-валидацию и дивергенцию Кульбака-Лейблера между апостериорными распределениями параметров модели на схожих подвыборках. Под схожими подвыборками понимают такие подвыборки, которые могут быть получены друг из друга добавлением, удалением или заменой одного объекта.
+
+В настоящей работе рассматриваются несколько подходов к определению достаточного размера выборки. Предлагается оценивать математическое ожидание и дисперсию функции правдоподобия на бутстрапированных подвыборках. Малое изменение этих величин при добавлении очередного объекта свидетельствует о достижении достаточного числа объектов в выборке. Доказывается корректность определения в модели линейной регрессии. Представленный метод легко использовать и на практике. Для этого предлагается подсчитывать значение функции ошибки, а не правдоподобия. 
+
+\section{Постановка задачи}
+\textit{Объектом} называется пара $(\bx, y)$, где $\bx \in \mathbb{X} \subseteq \mathbb{R}^n$ есть вектор признакового описания объекта, а $y \in \mathbb{Y}$ есть значение целевой переменной. В задаче регрессии $\mathbb{Y} = \mathbb{R}$, а в задаче $K$-классовой классификации $\mathbb{Y} = \{1, \ldots, K\}$.
+
+\textit{Матрицей объекты-признаки} для выборки $\mathcal{D}_m = \left\{ (\bx_i, y_i) \right\}, i \in \mathcal{I} = \{ 1, \ldots, m \}$ размера $m$ называется матрица $\bX_m = \left[ \bx_1, \ldots, \bx_m \right]\T \in \mathbb{R}^{m \times n}$.
+
+\textit{Вектором ответов} (вектором значений целевой переменной) для выборки $\mathcal{D}_m = \left\{ (\bx_i, y_i) \right\}, i \in \mathcal{I} = \{ 1, \ldots, m \}$ размера $m$ называется вектор $\by_m = \left[ y_1, \ldots, y_m \right]\T \in \mathbb{Y}^m$.
+
+\textit{Моделью} называется параметрическое семейство функций $f$, отображающих декартово произведение множества значений признакового описания объектов $\mathbb{X}$ и множества значений параметров $\mathbb{W}$ во множество значений целевой переменной $\mathbb{Y}$: 
+\[ f: \mathbb{X} \times \mathbb{W} \to \mathbb{Y}. \]
+
+\textit{Вероятностной моделью} называется совместное распределение вида 
+\[ p(y, \bw | \bx) = p(y | \bx, \bw) p(\bw): \mathbb{Y} \times \mathbb{W} \times \mathbb{X} \to \mathbb{R}^+, \]
+где $\bw \in \mathbb{W}$ есть набор параметров модели, $p(y | \bx, \bw)$ задает правдоподобие объекта, а $p(\bw)$ задает априорное распределение параметров.
+
+\textit{Функцией правдоподобия} простой выборки $\mathcal{D}_m = \left\{ (\bx_i, y_i) \right\}, i \in \mathcal{I} = \{ 1, \ldots, m \}$ размера $m$ называется функция 
+\[ L(\mathcal{D}_m, \mathbf{w}) = p(\by_m | \bX_m, \bw) = \prod_{i=1}^{m} p(y_i | \mathbf{x}_i, \mathbf{w}). \]
+Ее логарифм 
+\[ l(\mathcal{D}_m, \mathbf{w}) = \sum\limits_{i=1}^{m} \log p(y_i | \mathbf{x}_i, \mathbf{w}) \]
+называется \textit{логарифмической функцией правдоподобия}. Далее, если не оговорено противное, будем считать выборку простой.
+
+Оценкой максимума правдоподобия набора параметров $\bw \in \mathbb{W}$ по подвыборке $\mathcal{D}_k$ размера $k$ называется 
+\[ \hat{\mathbf{w}}_{k} = \argmax_{\bw \in \mathbb{W}} L(\mathcal{D}_k, \mathbf{w}). \]
+
+Ставится задача определения достаточного размера выборки $m^*$. Пусть задан некоторый критерий $T$. Он может быть построен, например, на основе эвристик о поведении параметров модели.
+\begin{defi}
+    Размер выборки $m^*$ называется \textit{достаточным} согласно критерию $T$, если $T$ выполняется для всех $k \geqslant m^*$.
+\end{defi}
+
+\section{Предлагаемые методы определения достаточного размера выборки}
+
+В этом разделе будем считать, что достоверно $m^* \leqslant m$. Это означает, что нам нужно просто формализовать, какой размер выборки можно считать достаточным. Для определения достаточности будем использовать функцию правдоподобия. Когда в наличии имеется достаточно объектов, вполне естественно ожидать, что от одной реализации выборки к другой полученная оценка параметров не будет сильно меняться \cite{Joseph1997,Joseph1995}. То же можно сказать и про функцию правдоподобия. Таким образом, сформулируем, какой размер выборки можно считать достаточным..
+
+\begin{defi}
+    \label{sufficient-variance}
+    Зафиксируем некоторое положительное число $\varepsilon > 0$. Размер выборки $m^*$ называется \textit{$D$-достаточным}, если для всех $k \geqslant m^*$
+    \[ D(k) = \mathbb{D}_{\hat{\mathbf{w}}_{k}} L(\mathcal{D}_m, \hat{\mathbf{w}}_{k}) \leqslant \varepsilon. \]
+\end{defi}
+
+С другой стороны, когда в наличии имеется достаточно объектов, также вполне естественно, что при добавлении очередного объекта в рассмотрение полученная оценка параметров не будет сильно меняться. Сформулируем еще одно определение.
+
+\begin{defi}
+    \label{sufficient-difference}
+    Зафиксируем некоторое положительное число $\varepsilon > 0$. Размер выборки $m^*$ называется \textit{$M$-достаточным}, если для всех $k \geqslant m^*$ 
+    \[ M(k) = \left| \mathbb{E}_{\hat{\mathbf{w}}_{k+1}} L(\mathcal{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\hat{\mathbf{w}}_{k}} L(\mathcal{D}_m, \hat{\mathbf{w}}_{k}) \right| \leqslant \varepsilon. \]
+\end{defi}
+В определениях выше вместо функции правдоподобия $L(\mathcal{D}_m, \hat{\mathbf{w}}_{k})$ можно рассматривать ее логарифм $l(\mathcal{D}_m, \hat{\mathbf{w}}_{k})$.
+
+Предположим, что $\mathbb{W} = \mathbb{R}^n$. Напомним, что информацией Фишера называется матрица
+\[ \left[\mathbf{I}(\bw)\right]_{ij} = - \mathbb{E}\left[ \dfrac{\partial^2 \log p(\by | \bx, \bw)}{\partial w_i \partial w_j} \right]. \]
+Известным результатом является асимптотическая нормальность оценки максимума правдоподобия, то есть $\sqrt{k}\left( \hat{\bw}_k - \bw \right) \xrightarrow{d} \mathcal{N}\left(0, \mathbf{I}^{-1}(\bw)\right)$. Из сходимости по распределению в общем случае не следует сходимость моментов случайного вектора. Тем не менее, если предположить последнее, то в некоторых моделях можно доказать корректность предложенного определения $M$-достаточного размера выборки.
+
+Для удобства обозначим параметры распределения $\hat{\bw}_k$ следующим образом: математическое ожидание $\mathbb{E} \hat{\bw}_k = \bm_k$ и матрица ковариации $\mathbb{D} \hat{\bw}_k = \bSigma_k$. Тогда имеет место следующая теорема, доказательство которой приведено в Приложении.
+
+\begin{theorem}\label{theorem}
+    Пусть $\| \bm_{k+1} - \bm_k \|_2 \to 0$ и $\| \bSigma_{k+1} - \bSigma_k \|_{F} \to 0$ при $k \to \infty$. Тогда в модели линейной регрессии определение $M$-достаточного размера выборки является корректным. А именно, для любого $\varepsilon > 0$ найдется такой $m^*$, что для всех $k \geqslant m^*$ выполнено $M(k) \leqslant \varepsilon$.
+\end{theorem}
+
+\begin{corollary}\label{corollary}
+    Пусть $\| \bm_k - \bw \|_2 \to 0$ и $\| \bSigma_k - \left[k\mathbf{I}(\bw)\right]^{-1} \|_{F} \to 0$ при $k \to \infty$. Тогда в модели линейной регрессии определение $M$-достаточного размера выборки является корректным. 
+\end{corollary}
+
+По условию задана одна выборка. Поэтому в эксперименте нет возможности посчитать указанные в определениях математическое ожидание и дисперсию. Для их оценки воспользуемся техникой бутстрап. А именно, сгенерируем из заданной $\mathcal{D}_m$ некоторое число $B$ подвыборок размера $k$ с возвращением. Для каждой из них получим оценку параметров $\hat{\mathbf{w}}_{k}$ и посчитаем значение $L(\mathcal{D}_m, \hat{\mathbf{w}}_{k})$. Для оценки будем использовать выборочное среднее и несмещенную выборочную дисперсию (по бутстрап-выборкам).
+
+Предложенные выше определения можно применять и в тех задачах, когда минимизируется произвольная функция потерь, а не максимизируется функция правдоподобия. Мы не приводим никаких теоретических обоснований этого, однако на практике такая эвристика оказывается достаточно удачной.
+
+\section{Вычислительный эксперимент}
+
+В данном разделе проводится эмпирическое исследование предлагаемых методов. Эксперименты проводятся на синтетических данных и на выборке Liver Disorders из библиотеки \cite{UCI}. Полностью воспроизводимый код экспериментов доступен в GitHub репозитории\\
+(\texttt{https://github.com/kisnikser/Likelihood-Bootstrapping}).
+
+Синтетические данные сгенерированы из моделей линейной и логистической регрессий. Число объектов 1000, число признаков 20. Используется $B=1000$ бустрапированных подвыборок. Подсчитываются значения функций $D$ и $M$. Датасет с задачей регрессии Liver Disorders содержит 345 объектов и 5 признаков. Мы также используем $B=1000$ бутстрапированных подвыборок для оценки математического ожидания и дисперсии функции ошибки.
+
+На рис.~\ref{synthetic-regression} можно видеть полученные зависимости между используемым размером подвыборки $k$ и рассматриваемыми функциями $D$ и $M$ для синтетической выборки с задачей регрессии. Результаты для синтетической выборки с задачей классификации представлены на рис.~\ref{synthetic-classification}. В то же время, на рис.~\ref{liver-disorders} мы видим аналогичные графики для датасета Liver Disorders. Видно, что во всех случаях значения функций $D$ и $M$ стремятся к нулю при увеличении размера выборки. Эти эмпирические результаты подтверждают теоретические, полученные ранее.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{synthetic-regression}
+    \caption{Сходимость предлагаемых функций $D$ и $M$ для выборки синтетической регрессии, т.е. модели линейной регрессии. Обе функции стремятся к нулю при увеличении размера выборки.}
+    \label{synthetic-regression}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{synthetic-classification}
+    \caption{Сходимость предлагаемых функций $D$ и $M$ для выборки синтетической классификации, т.е. модели логистической регрессии. Обе функции стремятся к нулю при увеличении размера выборки.}
+    \label{synthetic-classification}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{liver-disorders}
+    \caption{Сходимость предлагаемых функций $D$ и $M$ для выборки Liver Disorders. Обе функции стремятся к нулю при увеличении размера выборки.}
+    \label{liver-disorders}
+\end{figure}
+
+В определениях $D$-достаточности и $M$-достаточности участвует гиперпараметр $\varepsilon$, который отвечает за порог для достаточного размера выборки $m^*$. С целью изучения зависимости между ними, мы представляем рис.~\ref{sufficient-vs-threshold}, где указано, какой размер выборки следует выбрать, чтобы обеспечить определенный уровень уверенности.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{sufficient-vs-threshold}
+    \caption{Зависимость достаточного размера выборки от значения порога на трех наборах данных: синтетическая регрессия, синтетическая классификация и Liver Disorders. При увеличении значения порога $\varepsilon$ достаточный размер уменьшается. Это означает, что можно выбирать меньше объектов для удовлетворения желаемых значений предлагаемых функций $D$ и $M$.}
+    \label{sufficient-vs-threshold}
+\end{figure}
+
+Чтобы сравнить эффективность предложенных методов на разных наборах данных, были выбраны выборки из открытой библиотеки \cite{UCI}. Подробная информация о каждом наборе данных, количество наблюдений и количество признаков представлены в таблице~\ref{table}. Для демонстрационных целей были выбраны такие значения гиперпараметра $\varepsilon$, при которых значения функций $D$ и $M$ уменьшаются в два раза. Соответствующие результаты приведены в таблице~\ref{table}. Пропуски означают, что первоначальный размер выборки недостаточен.
+
+\begin{table}[ht]
+    \centering
+    \caption{Сравнение предлагаемых методов определения достаточного размера выборки: на основе $D$ и $M$. Для каждой из предлагаемых функций подбирается такой значение порога, что ее изначальное значение уменьшается вдвое. Результаты представлены для набора выборок с задачей регрессии. Пропуски в данных означают, что исходный размер выборки недостаточен.}
+    \label{table}
+    \begin{tabular}{l|c|c|c|c}
+    \toprule
+    Название & Объекты $m$ & Признаки $n$ & $D$ & $M$ \\
+    \midrule
+    Abalone & 4177 & 8 & 96 & 96  \\
+    Auto MPG & 392 & 8 & 15 & 15 \\
+    Automobile & 159 & 25 & 70 & 156  \\
+    Liver Disorders & 345 & 6 & 12 & 19  \\
+    Servo & 167 & 4 & 41 & --- \\
+    Forest fires & 517 & 12 & 208 & --- \\
+    Wine Quality & 6497 & 12 & 144 & 144  \\
+    Energy Efficiency & 768 & 9 & 24 & 442  \\
+    Student Performance & 649 & 32 & 129 & 177  \\
+    Facebook Metrics & 495 & 18 & 31 & 388   \\
+    Real Estate Valuation & 414 & 7 & 15 & 23  \\
+    Heart Failure Clinical Records & 299 & 12 & 63 & 224  \\
+    Bone marrow transplant: children & 142 & 36 & --- & --- \\
+    \bottomrule
+    \end{tabular}
+\end{table}
+
+\clearpage
+\section{Обсуждение}
+
+В статье предлагаются два новых метода определения достаточного размера выборки, основанные на значениях правдоподобия на бутстрапированных подвыборках. Первый метод, называемый $D$-достаточностью, основан на дисперсии функции правдоподобия, в то время как второй, $M$-достаточность, фокусируется на разности в математическом ожидании функции правдоподобия при добавлении одного объекта в выборку. Демонстрируется корректность определения $M$-достаточности в модели линейной регрессии при определенных условиях на параметры модели.
+
+Вычислительные эксперименты, проведенные как на синтетических, так и на реальных выборках, показывают, что предлагаемые функции $D$ и $M$ стремятся к нулю при увеличении размера выборки. Эксперименты также подчеркивают практическую значимость методов, поскольку они могут быть легко применены к различным наборам данных.
+
+Предлагаемые методы потенциально могут быть применены к широкому спектру моделей и наборов данных, помимо линейной регрессии. Хотя мы доказали корректность определения M-достаточного размера выборки только для линейной регрессии, эмпирические результаты показывают, что эти методы могут быть эффективны и для других моделей. Будущая работа должна быть сосредоточена на распространении теоретического анализа на другие модели, включая, вероятно, нейронные сети.
+
+\section{Заключение}
+
+В статье представлены два новых метода, $D$-достаточность и $M$-достаточность, для определения достаточного размера выборки на основе значений правдоподобия на бутстрапированных подвыборках. Корректность определения $M$-достаточного размера выборки продемонстрирована в модели линейной регрессии, а вычислительные эксперименты на синтетических и реальных наборах данных показывают, что предложенные функции сходятся к нулю по мере увеличения размера выборки, что подчеркивает практичность методов.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \bibliographystyle{gost71u}
+% \bibliography{references}
+
+\begin{thebibliography}{99}
+
+\bibitem{bies2006genetic}
+\textit{Robert~R~Bies, Matthew~F~Muldoon, Bruce~G~Pollock et~al. A genetic algorithm-based, hybrid machine learning approach to model selection.}~// J. Pharmacokinet. Pharmacodyn.
+\newblock 2006.
+\newblock V.~33.
+\newblock №~2.
+\newblock P.~195.
+
+\bibitem{cawley2010over}
+\textit{Cawley,~Gavin~C. On over-fitting in model selection and subsequent selection bias in performance evaluation.}~// J. Mach. Learn. Res.
+\newblock 2010.
+\newblock V.~11.
+\newblock №~1.
+\newblock P.~2079--2107.
+
+\bibitem{byrd2012sample}
+\textit{Richard~H~Byrd, Gillian~M~Chin, Jorge~Nocedal, Yuchen~Wu. Sample size selection in optimization methods for machine learning.}~// Math. Program.
+\newblock 2012.
+\newblock V. 134.
+\newblock №~1.
+\newblock P.~127--155.
+
+\bibitem{figueroa2012predicting}
+\textit{Rosa~L~Figueroa, Qing~Zeng-Treitler, Sasikiran~Kandula, Long~H~Ngo. Predicting sample size required for classification performance.}~// BMC Med. Inf. Decis. Making.
+\newblock 2012.
+\newblock V.~12.
+\newblock №~1.
+\newblock P.~1--10.
+
+\bibitem{balki2019sample}
+\textit{Indranil~Balki, Afsaneh~Amirabadi, Jacob~Levman et~al. Sample-size determination methodologies for machine learning in medical imaging research: a systematic review.}~// Can. Assoc. Radiol. J.
+\newblock 2019.
+\newblock V.~70.
+\newblock №~4.
+\newblock P.~344--353.
+
+\bibitem{Adcock1988}
+\textit{Adcock,~C.~J. A Bayesian Approach to Calculating Sample Sizes.}~// J. R. Stat. Soc. D.
+\newblock 1988.
+\newblock V.~37.
+\newblock №~4.
+\newblock P.~433.
+
+\bibitem{Joseph1995}
+\textit{Lawrence~Joseph, David~B.~Wolfson, Roxane~Du~Berger. Sample Size Calculations for Binomial Proportions via Highest Posterior Density Intervals.}~// J. R. Stat. Soc. D.
+\newblock 1995.
+\newblock V.~44.
+\newblock №~2.
+\newblock P.~143--154.
+
+\bibitem{self1988power}
+\textit{Steven~G~Self, Robert~H~Mauritsen. Power/sample size calculations for generalized linear models.}~// Biometrics.
+\newblock 1988.
+\newblock V.~44.
+\newblock №~1.
+\newblock P.~79--86.
+
+\bibitem{shieh2000power}
+\textit{Gwowen~Shieh. On power and sample size calculations for likelihood ratio tests in generalized linear models.}~// Biometrics.
+\newblock 2000.
+\newblock V.~56.
+\newblock №~4.
+\newblock P.~1192--1196.
+
+\bibitem{shieh2005power}
+\textit{Gwowen~Shieh. On power and sample size calculations for Wald tests in generalized linear models.}~// J. Stat. Plann. Inference	.
+\newblock 2005.
+\newblock V.~128.
+\newblock №~1.
+\newblock P.~43--59.
+
+\bibitem{Lindley1997}
+\textit{Dennis~V.~Lindley. The choice of sample size.}~// J. R. Stat. Soc. D.
+\newblock 1997.
+\newblock V.~46.
+\newblock №~2.
+\newblock P.~129–138.
+
+\bibitem{PhamGia1997}
+\textit{Dennis~V.~Lindley. On Bayesian analysis, Bayesian decision theory and the sample size problem.}~// J. R. Stat. Soc. D.
+\newblock 1997.
+\newblock V.~46.
+\newblock №~2.
+\newblock P.~139–144.
+
+\bibitem{Gelfand2002}
+\textit{Alan~E.~Gelfand, Fei~Wang. A simulation-based approach to Bayesian sample size determination for performance under a given model and for separating models.}~// Stat. Sci.
+\newblock 2002.
+\newblock V.~17. 
+\newblock №~2.
+\newblock P.~192-208.
+
+\bibitem{Cao2009}
+\textit{Jing~Cao, J.~Jack~Lee, Susan~Alber. Comparison of Bayesian sample size criteria: ACC, ALC, and WOC.}~// J. Stat. Plann. Inference.
+\newblock 2009.
+\newblock V.~139.
+\newblock №~12.
+\newblock P.~4111–4122.
+
+\bibitem{Brutti2014}
+\textit{Pierpaolo~Brutti, Fulvio~De~Santis, Stefania~Gubbiotti. Bayesian-frequentist sample size determination: a game of two priors.}~// METRON
+\newblock 2014.
+\newblock V.~72.
+\newblock №~2.
+\newblock P.~133–151.
+
+\bibitem{Pezeshk2008}
+\textit{Hamid~Pezeshk, Nader~Nematollahi, Vahed~Maroufy, John~Gittins. The choice of sample size: a mixed Bayesian / frequentist approach.}~// Stat. Methods Med. Res.
+\newblock 2008.
+\newblock V.~18.
+\newblock №~2.
+\newblock P.~183–194.
+
+\bibitem{Grabovoy2022}
+\textit{A.~V.~Grabovoy, T.~T.~Gadaev, A.~P.~Motrenko, V.~V.~Strijov. Numerical Methods of Sufficient Sample Size Estimation for Generalised Linear Models.}~// Lobachevskii J. Math.
+\newblock 2022.
+\newblock V.~43.
+\newblock №~9.
+\newblock P.~2453–2462.
+
+\bibitem{MOTRENKO2014743}
+\textit{Anastasiya~Motrenko, Vadim~Strijov, Gerhard-Wilhelm~Weber. Sample size determination for logistic regression.}~// J. Comput. Appl. Math.
+\newblock 2014.
+\newblock V.~255.
+\newblock №~2.
+\newblock P.~743--752.
+
+\bibitem{Joseph1997}
+\textit{Lawrence~Joseph, Roxane~Du~Berger, Patrick~Bélisle. Bayesian and mixed Bayesian/likelihood criteria for sample size determination.}~// Stat. Med.
+\newblock 1997.
+\newblock V.~16.
+\newblock №~7.
+\newblock P.~769--781.
+
+\bibitem{UCI}
+\textit{Markelle,~Kelly. The UCI Machine Learning Repository.} \texttt{https://archive.ics.uci.edu}.
+\end{thebibliography}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\section{Приложение}
+
+\begin{center}
+    7.1. Доказательство теоремы~\ref{theorem}
+\end{center}
+
+\textbf{Доказательство.} Рассмотрим определение M-достаточного размера выборки в терминах логарифма функции правдоподобия. В модели линейной регрессии
+    \[ L\left( \mathcal{D}_m, \hat{\mathbf{w}}_k \right) = p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} p(y_i | \mathbf{x}_i, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} \mathcal{N}\left( y_i | \hat{\mathbf{w}}_k^{\top} \mathbf{x}_i, \sigma^2 \right) = \]
+    \[= \left(2\pi\sigma^2 \right)^{-m/2} \exp\left(-\dfrac{1}{2\sigma^2}\|\mathbf{y} -\mathbf{X} \hat{\mathbf{w}}_k\|_2^2 \right). \]
+Прологарифмируем:
+    \[ l\left( \mathcal{D}_m, \hat{\mathbf{w}}_k \right) = \log p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = -\dfrac{m}{2}\log\left( 2\pi\sigma^2 \right) - \dfrac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \hat{\mathbf{w}}_k \|_2^2. \]
+Возьмем математическое ожидание по $\mathcal{D}_k$, учитывая, что $\mathbb{E}_{\mathcal{D}_k}\hat{\mathbf{w}}_k=\mathbf{m}_k$ и $\text{cov}(\hat{\mathbf{w}}_k) = \mathbf{\Sigma}_k$:
+    \[ \mathbb{E}_{\mathcal{D}_k} l\left( \mathcal{D}_m, \hat{\mathbf{w}}_k \right) = -\dfrac{m}{2}\log\left( 2\pi\sigma^2 \right) - \dfrac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 + \text{tr}\left( \mathbf{X}^{\top}\mathbf{X} \mathbf{\Sigma}_k \right) \Big). \]
+    Запишем выражение для разности математических ожиданий:
+    \[ \mathbb{E}_{\mathcal{D}_{k+1}} l(\mathcal{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\mathcal{D}_k} l(\mathcal{D}_m, \hat{\mathbf{w}}_{k}) = \]
+    \[ = \dfrac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 - \| \mathbf{y} - \mathbf{X} \mathbf{m}_{k+1} \|_2^2 \Big) + \dfrac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \Big) \right) = \]
+    \[ = \dfrac{1}{2\sigma^2} \Big( 2 \mathbf{y}^{\top} \mathbf{X} (\mathbf{m}_{k+1} - \mathbf{m}_k) + (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \Big) + \]
+    \[ + \dfrac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big). \]
+Значение функции $M(k)$ есть модуль от вышеприведенного выражения. Применим неравенство треугольника для модуля, а затем оценим каждое слагаемое. Первое слагаемое оценим, используя неравенство Коши--Буняковского:
+\[\big| \mathbf{y}^{\top}\mathbf{X}(\mathbf{m}_{k+1}-\mathbf{m}_k)\big| \leqslant \| \mathbf{X}^{\top}\mathbf{y} \|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2. \]
+    Второе слагаемое оценим, используя неравенство Коши--Буняковского, свойство согласованности спектральной матричной нормы, а также ограниченность последовательности векторов $\bm_k$, которая следует из предъявленной в условии сходимости:
+\[\big| (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \big| \leqslant \| \mathbf{X} (\mathbf{m}_k - \mathbf{m}_{k+1}) \|_2 \| \mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \|_2 \leqslant \]
+    \[ \leqslant \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \| \mathbf{m}_k + \mathbf{m}_{k+1} \|_2 \leqslant C \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2. \]
+    Последнее слагаемое оценим, используя неравенство Гёльдера для нормы Фробениуса:
+    \[ \Big| \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \Big| \leqslant \| \mathbf{X}^{\top}\mathbf{X} \|_F \| \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \|_F. \]
+Наконец, поскольку $\| \bm_k - \bm_{k+1} \|_2 \to 0$ и $\| \bSigma_k - \bSigma_{k+1} \|_{F} \to 0$ при $k \to \infty$, то $M(k) \to 0$ при $k \to \infty$, что доказывает теорему.
+
+\begin{center}
+    7.2. Доказательство следствия~\ref{corollary}
+\end{center}
+
+\textbf{Доказательство.} Из приведенных в условии сходимостей следует, что $\| \bm_k - \bm_{k+1} \|_2 \to 0$ и $\| \bSigma_k - \bSigma_{k+1} \|_{F} \to 0$ при $k \to \infty$. Применение теоремы~\ref{theorem} заканчивает доказательство.
+
+\end{document} 

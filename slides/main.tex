@@ -1,0 +1,392 @@
+\documentclass[aspectratio=169]{beamer}
+
+\graphicspath{{figs}}
+
+\usepackage[T1,T2A]{fontenc}
+\usepackage[main=russian,english]{babel}
+
+\usepackage{svg}
+\usepackage{cmap}
+\usepackage{tikz}
+\usepackage{array}
+\usepackage{cancel}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{csquotes}
+\usepackage{amssymb,amsfonts,amsmath}
+
+\usecolortheme{beaver}
+\usefonttheme[onlymath]{serif}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[page number]
+\setbeamertemplate{blocks}[rounded=true,shadow=true]
+\setbeamersize{text margin left=0.5cm,text margin right=0.5cm}
+\setbeamerfont{author}{size=\normalsize}
+\setbeamerfont{institute}{size=\normalsize}
+\setbeamerfont{date}{size=\normalsize}
+\setbeamertemplate{enumerate item}{\insertenumlabel)}
+\setbeamertemplate{enumerate subitem}{\insertenumlabel)}
+\setbeamertemplate{enumerate subsubitem}{\insertenumlabel)}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\title{О связи оптимизационной поверхности с достаточным размером выборки в параметрических моделях машинного обучения}
+\author{
+    Киселев Никита Сергеевич
+}
+\institute{
+    Диссертация на соискание ученой степени\\
+    кандидата физико-математических наук\\
+    1.2.1~--- Искусственный интеллект и машинное обучение\\
+    Научный руководитель: к.ф.-м.н. Грабовой~А.\,В.
+}
+\date{Москва~--- 2026}
+
+\begin{document}
+
+\begin{frame}
+    \thispagestyle{empty}
+    \maketitle
+\end{frame}
+
+\begin{frame}{Методы определения достаточного размера выборки}
+    Исследуется взаимосвязь между сложностью параметрической модели и количеством данных, необходимым для ее обучения до заранее заданной точности.
+    \begin{block}{Проблема}
+        Множество оптимальных параметров модели неявным образом зависит от набора обучающих данных. Статистические подходы не применимы в практических задачах.
+    \end{block}
+    \begin{block}{Требуется}
+        Предложить определение достаточного размера выборки, учитывающее структуру заданной параметрической модели. Разработать методы, реализующие предложенные критерии достаточности обучающего набора данных на практике.
+    \end{block}
+    \begin{block}{Метод решения}
+        Предлагается рассмотреть изменение распределения оптимальных параметров модели при увеличении размера выборки. Для нейросетевых моделей предлагается использовать в качестве критерия сходимость поверхности функции потерь.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Задача определения достаточного размера выборки}
+    \begin{columns}[T]
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Выборка}
+                \vspace{-0.5em}
+                \[
+                    \mathfrak{D}_m = \left\{ (\mathbf{x}_i, \mathbf{y}_i) \right\}, \quad i = 1, \ldots, m
+                \]
+                \vspace{-1.5em}
+                \begin{enumerate}
+                    \item $\mathbf{x} \in \mathbb{X}$~--- признаковое описание объекта;
+                    \item $\mathbf{y} \in \mathbb{Y}$~--- значение целевой переменной.
+                \end{enumerate}
+            \end{block}
+            \vfill
+            \begin{block}{Вероятностная модель}
+                \vspace{-1.5em}
+                \[
+                    p(\mathbf{y}, \mathbf{w} | \mathbf{x}) = p(\mathbf{y} | \mathbf{x}, \mathbf{w}) p(\mathbf{w}): \mathbb{Y} \times \mathbb{W} \times \mathbb{X} \to \mathbb{R}^+
+                \]
+                \vspace{-2em}
+                \begin{enumerate}
+                    \item $p(\mathbf{y} | \mathbf{x}, \mathbf{w})$~--- правдоподобие;
+                    \item $p(\mathbf{w})$~--- априорное распределение.
+                \end{enumerate}
+            \end{block}
+        \end{column}
+        \begin{column}{0.5\textwidth}
+            \begin{block}{Определение}
+                \vspace{0.5em}
+                Размер выборки $m^*$ называется \alert{\textbf{достаточным}} согласно критерию $T$, если $T$ выполняется для всех $k \geqslant m^*$.
+            \end{block}
+            \vspace{3em}
+            \begin{block}{Требуется}
+                \vspace{0.5em}
+                \begin{enumerate}
+                    \item Предложить критерий $T$ определения достаточного размера выборки $m^*$;
+                    \item Построить метод, реализующий критерий $T$ на практике.
+                \end{enumerate}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Правдоподобие обучающей выборки в модели линейной регрессии и его сходимость в точках максимума на подвыборках}
+    \vspace{-0.5em}
+    \begin{columns}[T]
+        \begin{column}{0.42\textwidth}
+            \begin{block}{Функция правдоподобия}
+                \vspace{-0.3cm}
+                \[ L(\mathfrak{D}_m, \mathbf{w}) = \prod_{i=1}^{m} p(y_i | \mathbf{x}_i, \mathbf{w}) \]
+                \vspace{-0.5cm}
+            \end{block}
+            \begin{block}{Оценка максимума правдоподобия}
+                \vspace{-0.2cm}
+                \[ \hat{\mathbf{w}}_{k} = \argmax_{\mathbf{w} \in \mathbb{W}} L(\mathfrak{D}_k, \mathbf{w}) \]
+                \vspace{-0.5cm}
+            \end{block}
+        \end{column}
+        \begin{column}{0.58\textwidth}
+            \begin{block}{Определение (\alert{D}-достаточность)}
+                \vspace{-0.1cm}
+                \[ \forall k \geqslant m^*: \alert{D}(k) = \mathbb{D}_{\hat{\mathbf{w}}_{k}} L(\mathfrak{D}_m, \hat{\mathbf{w}}_{k}) \leqslant \varepsilon \]
+            \end{block}
+            \vspace{-0.32em}
+            \begin{block}{Определение (\alert{M}-достаточность)}
+                \vspace{-0.3cm}
+                \[ \forall k \geqslant m^*: \]
+                \[ \alert{M}(k) = \left| \mathbb{E}_{\hat{\mathbf{w}}_{k+1}} L(\mathfrak{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\hat{\mathbf{w}}_{k}} L(\mathfrak{D}_m, \hat{\mathbf{w}}_{k}) \right| \leqslant \varepsilon \]
+            \end{block}
+        \end{column}
+    \end{columns}
+    \vspace{-0.5em}
+    \begin{block}{Теорема 1 (Киселев, 2023)}
+        Обозначим $\mathbb{E} \hat{\mathbf{w}}_k = \mathbf{m}_k$, $\mathbb{D} \hat{\mathbf{w}}_k = \boldsymbol{\Sigma}_k$. Пусть $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$ и $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_{F} \to 0$ при $k \to \infty$. Тогда \alert{\textbf{в модели линейной регрессии}} определение M-достаточного размера выборки является корректным. А именно, для любого $\varepsilon > 0$ найдется такой $m^*$, что для всех $k \geqslant m^*$ выполнено $M(k) \leqslant \varepsilon$.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Близость апостериорных распределений параметров на схожих подвыборках в вероятностной модели линейной регрессии}
+    \begin{columns}[T]
+        \begin{column}{0.45\textwidth}
+            \vspace{-1em}
+            \begin{figure}
+                \includegraphics[width=0.6\textwidth]{posterior_trunc_ru.pdf}
+            \end{figure}
+            \vspace{-1em}
+            \begin{block}{Определение (\alert{KL}-достаточность)}
+                \vspace{-2em}
+                \[ \forall k \geqslant m^*: \alert{KL}(k) = D_{\mathrm{KL}}(p_k \| p_{k+1}) = \]
+                \vspace{-1.5em}
+                \[ = \int p_k(\mathbf{w}) \log{\dfrac{p_k(\mathbf{w})}{p_{k+1}(\mathbf{w})}} d\mathbf{w} \leqslant \varepsilon \]
+            \end{block}
+            \vspace{-1em}
+            \begin{block}{Определение (\alert{S}-достаточность)}
+                \vspace{-1em}
+                \[ \forall k \geqslant m^*: \]
+                \vspace{-1.5em}
+                \[ \alert{S}(k) = \mathrm{s\text{-}score}(p_k, p_{k+1}) \geqslant 1-\varepsilon \]
+            \end{block} 
+        \end{column}
+        \begin{column}{0.55\textwidth}
+            \begin{block}{Вероятностная модель линейной регрессии}
+                \vspace{-0.7cm}
+                \[ p(\mathbf{y}, \mathbf{w} | \mathbf{X}) = \mathcal{N}\left( \mathbf{y} | \mathbf{X} \mathbf{w}, \sigma^2 \mathbf{I} \right) \mathcal{N}\left( \mathbf{w} | \mathbf{0}, \alpha^{-1} \mathbf{I} \right) \]
+                \vspace{-0.7cm}
+            \end{block}
+            \begin{block}{Теорема 2 (Киселев, 2024)}
+                Пусть множества значений признаков и целевой переменной ограничены, т.е. $\exists M \in \mathbb{R}:$ $\| \mathbf{X} \|_2 \leqslant M$ и $|y| \leqslant M$. Если  $\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right) = \omega(\sqrt{k})$ при $k \to \infty$, то \alert{\textbf{в модели линейной регрессии с нормальным априорным распределением параметров}} определения KL- и S-достаточного размера выборки являются корректными.
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Стабилизация ландшафта функции потерь в нейронных сетях}
+    \begin{columns}[T]
+        \begin{column}{0.6\textwidth}
+            \vspace{-0.3em}
+            \begin{block}{Модель}
+                Условное распределение $p(\mathbf{y}|\mathbf{x})$ аппроксимируется нейросетью $f_{\mathbf{w}}: \mathcal{X} \to \mathcal{Y}$ с параметрами $\mathbf{w} \in \mathbb{R}^{N}$.
+            \end{block}
+            \vspace{-0.2em}
+            \begin{block}{Функция потерь}
+            \vspace{-1.2em}
+                \[ \mathcal{L}_m(\mathbf{w}) = \dfrac{1}{m} \sum\limits_{i=1}^{m} \ell(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i) = \dfrac{1}{m} \sum\limits_{i=1}^{m} \ell_i(\mathbf{w}) \]
+            \end{block}
+            \vspace{-1em}
+            \begin{block}{Изменение значения в точке при добавлении одного объекта}
+                \vspace{-1.5em}
+                \[
+                    \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_k(\mathbf{w}) = \dfrac{1}{k+1} \left( \ell_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) \right)
+                \]
+            \end{block}
+            \vspace{-1.5em}
+            \begin{block}{Предположение}
+                Пусть $\mathbf{w}^*$ является точкой минимума обеих функций $\mathcal{L}_{k}(\mathbf{w})$ и $\mathcal{L}_{k+1}(\mathbf{w})$, т.е. $\nabla \mathcal{L}_{k}(\mathbf{w}^*) = \nabla \mathcal{L}_{k+1}(\mathbf{w}^*) = \mathbf{0}$.
+            \end{block}
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            \vspace{-0.5em}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.85\textwidth]{losses_assumption.pdf}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Аппроксимация второго порядка и разложение Гаусса--Ньютона}
+    \begin{block}{Аппроксимация второго порядка}
+        \vspace{-1em}
+        \[ \mathbf{H}^{(k)}(\mathbf{w}) = \nabla^2_{\mathbf{w}} \mathcal{L}_{k}(\mathbf{w}) = \dfrac{1}{k} \sum\limits_{i=1}^{k} \nabla^2_{\mathbf{w}} \ell(f_{\mathbf{w}}(\mathbf{x}_{i}), \mathbf{y}_{i}) = \dfrac{1}{k} \sum\limits_{i=1}^{k} \mathbf{H}_{i}(\mathbf{w}) \]
+        \vspace{-0.5em}
+        \begin{equation*}
+            \mathcal{L}_{k}(\mathbf{w}) \approx \mathcal{L}_{k}(\mathbf{w}^*) + \dfrac{1}{2} (\mathbf{w} - \mathbf{w}^*)^\top \mathbf{H}^{(k)}(\mathbf{w}^*) (\mathbf{w} - \mathbf{w}^*)
+        \end{equation*}
+    \end{block}
+    \begin{block}{Разложение Гаусса--Ньютона матрицы Гессе}
+       \[
+        \mathbf{H}_{i}(\mathbf{w}) =
+        \underbrace{
+        \nabla_{\mathbf{w}} \mathbf{z}_i
+        \dfrac{\partial^2 \ell(\mathbf{z}_i, \mathbf{y}_i)}{\partial \mathbf{z}_{i}^2}
+        \nabla_{\mathbf{w}} \mathbf{z}_i^\top
+        }_{\text{Гаусс--Ньютоновская часть}}
+        \;+\;
+        \cancel{
+        \underbrace{
+        \sum\limits_{k=1}^{K}
+        \dfrac{\partial \ell(\mathbf{z}_i, \mathbf{y}_i)}{\partial z_{ik}}
+        \nabla^2_{\mathbf{w}} z_{ik}
+        }_{\text{остаточный член}}
+        }
+        \hspace{0.9em}
+        \raisebox{1.6em}{\small $\|\cdot\|_2 \approx 0$}
+        \]
+    \end{block}
+\end{frame}
+
+\begin{frame}{Оценка сходимости в одной точке из окрестности минимума}
+    \vspace{0.5em}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.3\textwidth]{delta_one_point.pdf}
+    \end{figure}
+    \[
+        \Delta_{k+1} = | \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_k(\mathbf{w}) |, \quad \mathbf{w} \in \mathcal{U}_{R}(\mathbf{w}^*)
+    \]
+    \vspace{-0.5em}
+    \begin{block}{Теорема 3 (Киселев, 2024)}
+        В \alert{\textbf{полносвязной нейронной сети}}, используемой для решения задачи $K$-классовой классификации с использованием кросс-энтропийной функции потерь, содержащей $L$ слоев и имеющей размер скрытого слоя $h$, для всякого объекта $i$ верно
+            \[ \left\| \mathbf{H}_i(\mathbf{w}) \right\|_2 \propto L (hM)^{2L}, \quad \Delta_k \propto \dfrac{L (hM)^{2L}}{k},
+        \]
+        где $M$~--- константа, ограничивающая норму весов модели.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Оценка сходимости по набору точек из окрестности минимума}
+    \begin{columns}[T]
+        \begin{column}{0.6\textwidth}
+            \vspace{-1em}
+            \hspace*{0.2em}
+            \begin{minipage}{\linewidth}
+                \begin{align*}
+                    \Delta_{k+1} & = \int \left( \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) \right)^2 p(\mathbf{w}) d\mathbf{w} = \\
+                    & = \mathbb{E}_{p(\mathbf{w})} \left[ \left( \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) \right)^2 \right],
+                \end{align*}
+                где $p(\mathbf{w})$ задает предпочтение по выбору точек в пространстве параметров
+                (в общем случае может быть и не вероятностным распределением).
+            \end{minipage}
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.75\textwidth]{delta_monte_carlo.pdf}
+            \end{figure}
+        \end{column}
+    \end{columns}
+    \vspace{0em}
+    \begin{block}{Теорема 4 (Киселев, 2025)}
+        При выборе нормального распределения $p(\mathbf{w}) = \mathcal{N}(\mathbf{w} \vert \mathbf{w}^*, \sigma^2 \mathbf{I})$ справедливо
+        \[
+            \Delta_{k} \propto \frac{\sigma^4 N^2 M_{\mathbf{H}}^2}{k^2}
+        \]
+        где $M_{\mathbf{H}}$ есть верхняя оценка на спектральную норму матрицы Гессе.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Выбор линейного подпространства для сэмплирования набора точек}
+    \begin{block}{Проекция на линейное подпространство}
+        Рассматриваем подпространство, натянутое на $D$ векторов, соответствующих $D$ наибольшим собственным значениям матрицы Гессе: $\lambda_k^{(1)}, \ldots \lambda_k^{(D)}$. В таком случае происходит замена: $p(\mathbf{w}) = \mathcal{N}(\mathbf{w} \vert \mathbf{m}, \sigma^2 \mathbf{I}_{\alert{N}}) \to p(\boldsymbol{\theta}) = \mathcal{N}(\boldsymbol{\theta} \vert \mathbf{0}, \sigma^2 \mathbf{I}_{\alert{D}})$.
+    \end{block}
+    \begin{columns}[T]
+        \begin{column}{0.6\textwidth}
+            \hspace*{0.2em}
+            \begin{minipage}{\linewidth}
+            \begin{block}{Теорема 5 (Киселев, 2025)}
+                Пусть $\mathbf{P}=[\mathbf{e}_1,\ldots,\mathbf{e}_D] \in \mathbb{R}^{N \times D}$~--- матрица из $D$ главных собственных векторов $\mathbf{H}^{(k)}(\mathbf{w}^*)$,
+                и $\mathbf{w}=\mathbf{w}^*+\mathbf{P}\boldsymbol{\theta}$, где $\boldsymbol{\theta} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_{D})$, тогда
+                \[
+                \Delta_{k+1}
+                \leqslant
+                \frac{\sigma^4}{4}\!\left(
+                2\sum_{d=1}^D(\lambda_{k+1}^{(d)}-\lambda_{k}^{(d)})^2
+                +
+                \Big(\sum_{d=1}^D(\lambda_{k+1}^{(d)}-\lambda_{k}^{(d)})\Big)^2
+                \right)
+                \]
+            \end{block}
+            \end{minipage}
+        \end{column}
+        \begin{column}{0.4\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=0.8\textwidth]{delta_monte_carlo_subspace.pdf}
+            \end{figure}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Вычислительный эксперимент}
+    \begin{itemize}
+        \item \textbf{Задача:} классификация изображений;
+        \item \textbf{Выборка:} MNIST, CIFAR10;
+        \item \textbf{Архитектура:} полносвязная $L$-слойная сеть со скрытым размером $h$ на каждом слое и ReLU после каждого из них;
+        \item \textbf{Варьирование архитектуры:} фиксируем число слоев $L$ и варьируем размер скрытого слоя $h$;
+        \item \textbf{Постановка эксперимента:}
+        \begin{enumerate}
+            \item Проводим $N=10$ независимых обучений модели на полном наборе данных $\to$ получаем набор точек $\hat{\mathbf{w}}_1, \ldots, \hat{\mathbf{w}}_N$;
+            \item По мере обучения подсчитываем Accuracy на отложенной выборке;
+            \item Подсчитываем $\left| \mathcal{L}_{k+1}(\hat{\mathbf{w}}_{n}) - \mathcal{L}_k(\hat{\mathbf{w}}_{n}) \right|$ для всех $k = 1, \ldots, m$ и $n = 1, \ldots, N$;
+            \item Повторяем 3 пункт $B=100$ раз, используя разный порядок добавления, усредняем результаты;
+            \item Усредняем результаты по $N=10$ обучениям.
+        \end{enumerate}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Связь между качеством модели и сходимостью функции потерь}
+    \begin{figure}[ht]
+        \centering
+        \includegraphics[width=0.5\linewidth]{mnist_L_3.pdf}\hfill
+        \includegraphics[width=0.5\linewidth]{cifar10_L_3.pdf}
+    \end{figure}
+    \vspace{-0.5em}
+    Зависимость \textbf{Accuracy на отложенной выборке} от значения абсолютной разности \textbf{функции потерь на обучающей выборке}. Полученные на наборах данных MNIST и CIFAR10 графики показывают, что чем меньше становится изменение поверхности функции потерь, тем выше качество модели.
+\end{frame}
+
+\begin{frame}{Сходимость поверхности при увеличении $k$}
+    \vspace{-0.5em}
+    \begin{figure}
+        \centering
+        \includegraphics[width=1\linewidth]{landscape_convergence.png}
+    \end{figure}
+    \vspace{-0.5em}
+    Рассматривается нормальное распределение с центром в точке минимума. Изменяется количество используемых данных для подсчета: слева 2 объекта, по центру 50 объектов, справа 100 объектов. Видно, что при увеличении $k$ начинает уменьшаться эффективная локальность окрестность.
+\end{frame}
+
+\begin{frame}{Выносится на защиту}
+    \begin{enumerate}
+        \item Исследована проблема определения достаточного размера выборки в параметрических моделях машинного обучения.
+        \item Предложены критерии достаточности количества обучающих данных в линейных моделях. Методы используют распределение оптимальных параметров модели и его изменение с увеличением размера выборки.
+        \item Для нейросетевых моделей предложены критерии, основанные на сходимости поверхности функции потерь при увеличении числа обучающих данных. Исследованы различные подходы к обоснованию такой сходимости для моделей с архитектурами MLP, CNN, Transformer.
+        \item Доказаны теоремы о корректности предложенных определений. Вычислительные эксперименты демонстрируют применимость полученных теоретических результатов в ряде практических задач.
+    \end{enumerate}
+\end{frame}
+
+\begin{frame}{Список работ автора по теме диссертации}
+    \scriptsize
+    {\usebeamercolor[fg]{block title} Публикации в рецензируемых научных журналах (ВАК, Scopus)}\\
+    \begin{enumerate}
+        \item \textit{\textbf{Kiselev N.\,S.}, Meshkov V.\,S., Grabovoy A.\,V.} Robust Convergence of Loss Landscapes through Distributional Averaging // \textit{Proceedings of the ISP RAS}, 2025.
+        \item \textit{Meshkov V., \textbf{Kiselev N.}, Grabovoy A.} ConvNets Landscape Convergence: Hessian-Based Analysis of Matricized Networks // \textit{Ivannikov ISPRAS Open Conference}, 2024.
+        \item \textit{\textbf{Kiselev N.\,S.}, Grabovoy A.\,V.} Unraveling the Hessian: A Key to Smooth Convergence in Loss Function Landscapes // \textit{Doklady Mathematics}, 2024.
+        \item \textit{\textbf{Kiselev N.}, Grabovoy A.} Sample Size Determination: Posterior Distributions Proximity // 
+        \textit{Computational Management Science}, 2025.
+        \item \textit{\textbf{Kiselev N.\,S.}, Grabovoy A.\,V.} Sample Size Determination: Likelihood Bootstrapping // \textit{Computational Mathematics and Mathematical Physics}, 2025.
+        % \item \alert{\textit{Petrov E., Meshkov V., \textbf{Kiselev N.}, Grabovoy A.} Closing the Curvature Gap: Full Transformer Hessians and Their Implications for Scaling Laws // \textit{ICLR}, 2026.}
+    \end{enumerate}
+    {\usebeamercolor[fg]{block title} Выступления с докладом}\\
+    \begin{enumerate}
+        \item Устойчивая сходимость поверхности функции потерь через усреднение по распределению // Открытая конференция ИСП РАН, 2025.
+        \item Достаточный размер выборки и его связь со сходимостью поверхности функции потерь // \textit{22-я Всероссийская конференция с международным участием <<Математические методы распознавания образов>>}, 2025.
+        \item Сходимость поверхности функции потерь как признак достаточного размера выборки // \textit{67-я Всероссийская научная конференция МФТИ}, 2025.
+        \item Определение достаточного размера выборки по апостериорному распределению параметров модели // \textit{66-я Всероссийская научная конференция МФТИ}, 2024.
+    \end{enumerate}
+\end{frame}
+
+\end{document} 
