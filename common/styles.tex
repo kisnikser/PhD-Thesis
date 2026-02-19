@@ -8,6 +8,20 @@
     \setlength{\parindent}{2.5em}                   % Абзацный отступ. Должен быть одинаковым по всему тексту и равен пяти знакам (ГОСТ Р 7.0.11-2011, 5.3.7).
 }
 
+%%% Окружения для теорем, лемм, определений %%%
+\theoremstyle{plain}  % Жирный заголовок, курсивное тело
+\newtheorem{theorem}{Теорема}[section]  % Теоремы нумеруются в пределах раздела
+\newtheorem{lemma}[theorem]{Лемма}  % Леммы используют ту же нумерацию, что и теоремы
+\newtheorem{proposition}[theorem]{Предложение}  % Предложения используют ту же нумерацию
+\newtheorem{corollary}[theorem]{Следствие}  % Следствия используют ту же нумерацию
+
+\theoremstyle{definition}  % Жирный заголовок, прямое тело
+\newtheorem*{definition}{Определение}  % Определения используют ту же нумерацию
+
+\theoremstyle{remark}  % Курсивный заголовок, прямое тело
+\newtheorem*{remark}{Замечание}  % Замечания используют ту же нумерацию
+\newtheorem*{example}{Пример}  % Примеры используют ту же нумерацию
+
 %%% Таблицы %%%
 \DeclareCaptionLabelSeparator{tabsep}{\tablabelsep} % нумерация таблиц
 \DeclareCaptionFormat{split}{\splitformatlabel#1\par\splitformattext#3}

@@ -216,16 +216,16 @@ sorting=none,% настройка сортировки списка литера
             \step[fieldsource=authorprogram,final=true]
             \step[fieldset=keywords,fieldvalue={,biblioauthorprogram},append=true]
         }
-        \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники
-            \perdatasource{biblio/external.bib}
+        \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники (perdatasource: basename файла, не полный путь — biblatex 3.13+)
+            \perdatasource{external.bib}
             \step[fieldset=keywords, fieldvalue={,biblioexternal},append=true]
         }
         \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники
-            \perdatasource{biblio/author.bib}
+            \perdatasource{author.bib}
             \step[fieldset=keywords, fieldvalue={,biblioauthor},append=true]
         }
         \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники
-            \perdatasource{biblio/registered.bib}
+            \perdatasource{registered.bib}
             \step[fieldset=keywords, fieldvalue={,biblioregistered},append=true]
         }
         \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники
@@ -286,7 +286,7 @@ sorting=none,% настройка сортировки списка литера
 \DeclareSourcemap{ %модификация bib файла перед тем, как им займётся biblatex
     \maps{
         \map[overwrite]{% стираем значения всех полей addendum
-            \perdatasource{biblio/author.bib}
+            \perdatasource{author.bib}
             \step[fieldset=addendum, null] %чтобы избавиться от информации об объёме авторских статей, в отличие от автореферата
         }
     }
@@ -324,7 +324,7 @@ sorting=none,% настройка сортировки списка литера
         volume,%
         % Список лишних полей в презентации }}}
     }]{
-        \perdatasource{biblio/author.bib}
+        \perdatasource{author.bib}
         \step[fieldset=$MAPLOOP,null]
     }
     }
@@ -560,7 +560,8 @@ sorting=none,% настройка сортировки списка литера
 \makeatother
 
 \defbibheading{nobibheading}{} % пустой заголовок, для подсчёта публикаций с помощью невидимой библиографии
-\defbibheading{pubgroup}{\section*{#1}} % обычный стиль, заголовок-секция
+% \defbibheading{pubgroup}{\section*{#1}} % обычный стиль, заголовок-секция
+\defbibheading{pubgroup}{\section*{#1}\addcontentsline{toc}{chapter}{#1}} % обычный стиль, заголовок-секция; добавляем в оглавление
 \defbibheading{pubsubgroup}{\noindent\textbf{#1}} % для подразделов "по типу источника"
 
 %%%Сортировка списка литературы Русский-Английский (предварительно удалить dissertation.bbl) (начало)
@@ -615,12 +616,11 @@ sorting=none,% настройка сортировки списка литера
 % Вариант вывода печатных работ автора, с группировкой по типу источника.
 % Порядок команд `\printbibliography` должен соответствовать порядку в файле common/characteristic.tex
 \newcommand*{\insertbiblioauthorgrouped}{
-    \section*{\bibtitleauthor}
+    \section*{\bibtitleauthor}\addcontentsline{toc}{chapter}{\bibtitleauthor}
     \ifsynopsis
     \printbibliography[heading=pubsubgroup, section=0, keyword=biblioauthorvak,    title=\bibtitleauthorvak,resetnumbers=true] % Работы автора из списка ВАК (сброс нумерации)
     \else
-    % \printbibliography[heading=pubsubgroup, section=0, keyword=biblioauthorvak,    title=\bibtitleauthorvak,resetnumbers=false] % Работы автора из списка ВАК (сквозная нумерация)
-    \printbibliography[heading=pubsubgroup, section=0, keyword=biblioauthorvak,    title=\bibtitleauthorvak,resetnumbers=true] % Работы автора из списка ВАК (сброс нумерации)
+    \printbibliography[heading=pubsubgroup, section=0, keyword=biblioauthorvak,    title=\bibtitleauthorvak,resetnumbers=false] % Работы автора из списка ВАК (сквозная нумерация)
     \fi
     \printbibliography[heading=pubsubgroup, section=0, keyword=biblioauthorwos,    title=\bibtitleauthorwos,resetnumbers=false]% Работы автора, индексируемые Web of Science
     \printbibliography[heading=pubsubgroup, section=0, keyword=biblioauthorscopus, title=\bibtitleauthorscopus,resetnumbers=false]% Работы автора, индексируемые Scopus

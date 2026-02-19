@@ -5,14 +5,19 @@
 \ifdefmacro{\microtypesetup}{\microtypesetup{protrusion=false}}{} % не рекомендуется применять пакет микротипографики к автоматически генерируемому списку литературы
 % \insertbibliofull                           % Подключаем Bib-базы: все статьи единым списком
 % Режим с подсписками
+% \insertbiblioexternal                      % Подключаем Bib-базы: статьи, не являющиеся статьями автора по теме диссертации
 
+% \clearpage
 % Для вывода выберите и расскомментируйте одно из двух
-%\insertbiblioauthor                        % Подключаем Bib-базы: работы автора единым списком
+%\insertbiblioauthor                        % Подключаем Bib-базы: работы автора единым списком 
+% \insertbiblioauthorgrouped                 % Подключаем Bib-базы: работы автора сгруппированные (ВАК, WoS, Scopus и т.д.)
+
 \begin{refcontext}[labelprefix=A]
-\insertbiblioauthorgrouped                 % Подключаем Bib-базы: работы автора сгруппированные (ВАК, WoS, Scopus и т.д.)
+\insertbiblioauthorgrouped
 \end{refcontext}
 \clearpage
-\insertbiblioexternal                      % Подключаем Bib-базы: статьи, не являющиеся статьями автора по теме диссертации
+\insertbiblioexternal
+
 \ifdefmacro{\microtypesetup}{\microtypesetup{protrusion=true}}{}
 \urlstyle{tt}                               % возвращаем установки шрифта ссылок URL
 %\hypersetup{ urlcolor={urlcolor} }          % Восстанавливаем цвет ссылок
