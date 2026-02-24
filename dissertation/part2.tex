@@ -139,13 +139,17 @@ KL-дивергенция характеризует <<расстояние>> м
 
 Таким образом, при достаточном размере выборки апостериоры на схожих подвыборках должны быть близки в смысле s-score.
 
-\section{Корректность определений в вероятностой модели линейной регрессии}\label{sec:linear-theory}
+\section{Сходимость оптимизационной поверхности в вероятностной модели линейной регрессии}\label{sec:linear-theory}
 
 \begin{definition}
     Критерий достаточности называется \emph{корректным}, если при увеличении размера выборки соответствующая функция сходится к предельному значению.
 \end{definition}
 
 Отметим, что по сути корректность критерия позволяет гарантированно достичь заданного порога~$\varepsilon$, ограничивающего целевую функцию, при достаточно большом~$k$.
+
+В этом разделе мы сперва формулируем результаты о сходимости распределений параметров модели в
+
+\subsection{Сходимость распределения параметров модели}
 
 Обозначим $\mathbb{E} \hat{\mathbf{w}}_k = \mathbf{m}_k$ и $\mathbb{D} \hat{\mathbf{w}}_k = \boldsymbol{\Sigma}_k$ (здесь $\mathbf{m}_k$, $\boldsymbol{\Sigma}_k$~--- моменты распределения оценки ММП; в байесовской постановке с сопряженным априором они совпадают с параметрами апостериора).
 
@@ -173,110 +177,209 @@ KL-дивергенция характеризует <<расстояние>> м
 
 Условие $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ означает, что минимальное собственное значение растет быстрее $\sqrt{k}$ и гарантирует отсутствие сильной мультиколлинеарности при росте выборки. На практике это условие часто выполняется для <<хорошо обусловленных>> данных.
 
+\subsection{Сходимость полного байесовского прогноза}
+
+В предыдущем разделе было показано, что при увеличении используемого размера выборки в модели линейной регрессии наблюдается сходимость апостериорных распределений параметров на схожих подвыборках. Однако на практике нас больше интересует прогноз, который можно сделать на тестовой выборке, предварительно настроив модель на обучающей.
+
+Пусть предварительно было произведено разбиение выборки $\mathfrak{D}_m$ на обучающую и тестовую, то есть
+\[
+\mathfrak{D}_m = \mathfrak{D}_{m_1}^{\text{train}} \sqcup \mathfrak{D}_{m_2}^{\text{test}},
+\]
+где $\mathfrak{D}_{m_1}^{\text{train}} = (\mathbf{X}_{\text{train}}, \mathbf{y}_{\text{train}})$ и $\mathfrak{D}_{m_2}^{\text{test}} = (\mathbf{X}_{\text{test}}, \mathbf{y}_{\text{test}})$.
+
+Рассмотрим подвыборку $(\mathbf{X}_k, \mathbf{y}_k) \subset \mathfrak{D}_{m_1}^{\text{train}}$ и сформулируем теорему о близости полных байесовских прогнозов, сделанных на схожих подвыборках обучающей выборки.
+
+\begin{theorem}\label{th:prediction-convergence}
+Пусть множества значений признаков и целевой переменной ограничены, то есть $\exists M \in \mathbb{R}:$ $\|\mathbf{x}\|_2 \leqslant M$ и $|y| \leqslant M$. Если $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ при $k \to \infty$, то в модели линейной регрессии с нормальным априорным распределением параметров
+\[
+D_{\mathrm{KL}}\left(p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k) \| p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_{k+1}, \mathbf{y}_{k+1})\right) \to 0
+\]
+при $k \to \infty$.
+\end{theorem}
+
 \section{Доказательства теоретических результатов}
 
-В данном приводятся доказательства основных теорем настоящей главы: \ref{th:M-sufficient}, \ref{th:KL-sufficient}, \ref{th:S-sufficient} и \ref{th:moments}. Начнем с доказательства теоремы~\ref{th:M-sufficient} о корректности определения M-достаточного размера выборки.
+В данном приводятся доказательства основных теорем настоящей главы: \ref{th:M-sufficient}, \ref{th:KL-sufficient}, \ref{th:S-sufficient}, \ref{th:moments} и \ref{th:prediction-convergence}. Начнем с доказательства теоремы~\ref{th:M-sufficient} о корректности определения M-достаточного размера выборки.
 
 \begin{proof}[Доказательство теоремы~\ref{th:M-sufficient}]
     Рассмотрим определение M-достаточного размера выборки в терминах логарифма функции правдоподобия. В модели линейной регрессии
-    \[ L\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} p(y_i | \mathbf{x}_i, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} \mathcal{N}\left( y_i | \hat{\mathbf{w}}_k^{\top} \mathbf{x}_i, \sigma^2 \right) = \]
-    \[= \left(2\pi\sigma^2 \right)^{-m/2} \exp\left(-\dfrac{1}{2\sigma^2}\|\mathbf{y} -\mathbf{X} \hat{\mathbf{w}}_k\|_2^2 \right). \]
-    Прологарифмируем:
-    \[ l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = \log p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = -\dfrac{m}{2}\log\left( 2\pi\sigma^2 \right) - \dfrac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \hat{\mathbf{w}}_k \|_2^2. \]
-    Возьмем математическое ожидание по $\mathfrak{D}_k$, учитывая, что $\mathbb{E}_{\mathfrak{D}_k}\hat{\mathbf{w}}_k=\mathbf{m}_k$ и $\text{cov}(\hat{\mathbf{w}}_k) = \mathbf{\Sigma}_k$:
-    \[ \mathbb{E}_{\mathfrak{D}_k} l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = -\dfrac{m}{2}\log\left( 2\pi\sigma^2 \right) - \dfrac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 + \text{tr}\left( \mathbf{X}^{\top}\mathbf{X} \mathbf{\Sigma}_k \right) \Big). \]
-    Запишем выражение для разности математических ожиданий:
-    \[ \mathbb{E}_{\mathfrak{D}_{k+1}} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\mathfrak{D}_k} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k}) = \]
-    \[ = \dfrac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 - \| \mathbf{y} - \mathbf{X} \mathbf{m}_{k+1} \|_2^2 \Big) + \dfrac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \Big) \right) = \]
-    \[ = \dfrac{1}{2\sigma^2} \Big( 2 \mathbf{y}^{\top} \mathbf{X} (\mathbf{m}_{k+1} - \mathbf{m}_k) + (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \Big) + \]
-    \[ + \dfrac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big). \]
-    Значение функции $M(k)$ есть модуль от вышеприведенного выражения. Применим неравенство треугольника для модуля, а затем оценим каждое слагаемое. Первое слагаемое оценим, используя неравенство Коши--Буняковского:
-    \[\big| \mathbf{y}^{\top}\mathbf{X}(\mathbf{m}_{k+1}-\mathbf{m}_k)\big| \leqslant \| \mathbf{X}^{\top}\mathbf{y} \|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2. \]
-    Второе слагаемое оценим, используя неравенство Коши--Буняковского, свойство согласованности спектральной матричной нормы, а также ограниченность последовательности векторов $\mathbf{w}_k$, которая следует из предъявленной в условии сходимости:
-    \[\big| (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \big| \leqslant \| \mathbf{X} (\mathbf{m}_k - \mathbf{m}_{k+1}) \|_2 \| \mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \|_2 \leqslant \]
-    \[ \leqslant \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \| \mathbf{m}_k + \mathbf{m}_{k+1} \|_2 \leqslant C \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2. \]
-    Последнее слагаемое оценим, используя неравенство Гёльдера для нормы Фробениуса:
-    \[ \Big| \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \Big| \leqslant \| \mathbf{X}^{\top}\mathbf{X} \|_F \| \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \|_F. \]
-    Наконец, поскольку $\| \mathbf{w}_k - \mathbf{w}_{k+1} \|_2 \to 0$ и $\| \boldsymbol{\Sigma}_k - \boldsymbol{\Sigma}_{k+1} \|_{F} \to 0$ при $k \to \infty$, то $M(k) \to 0$ при $k \to \infty$, что доказывает теорему.
+    \begin{align}
+        L\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) &= p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} p(y_i | \mathbf{x}_i, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} \mathcal{N}\left( y_i | \hat{\mathbf{w}}_k^{\top} \mathbf{x}_i, \sigma^2 \right) \notag \\
+        &= \left(2\pi\sigma^2 \right)^{-m/2} \exp\left(-\frac{1}{2\sigma^2}\|\mathbf{y} -\mathbf{X} \hat{\mathbf{w}}_k\|_2^2 \right). \label{eq:proof:M-sufficient:1}
+    \end{align}
+    Логарифмируя~\eqref{eq:proof:M-sufficient:1}, получаем
+    \begin{equation}
+        l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = \log p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = -\frac{m}{2}\log\left( 2\pi\sigma^2 \right) - \frac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \hat{\mathbf{w}}_k \|_2^2. \label{eq:proof:M-sufficient:2}
+    \end{equation}
+    Возьмем математическое ожидание~\eqref{eq:proof:M-sufficient:2} по $\mathfrak{D}_k$, учитывая, что $\mathbb{E}_{\mathfrak{D}_k}\hat{\mathbf{w}}_k=\mathbf{m}_k$ и $\text{cov}(\hat{\mathbf{w}}_k) = \mathbf{\Sigma}_k$, тогда имеем
+    \begin{equation}
+        \mathbb{E}_{\mathfrak{D}_k} l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = -\frac{m}{2}\log\left( 2\pi\sigma^2 \right) - \frac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 + \text{tr}\left( \mathbf{X}^{\top}\mathbf{X} \mathbf{\Sigma}_k \right) \Big). \label{eq:proof:M-sufficient:3}
+    \end{equation}
+    Используя~\eqref{eq:proof:M-sufficient:3} для размеров~$k$ и $k+1$, запишем выражение для разности математических ожиданий, в таком случае получим
+    \begin{align}
+        &\mathbb{E}_{\mathfrak{D}_{k+1}} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\mathfrak{D}_k} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k}) = \notag \\
+        &= \frac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 - \| \mathbf{y} - \mathbf{X} \mathbf{m}_{k+1} \|_2^2 \Big) + \frac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \notag \\
+        &= \frac{1}{\sigma^2} \mathbf{y}^{\top} \mathbf{X} (\mathbf{m}_{k+1} - \mathbf{m}_k) \label{eq:proof:M-sufficient:4} \\
+        &+ \frac{1}{2\sigma^2} (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \label{eq:proof:M-sufficient:5} \\
+        &+ \frac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big). \label{eq:proof:M-sufficient:6}
+    \end{align}
+    Значение функции $M(k)$ есть модуль от выражения выше. Применим неравенство треугольника для модуля, а затем оценим каждое слагаемое. Первое слагаемое~\eqref{eq:proof:M-sufficient:4} оценим, используя неравенство Коши--Буняковского:
+    \begin{equation}
+        \big| \mathbf{y}^{\top}\mathbf{X}(\mathbf{m}_{k+1}-\mathbf{m}_k)\big| \leqslant \| \mathbf{X}^{\top}\mathbf{y} \|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2. \label{eq:proof:M-sufficient:7}
+    \end{equation}
+    Второе слагаемое~\eqref{eq:proof:M-sufficient:5} оценим, используя неравенство Коши--Буняковского, свойство согласованности спектральной матричной нормы, а также ограниченность последовательности векторов $\mathbf{w}_k$, которая следует из предъявленной в условии сходимости:
+    \begin{align}
+        \big| (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \big| &\leqslant \| \mathbf{X} (\mathbf{m}_k - \mathbf{m}_{k+1}) \|_2 \| \mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \|_2 \notag \\
+        &\leqslant \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \| \mathbf{m}_k + \mathbf{m}_{k+1} \|_2 \notag \\
+        &\leqslant C \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2. \label{eq:proof:M-sufficient:8}
+    \end{align}
+    Последнее слагаемое~\eqref{eq:proof:M-sufficient:6} оценим, используя неравенство Гёльдера для нормы Фробениуса:
+    \begin{equation}
+        \Big| \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \Big| \leqslant \| \mathbf{X}^{\top}\mathbf{X} \|_F \| \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \|_F. \label{eq:proof:M-sufficient:9}
+    \end{equation}
+    Наконец, поскольку по условию теоремы $\| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \to 0$ и $\| \boldsymbol{\Sigma}_k - \boldsymbol{\Sigma}_{k+1} \|_{F} \to 0$ при $k \to \infty$, то выражения~\eqref{eq:proof:M-sufficient:7}, \eqref{eq:proof:M-sufficient:8} и \eqref{eq:proof:M-sufficient:9} стремятся к 0 при $k \to \infty$, а следовательно и $M(k) \to 0$ при $k \to \infty$, что доказывает теорему.
 \end{proof}
 
-Теорема~\ref{th:M-sufficient} показывает, что при достаточном объеме выборки добавление очереднего объекта практически не изменяет ожидаемое значение функции правдоподобия на полной выборке. Тем не менее, особый интерес представляют результаты, полученные для апостериорных распределений.
+Теорема~\ref{th:M-sufficient} показывает, что при достаточном объеме выборки добавление очереднего объекта практически не изменяет ожидаемое значение функции правдоподобия на полной выборке. Тем не менее, особый интерес представляют результаты, полученные для полных апостериорных распределений параметров.
 
 \begin{proof}[Доказательство теоремы~\ref{th:KL-sufficient}]
-    Дивергенция Кульбака-Лейблера для пары нормальных апостериорных распределений имеет вид
-    \[ D_{\text{KL}}\left( p_k \| p_{k+1} \right) = \dfrac{1}{2} \Big( \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) + (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) - \]
-    \[ - n + \log{\left( \dfrac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} \Big). \]
-    Представим $\boldsymbol{\Sigma}_{k+1}$ как $\boldsymbol{\Sigma}_{k+1} = \boldsymbol{\Sigma}_k + \Delta \boldsymbol{\Sigma}$. Рассмотрим в отдельности каждое слагаемое.
-    \[ \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) = \mathrm{tr}\left( \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)^{-1} \mathbf{\Sigma}_k \right) \to \mathrm{tr} \mathbf{I}_n= n \text{ при } \| \Delta \boldsymbol{\Sigma} \|_F \to 0, \]
-    \[ \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \mathbf{\Sigma}_{k+1}^{-1} \|_2 \to 0 \] 
-    при $ \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$,
-    \[ \log{\left( \dfrac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} = \log{\left( \dfrac{\det \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)}{\det \mathbf{\Sigma}_{k}} \right)} \to \log \det \mathbf{I}_n = \log 1 = 0 \]
-    при $ \| \Delta \boldsymbol{\Sigma} \|_F \to 0$, откуда и имеем требуемое.
+    Дивергенция Кульбака"--~Лейблера для пары нормальных апостериорных распределений имеет вид
+    \begin{multline}
+        D_{\text{KL}}\left( p_k \| p_{k+1} \right) = \frac{1}{2} \Bigg( \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) + (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) - \\
+        - n + \log{\left( \frac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} \Bigg). \label{eq:proof:KL-sufficient:1}
+    \end{multline}
+    Представим $\boldsymbol{\Sigma}_{k+1}$ как $\boldsymbol{\Sigma}_{k+1} = \boldsymbol{\Sigma}_k + \Delta \boldsymbol{\Sigma}$. Рассмотрим в отдельности каждое слагаемое в~\eqref{eq:proof:KL-sufficient:1}.
+    Для первого слагаемого получаем
+    \begin{equation}
+        \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) = \mathrm{tr}\left( \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)^{-1} \mathbf{\Sigma}_k \right) \to \mathrm{tr} \left( \mathbf{I}_n \right) = n \label{eq:proof:KL-sufficient:2}
+    \end{equation}
+    при $\| \Delta \boldsymbol{\Sigma} \|_F \to 0$. Для второго слагаемого имеем
+    \begin{equation}
+        \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \mathbf{\Sigma}_{k+1}^{-1} \|_2 \to 0 \label{eq:proof:KL-sufficient:3}
+    \end{equation}
+    при $ \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$. Наконец, для последнего слагаемого можем записать
+    \begin{equation}
+        \log{\left( \frac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} = \log{\left( \frac{\det \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)}{\det \mathbf{\Sigma}_{k}} \right)} \to \log \det \mathbf{I}_n = \log 1 = 0 \label{eq:proof:KL-sufficient:4}
+    \end{equation}
+    при $ \| \Delta \boldsymbol{\Sigma} \|_F \to 0$. Объединяя предельные соотношения~\eqref{eq:proof:KL-sufficient:2}, \eqref{eq:proof:KL-sufficient:3} и \eqref{eq:proof:KL-sufficient:4}, получаем требуемое в условиях теоремы.
 \end{proof}
 
 \begin{proof}[Доказательство теоремы~\ref{th:S-sufficient}]
     Воспользуемся выражением s-score для пары нормальных априорных распределений из \cite{Aduenko2017}:
-    \[ \text{s-score}(p_k, p_{k+1}) = \exp{\left( -\dfrac{1}{2} (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right)}. \]
+    \begin{equation}
+        \text{s-score}(p_k, p_{k+1}) = \exp{\left( -\frac{1}{2} (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right)}. \label{eq:proof:S-sufficient:1}
+    \end{equation}
     Поскольку
-    \[ \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \]
-    \[ \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} \|_2 \to 0 \]
-    при $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$, то значение квадратичной формы внутри экспоненты стремится к нулю. Следовательно, $\text{s-score}(p_k, p_{k+1}) \to 1$ при устремлении $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$.
+    \begin{multline}
+        \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \\
+        \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} \|_2 \to 0
+    \end{multline}
+    при $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$, то значение квадратичной формы внутри экспоненты~\eqref{eq:proof:S-sufficient:1} стремится к нулю. Следовательно, $\text{s-score}(p_k, p_{k+1}) \to 1$ при устремлении $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$, что и требовалось доказать.
 \end{proof}
 
-Наконец, в вероятностной модели линейной регрессии с гауссовским априорным распределением доказывается следующая теорема, определяющая достаточные условия для сходимостей из предыдущих теорем~\ref{th:KL-sufficient} и \ref{th:S-sufficient}.
+В вероятностной модели линейной регрессии с гауссовским априорным распределением доказывается следующая теорема, определяющая достаточные условия для сходимостей из предыдущих теорем~\ref{th:KL-sufficient} и \ref{th:S-sufficient}.
 
 \begin{proof}[Доказательство теоремы~\ref{th:moments}]
     Пусть задано нормальное априорное распределение параметров $p(\mathbf{w}) = \mathcal{N}\left( \mathbf{w} | \mathbf{0}, \alpha^{-1} \mathbf{I} \right)$. В модели линейной регрессии правдоподобие является нормальным, а именно
-    \[ p(\mathbf{y} | \mathbf{X}, \mathbf{w}) = \mathcal{N}\left( \mathbf{y} | \mathbf{X} \mathbf{w}, \sigma^2 \mathbf{I} \right) = \left( 2\pi\sigma^2 \right)^{-m/2} \exp\left( -\dfrac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \mathbf{w} \|_2^2 \right). \]
+    \begin{equation}
+        p(\mathbf{y} | \mathbf{X}, \mathbf{w}) = \mathcal{N}\left( \mathbf{y} | \mathbf{X} \mathbf{w}, \sigma^2 \mathbf{I} \right) = \left( 2\pi\sigma^2 \right)^{-m/2} \exp\left( -\frac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \mathbf{w} \|_2^2 \right). \label{eq:proof:moments:1}
+    \end{equation}
     Используя сопряженность априорного распределения и правдоподобия, легко найти параметры апостериорного распределения:
-    \[ p(\mathbf{w} | \mathbf{X}, \mathbf{y}) = \mathcal{N}\left( \mathbf{w} | \mathbf{m}, \boldsymbol{\Sigma} \right), \]
+    \begin{equation*}
+        p(\mathbf{w} | \mathbf{X}, \mathbf{y}) = \mathcal{N}\left( \mathbf{w} | \mathbf{m}, \boldsymbol{\Sigma} \right),
+    \end{equation*}
     где
-    \[ \boldsymbol{\Sigma} = \left( \alpha \mathbf{I} + \dfrac{1}{\sigma^2} \mathbf{X}^\top \mathbf{X} \right)^{-1}, \qquad \mathbf{m} = \left( \mathbf{X}^\top \mathbf{X} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}^\top \mathbf{y}. \]
-    Рассмотрим выражение $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2$ нормы разности матриц ковариции для подвыборок размера $k$ и $k+1$. Введем обозначение $\mathbf{A}_k = \dfrac{1}{\sigma^2} \mathbf{X}^\top_k \mathbf{X}_k$. Учитывая формулы выше, имеем
-    \[ \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} - \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 = \]
-    \[ = \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \left( \mathbf{A}_{k+1} - \mathbf{A}_k \right) \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \leqslant \]
-    Воспользуемся субмультипликативностью спектральной матричной нормы.
-    \[ \leqslant \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \right\|_2 \left\| \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 = \]
-    Теперь воспользуемся выражением спектральной матричной нормы через максимальное собственное значение.
-    \[ = \dfrac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)} \dfrac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \leqslant \]
-    \[ \leqslant \dfrac{1}{\lambda_{\min}\left( \mathbf{A}_{k+1} \right)} \dfrac{1}{\lambda_{\min}\left( \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 = \]
-    \[ = \sigma^2  \dfrac{1}{\lambda_{\min}\left( \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} \right)} \dfrac{1}{\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right)} \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2. \]
-    Далее, поскольку по условию $\| \mathbf{x} \|_2 \leqslant M$, то
-    \[ \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2 = \left\| \sum\limits_{i=1}^{k+1} \mathbf{x}_i \mathbf{x}_i^\top - \sum\limits_{i=1}^{k} \mathbf{x}_i \mathbf{x}_i^\top \right\|_2 = \left\| \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 = \]
-    Матрица единичного ранга имеет единственное ненулевое собственное значение.
-    \[ = \lambda_{\max}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)  = \mathbf{x}_{k+1}^\top \mathbf{x}_{k+1} = \| \mathbf{x}_{k+1} \|_2^2 \leqslant M^2. \]
-    По условию $\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right) = \omega(\sqrt{k})$, тогда $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1})$ при $k \to \infty$. Далее воспользуемся эквивалентностью матричных норм, а именно
-    \[ \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_F \leqslant \sqrt{k} \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1/2}) \text{ при } k \to \infty, \]
-    что и требовалось доказать. Теперь оценим норму разности математических ожиданий.
-    \[ \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 = \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 = \]
-    Учтем, что $\mathbf{X}_{k+1}^\top = [\mathbf{X}_k^\top, \mathbf{x}_{k+1}]$ и $\mathbf{y}_{k+1} = [\mathbf{y}_k, y_{k+1}]^\top$, тогда $\mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} = \mathbf{X}_k^\top \mathbf{X}_k + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ и $\mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} = \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1}$.
-    \[ = \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \left( \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1} \right) - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 = \]
-    Вынесем множитель в первом слагаемом:
-    \[ \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} = \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \cdot \] 
-    \[ \cdot \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1}.\]
-    Далее вынесем общий множитель у обоих слагаемых.
-    \begin{multline*}
-        = \Bigg\| \left[ \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right] \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k + \\ + \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} y_{k+1} \Bigg\|_2 =
-    \end{multline*}
-    Воспользуемся неравенством треугольника, а также свойством согласованности и субмультипликативности спектральной нормы.
-    \begin{multline*}
-        \leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 + \\ + \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2
-    \end{multline*}
-    Оценим по отдельности каждое слагаемое. В первом множителе первого слагаемого применим формулу для разности обратных матриц, как мы делали с ковариационными матрицами.
-    \[ \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \leqslant \]
-    \[ \leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \right\|_2 \cdot \left\| \mathbf{I} \right\|_2 \cdot \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 \leqslant \]
-    Снова используем субмультипликативность, а также выражение для нормы матрицы единичного ранга.
-    \[ \leqslant \dfrac{1}{\lambda_{\min}\left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \dfrac{\left\| \mathbf{x}_{k+1} \right\|_2^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)} \leqslant \]
-    \[ \leqslant \dfrac{1}{1 + \lambda_{\min}\left(\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \leqslant \]
-    Минимальное собственное значение произведения матриц оценивается произведением их минимальных собственных значений. Кроме того, минимальное собственное значение матрицы единичного ранга $\mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ равно нулю.
-    \[ \leqslant \dfrac{1}{1 + \lambda_{\max}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right) \lambda_{\min}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} = \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)}. \]
-    Второй и третий множители первого слагаемого оцениваются следующим образом.
-    \[ \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 \leqslant \dfrac{\left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} = \dfrac{\left\| \sum\limits_{i=1}^{k} \mathbf{x}_i y_i \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \leqslant \dfrac{k M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \]
+    \begin{equation}
+        \boldsymbol{\Sigma} = \left( \alpha \mathbf{I} + \frac{1}{\sigma^2} \mathbf{X}^\top \mathbf{X} \right)^{-1}, \qquad \mathbf{m} = \left( \mathbf{X}^\top \mathbf{X} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}^\top \mathbf{y}.
+        \label{eq:proof:moments:2}
+    \end{equation}
+    Рассмотрим выражение $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2$ нормы разности матриц ковариции для подвыборок размера $k$ и $k+1$. Введем обозначение $\mathbf{A}_k = \frac{1}{\sigma^2} \mathbf{X}^\top_k \mathbf{X}_k$. Учитывая формулы моментов~\eqref{eq:proof:moments:2}, имеем
+    \begin{align}
+        &\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = \notag \\
+        &= \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} - \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \notag \\
+        &= \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \left( \mathbf{A}_{k+1} - \mathbf{A}_k \right) \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \notag \\
+        &\leqslant \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \right\|_2 \left\| \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \label{eq:proof:moments:3} \\
+        &= \frac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \notag \\
+        &\leqslant \frac{1}{\lambda_{\min}\left( \mathbf{A}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \notag \\
+        &= \sigma^2  \frac{1}{\lambda_{\min}\left( \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right)} \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2. \label{eq:proof:moments:4}
+    \end{align}
+    Здесь в~\eqref{eq:proof:moments:3} мы воспользовались субмультипликативностью спектральной матричной нормы, а в \eqref{eq:proof:moments:3} "--- выражением спектральной матричной нормы через максимальное собственное значение.
+    Далее, поскольку по условию $\| \mathbf{x} \|_2 \leqslant M$, то мы оцениваем норму разности матриц из~\eqref{eq:proof:moments:4} следующим образом:
+    \begin{align}
+        \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2 
+        &= \left\| \sum\limits_{i=1}^{k+1} \mathbf{x}_i \mathbf{x}_i^\top - \sum\limits_{i=1}^{k} \mathbf{x}_i \mathbf{x}_i^\top \right\|_2 = \left\| \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 \notag \\
+        &= \lambda_{\max}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)  = \mathbf{x}_{k+1}^\top \mathbf{x}_{k+1} = \| \mathbf{x}_{k+1} \|_2^2 \leqslant M^2, \label{eq:proof:moments:4}
+    \end{align}
+    где переход к~\eqref{eq:proof:moments:4} имеет место потому, что матрица единичного ранга имеет единственное ненулевое собственное значение. По условию $\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right) = \omega(\sqrt{k})$, тогда $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1})$ при $k \to \infty$. Пользуясь эквивалентностью матричных норм, получаем требуемую сходимость для матриц ковариации:
+    \begin{equation}
+        \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_F \leqslant \sqrt{k} \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1/2}), \quad k \to \infty.
+    \end{equation}
+    Теперь оценим норму разности математических ожиданий. Пользуясь формулой~\eqref{eq:proof:moments:2}, получаем
+    \begin{align}
+        &\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 = \notag \\
+        &= \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 \notag \\
+        &= \Big\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \left( \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1} \right) \notag \\
+        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \Big\|_2 \notag \\
+        &= \Bigg\| \left[ \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right] \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \notag \\
+        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} y_{k+1} \Bigg\|_2 \label{eq:proof:moments:3} \\
+        &\leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 \notag \\
+        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \label{eq:proof:moments:4}
+    \end{align}
+    Здесь мы учли, что $\mathbf{X}_{k+1}^\top = [\mathbf{X}_k^\top, \mathbf{x}_{k+1}]$ и $\mathbf{y}_{k+1} = [\mathbf{y}_k, y_{k+1}]^\top$, тогда $\mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} = \mathbf{X}_k^\top \mathbf{X}_k + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ и $\mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} = \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1}$.
+    Для перехода к~\eqref{eq:proof:moments:3} мы вынесли множитель в первом слагаемом, после чего вынесли общий множитель у обоих слагаемых. Далее для получения~\eqref{eq:proof:moments:4} мы  применили неравенство треугольника, а также свойства согласованности и субмультипликативности спектральной нормы. Оценим по отдельности каждое слагаемое в~\eqref{eq:proof:moments:4}. В первом множителе первого слагаемого применим формулу для разности обратных матриц, как мы делали с ковариационными матрицами:
+    \begin{align}
+        & \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \leqslant \notag \\
+        &\leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \right\|_2 \left\| \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 \leqslant \notag \\
+        &\leqslant \frac{1}{\lambda_{\min}\left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{\left\| \mathbf{x}_{k+1} \right\|_2^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)} \label{eq:proof:moments:5} \\
+        &\leqslant \frac{1}{1 + \lambda_{\min}\left(\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
+        & \leqslant \frac{1}{1 + \lambda_{\max}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right) \lambda_{\min}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
+        &= \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)}. \label{eq:proof:moments:6}
+    \end{align}
+
+    Выше, при переходе к~\eqref{eq:proof:moments:5}, мы снова использовали субмультипликативность, а также выражение для нормы матрицы единичного ранга. Наконец, для получения~\eqref{eq:proof:moments:6} мы применили, что минимальное собственное значение произведения матриц оценивается произведением их минимальных собственных значений, а минимальное собственное значение матрицы единичного ранга $\mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ равно нулю. Второй и третий множители первого слагаемого оцениваются следующим образом:
+    \begin{align}
+        \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2
+        &\leqslant \frac{\left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} = \frac{\left\| \sum\limits_{i=1}^{k} \mathbf{x}_i y_i \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
+        &\leqslant \frac{k M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)}. \label{eq:proof:moments:7}
+    \end{align}
     Наконец, оценим второе слагаемое.
-    \[ \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \leqslant \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} \]
-    Итого, имеем следующую оценку.
-    \[ \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \leqslant \dfrac{k M^3}{\lambda_{\min}^2\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} + \dfrac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} = k \cdot o(k^{-1}) + o(k^{-1/2}) = o(1) \]
+    \begin{equation}
+        \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \leqslant \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} \label{eq:proof:moments:8}
+    \end{equation}
+    Итого, собирая воедино~\eqref{eq:proof:moments:6}, \eqref{eq:proof:moments:7} и \eqref{eq:proof:moments:8}, имеем следующую оценку:
+    \begin{align}
+        \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2
+        &\leqslant \frac{k M^3}{\lambda_{\min}^2\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} + \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} \notag \\
+        &= k \cdot o(k^{-1}) + o(k^{-1/2}) = o(1)
+    \end{align}
     при $k \to \infty$. Таким образом, получили требуемую сходимость.
+\end{proof}
+
+Наконец, докажем теорему о сходимости полного байесовского прогноза на отложенной выборке.
+
+\begin{proof}[Доказательство теоремы~\ref{th:prediction-convergence}]
+    Полный байесовский прогноз для одиночной модели выражается по формуле
+    \begin{align}
+        p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k)
+        &= \int p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{w}) p(\mathbf{w}|\mathbf{X}_k, \mathbf{y}_k) d\mathbf{w} \notag \\
+        &= \int \mathcal{N}(\mathbf{y}_{\text{test}} | \mathbf{X}_{\text{test}}\mathbf{w}, \sigma^2 \mathbf{I}) \mathcal{N}(\mathbf{w} | \mathbf{m}_k, \boldsymbol{\Sigma}_k) d\mathbf{w} \label{eq:proof:prediction-convergence:1} \\
+        &= \mathcal{N}(\mathbf{y}_{\text{test}} | \mathbf{X}_{\text{test}} \mathbf{m}_k, \sigma^2 \mathbf{I} + \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_k \mathbf{X}_{\text{test}}^\top). \label{eq:proof:prediction-convergence:2}
+    \end{align}
+    Здесь при переходе от~\eqref{eq:proof:prediction-convergence:1} к~\eqref{eq:proof:prediction-convergence:2} мы воспользовались известным выражением из~\cite{bishop2006pattern}. В условиях настоящей теоремы справедливы результаты теоремы~\ref{th:moments}. Следовательно, $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$. Далее, остается показать сходимость математического ожидания и ковариационной матрицы нормального распределения прогноза модели. Для математического ожидания при $k \to \infty$ выполнено
+    \begin{equation}
+        \|\mathbf{X}_{\text{test}} \mathbf{m}_{k+1} - \mathbf{X}_{\text{test}} \mathbf{m}_{k}\|_2 \leqslant \|\mathbf{X}_{\text{test}}\|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0.
+        \label{eq:proof:prediction-convergence:3}
+    \end{equation}
+    Для ковариационной матрицы, ввиду субмультипликативности нормы Фробениуса, при $k \to \infty$ справедливо следующее:
+    \begin{equation}
+        \|\sigma^2 \mathbf{I} + \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_{k+1} \mathbf{X}_{\text{test}}^\top - \sigma^2 \mathbf{I} - \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_{k} \mathbf{X}_{\text{test}}^\top\|_F \leqslant \|\mathbf{X}_{\text{test}}\|_F^2 \|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_{k}\|_F \to 0.
+        \label{eq:proof:prediction-convergence:4}
+    \end{equation}
+    Наконец, имея сходимость математического ожидания~\eqref{eq:proof:prediction-convergence:3} и ковариационной матрицы~\eqref{eq:proof:prediction-convergence:4}, действуем аналогично доказательству теоремы~\ref{th:KL-sufficient} и получаем, что
+    \begin{equation*}
+        D_{\mathrm{KL}}\left(p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k) \| p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_{k+1}, \mathbf{y}_{k+1})\right) \to 0
+    \end{equation*}
+    при $k \to \infty$, завершая доказательство данной теоремы.
 \end{proof}
 
 \section{Вычислительные эксперименты}
