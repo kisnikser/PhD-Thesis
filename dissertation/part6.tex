@@ -1,0 +1,558 @@
+\chapter{Критерии достаточного размера выборки для вероятностных линейных моделей}\label{ch:linear}
+
+В данной главе рассматриваются методы определения достаточного размера обучающей выборки для линейных моделей. Сначала вводится вероятностная постановка линейной регрессии и описывается зависимость апостериорного распределения параметров и оценки максимального правдоподобия от размера выборки. Далее формулируются четыре критерия достаточности: D-достаточность (дисперсия правдоподобия), M-достаточность (изменение математического ожидания правдоподобия), KL-достаточность (дивергенция Кульбака"--~Лейблера между апостериорами) и S-достаточность (метрика близости s-score). Для каждого критерия приводятся теоремы о корректности и условия сходимости в вероятностной модели линейной регрессии. Вычислительный эксперимент демонстрирует применимость предложенных методов для предварительной оценки необходимого числа обучающих данных. В заключение обсуждается обобщение на логистическую регрессию и обобщенные линейные модели.
+
+\section{Введение}
+
+Особенный интерес представлет вопрос о законах масштабирования параметрических моделей: по какому правилу стоит совместно выбирать архитектуру модели и число данных для ее обучения. Существующие работы покрывают лишь небольшую часть всего параметрического семейства "--- в них рассматриваются линейные и обобщенно-линейные модели~\todo{(добавить математические формулировки + ссылки на работы по обобщенно-линейным моделям)}, для которых формулируются преимущественно статистические критерии~\todo{(ссылки на статистические критерии)}, направленные на определение достаточного размера выборки в предположении единственности решения оптимизационной задачи~\eqref{eq:intro-min-problem}.
+
+Классические статистические методы оценки размера выборки опираются на задание нулевой и альтернативной гипотез, допустимой вероятности ошибки первого рода и требуемой мощности теста. К ним относятся метод множителей Лагранжа~\todo{(ссылка)}, отношение правдоподобия~\todo{(ссылка)}, критерий Вальда~\todo{(ссылка)} и др. Эти методы дают теоретически обоснованные оценки, но требуют явных предположений о распределении данных и параметрах модели, а также информации о величине эффекта при альтернативе. На практике такие предположения часто недоступны или труднопроверяемы.
+
+\todo{Прям распишем разные критерии и их постановки, как у Грабового в статье}
+
+Информационно-теоретические подходы характеризуют связь между данными и моделью через энтропию, взаимную информацию или дивергенции между распределениями~\todo{(добавить ссылки)}. Байесовские методы используют апостериорное распределение параметров и критерии вроде средней апостериорной дисперсии (APVC), среднего покрытия (ACC) или дивергенции Кульбака"--~Лейблера между апостериорными распределениями на разных подвыборках~\todo{(добавить ссылки)}. Так, в работе~\cite{MOTRENKO2014743} для логистической регрессии предложено использовать KL-дивергенцию между апостериорными распределениями на <<схожих>> подвыборках (отличающихся одним объектом) для оценки достаточного размера выборки.
+
+\section{Предварительные сведения}\label{sec:linear-preliminaries}
+
+\textbf{Вероятностная модель линейной регрессии.} Объектом называется пара $(\mathbf{x}, y)$, где $\mathbf{x} \in \mathbb{R}^n$ "--- вектор признакового описания, $y \in \mathbb{R}$ "--- целевая переменная. Выборка размера~$m$ задается множеством $\mathfrak{D}_m = \{(\mathbf{x}_i, y_i)\}_{i=1}^m$ из $m$ независимых реализаций пар~$(\mathbf{x}, y)$. Вводятся матрица объекты-признаки $\mathbf{X}_m = \left[ \mathbf{x}_1, \ldots, \mathbf{x}_m \right]^\top \in \mathbb{R}^{m \times n}$ и вектор значений целевой переменной $\mathbf{y}_m = \left[ y_1, \ldots, y_m \right]^\top \in \mathbb{R}^{m}$. Вероятностная модель линейной регрессии задается правдоподобием
+\begin{equation}
+    \label{eq:linreg-likelihood}
+    p(y | \mathbf{x}, \mathbf{w}) = \mathcal{N}(y | \mathbf{w}^\top \mathbf{x}, \sigma^2 \mathbf{I}),
+\end{equation}
+где $\mathbf{w} \in \mathbb{R}^n$ "--- вектор параметров, $\sigma^2 > 0$ "--- дисперсия шума. Для простой выборки функция правдоподобия имеет вид
+\begin{equation}
+    \label{eq:likelihood-full}
+    L(\mathfrak{D}_m, \mathbf{w}) = p(\mathbf{y}_m | \mathbf{X}_m, \mathbf{w}) = (2\pi\sigma^2)^{-m/2} \exp\left(-\frac{1}{2\sigma^2} \|\mathbf{y}_m - \mathbf{X}_m \mathbf{w}\|_2^2\right),
+\end{equation}
+а логарифмическая функция правдоподобия записывается в виде
+\begin{equation}
+    \label{eq:loglikelihood}
+    l(\mathfrak{D}_m, \mathbf{w}) = \log L(\mathfrak{D}_m, \mathbf{w}) = -\frac{m}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2} \|\mathbf{y}_m - \mathbf{X}_m \mathbf{w}\|_2^2.
+\end{equation}
+
+Оценкой максимума правдоподобия (ОМП) по подвыборке $\mathfrak{D}_k \subseteq \mathfrak{D}_m$ размера $k$ называется
+\begin{equation}
+    \label{eq:mle}
+    \hat{\mathbf{w}}_k = \argmax_{\mathbf{w} \in \mathbb{R}^n} L(\mathfrak{D}_k, \mathbf{w}) = \argmin_{\mathbf{w} \in \mathbb{R}^n} \|\mathbf{y}_k - \mathbf{X}_k \mathbf{w}\|_2^2,
+\end{equation}
+которая задается формулой
+\begin{equation}
+    \hat{\mathbf{w}}_k = (\mathbf{X}_k^\top \mathbf{X}_k)^{-1} \mathbf{X}_k^\top \mathbf{y}_k
+\end{equation}
+и при условии полного столбцового ранга матрицы $\mathbf{X}_k$ является единственной.
+
+\textbf{Асимптотическое поведение ОМП.} Для частотного подхода важна сходимость ОМП $\hat{\mathbf{w}}_k$. Из асимптотической теории известно, что при стандартных условиях регулярности (ограниченность информационной матрицы Фишера, непрерывность и т.\:д.) выполняется
+\begin{equation}
+    \sqrt{k} (\hat{\mathbf{w}}_k - \mathbf{w}^*) \xrightarrow{d} \mathcal{N}(0, \mathcal{I}^{-1}(\mathbf{w}^*)),
+\end{equation}
+где $\mathbf{w}^*$ "--- истинный вектор параметров, а $\mathcal{I}(\mathbf{w})$ "--- информационная матрица Фишера:
+\begin{equation}
+    \label{eq:fisher-information}
+    \left[\mathcal{I}(\mathbf{w})\right]_{ij} = - \mathbb{E}\left[ \dfrac{\partial^2 \log p(y | \mathbf{x}, \mathbf{w})}{\partial w_i \partial w_j} \right].
+\end{equation}
+
+Таким образом, ОМП состоятельна и асимптотически нормальна, что наводит нас на идею о стабилизации ее статистик, например, функции правдоподобия на всей выборке~\eqref{eq:likelihood-full}. В следующем разделе мы вводим критерии достаточности размера выборки на основе этой идеи.
+
+\textbf{Апостериорное распределение параметров.} При заданном априорном распределении $p(\mathbf{w})$ апостериорное распределение параметров по формуле Байеса имеет вид
+\begin{equation}
+\label{eq:posterior}
+p(\mathbf{w} | \mathfrak{D}_k) = \frac{p(\mathfrak{D}_k | \mathbf{w}) p(\mathbf{w})}{p(\mathfrak{D}_k)} \propto L(\mathfrak{D}_k, \mathbf{w}) p(\mathbf{w}).
+\end{equation}
+
+Для гауссовского априорного распределения $p(\mathbf{w}) = \mathcal{N}(\mathbf{w} | \mathbf{m}_0, \boldsymbol{\Sigma}_0)$ и правдоподобия \eqref{eq:linreg-likelihood} апостериорное распределение сопряжено и также является гауссовским~\cite{bishop2006pattern}:
+\begin{equation}
+    \label{eq:posterior-gaussian}
+    p(\mathbf{w} | \mathfrak{D}_k) = \mathcal{N}(\mathbf{w} | \mathbf{m}_k, \boldsymbol{\Sigma}_k),
+\end{equation}
+где
+\begin{equation}
+    \boldsymbol{\Sigma}_k^{-1} = \boldsymbol{\Sigma}_0^{-1} + \frac{1}{\sigma^2} \mathbf{X}_k^\top \mathbf{X}_k, \qquad \mathbf{m}_k = \boldsymbol{\Sigma}_k \left( \boldsymbol{\Sigma}_0^{-1} \mathbf{m}_0 + \frac{1}{\sigma^2} \mathbf{X}_k^\top \mathbf{y}_k \right).
+\end{equation}
+
+Математическое ожидание $\mathbf{m}_k$ и матрица ковариации $\boldsymbol{\Sigma}_k$ апостериорного распределения зависят от подвыборки $\mathfrak{D}_k$. При увеличении размера выборки~$k$ матрица $\mathbf{X}_k^\top \mathbf{X}_k$ накапливает информацию о признаках, дисперсия апостериора~$\boldsymbol{\Sigma}_k$ уменьшается, а апостериорное среднее~$\mathbf{m}_k$ приближается к истинным параметрам при выполнении условий регулярности~\todo{(что за условия и почему?)}. В следующем разделе мы предлагаем критерий достаточности размера выборки, вдохновленный этими предельными свойствами. 
+
+\section{Критерии достаточности для линейных моделей}
+
+В данном разделе мы зафиксируем полную выборку $\mathfrak{D}_m$ и рассмотрим подвыборки $\mathfrak{D}_k \subseteq \mathfrak{D}_m$ размера $k \leqslant m$. Пусть $\hat{\mathbf{w}}_k$ "--- ОМП по $\mathfrak{D}_k$, а $p_k(\mathbf{w}) = p(\mathbf{w} | \mathfrak{D}_k)$ "--- апостериорное распределение параметров.
+
+\begin{definition}
+    Размер выборки $m^*$ называется \emph{достаточным} согласно критерию $T$, если $T$ выполняется для всех $k \geqslant m^*$.
+\end{definition}
+
+Введенное выше определение является наиболее общим для всех рассматриваемых в настоящей работе критериев. Оно универсально и подходит также под уже известные критерии достаточного размера выборки, сформулированные в разделе~\ref{sec:scaling-and-sample-size}. Ниже вводятся четыре критерия, различающиеся тем, какую характеристику стабильности модели они используют.
+
+\subsection{Стабилизация функции правдоподобия в точке ОМП}
+
+В этом разделе мы предлагаем критерии достаточности для вероятностной модели линейной регрессии, основанные на сходимости функции правдоподобия в точке максимума правдоподобия, оцененной по подвыборке. Основная идея методов заключается в том, что поскольку ОМП состоятельна и асимптотически нормальна, мы ожидаем такого же поведения и от функции правдоподобия всей обучающей выборки (или функции потерь на практике). Визуализация подходов представлена на рисунке~\ref{fig:likelihood}.
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=0.55\linewidth]{likelihood.pdf}
+    }
+    \caption{Визуализация критериев D-достаточности (уменьшение дисперсии функции правдоподобия) и M-достаточности (уменьшение изменения функции правдоподобия при добавлении новых объектов) размера выборки в вероятностной модели линейной регрессии}
+    \label{fig:likelihood}
+\end{figure}
+
+Сперва мы введем критерий на основе дисперсии функции правдоподобия. Его идея состоит в следующем: при достаточном размере выборки оценка параметров мало меняется от одной реализации подвыборки к другой, поэтому дисперсия значения правдоподобия (или его логарифма) в точке оценки по подвыборкам не должна превышать порога. Формально, это записывается в виде следующего определения.
+
+\begin{definition}
+    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется \emph{D-достаточным}, если для всех $k \geqslant m^*$
+    \begin{equation}
+        \label{eq:D-sufficient}
+        D(k) = \mathbb{D}_{\mathfrak{D}_k} L(\mathfrak{D}_m, \hat{\mathbf{w}}_k) \leqslant \varepsilon.
+    \end{equation}
+\end{definition}
+
+Вместо $L(\mathfrak{D}_m, \hat{\mathbf{w}}_k)$ можно рассматривать логарифм $l(\mathfrak{D}_m, \hat{\mathbf{w}}_k)$ "--- выбор той или иной формы влияет на масштаб порога $\varepsilon$ и ни на что больше. Далее в экспериментах мы увидим, какие свойста имеет введенная нами функция $D(k)$, но сейчас перейдем к следующему определению, используещему математическое ожидание функции правдоподобия.
+
+Идея M-критерия в том, что мы фиксируем изменение математического ожидания правдоподобия при добавлении одного объекта в подвыборку, и начиная с определенного размера выборки это изменение перестает быть существенным. На математическом языке мы можем это записать следующим образом.
+
+\begin{definition}
+    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется \emph{M-достаточным}, если для всех $k \geqslant m^*$
+    \begin{equation}
+    \label{eq:M-sufficient}
+    M(k+1) = \left| \mathbb{E}_{\mathfrak{D}_{k+1}} L(\mathfrak{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\mathfrak{D}_k} L(\mathfrak{D}_m, \hat{\mathbf{w}}_k) \right| \leqslant \varepsilon.
+    \end{equation}
+\end{definition}
+
+Для критерия M-достаточности в настоящей работе формулируется теоретическое утверждение в следующем разделе. Кроме того, проводимый в настоящей работе вычислительный эксперимент исследует также и зависимость критерия от введенного гиперпараметра~$\varepsilon$. Однако сперва мы введем еще два определения, которые основываются на анализе апостериорных распределений параметров модели.
+
+\subsection{Апостериорные распределения на схожих подвыборках}
+
+В то время как введенные в предыдущем разделе определения используют точечную оценку параметров "--- ОМП, в работе~\cite{MOTRENKO2014743} для логистической регрессии было предложено использовать близость апостериорных распределений на <<схожих>> подвыборках как меру достаточного размера выборки. Эта идея легла в основу критериев KL-достаточности и S-достаточности, которые мы формулируем далее. Нам потребуется формально определить, что такое схожие подвыборки. Рассмотрим две подвыборки $\mathfrak{D}^1 \subseteq \mathfrak{D}_m$ и $\mathfrak{D}^2 \subseteq \mathfrak{D}_m$. Пусть $\mathcal{I}_1 \subseteq \mathcal{I} = \{ 1, \ldots, m \}$ и $\mathcal{I}_2 \subseteq \mathcal{I} = \{ 1, \ldots, m \}$~--- соответствующие им подмножества индексов.
+
+\begin{definition}
+    Подвыборки $\mathfrak{D}^1$ и $\mathfrak{D}^2$ называются \emph{схожими}, если $\mathcal{I}_2$ может быть получено из $\mathcal{I}_1$ удалением, заменой или добавлением одного элемента,~т.\:е.
+    \begin{equation}
+        \left| \mathcal{I}_1 \triangle \mathcal{I}_2 \right| = \left| \left( \mathcal{I}_1 \setminus \mathcal{I}_2 \right) \cup \left( \mathcal{I}_2 \setminus \mathcal{I}_1 \right) \right| = 1.
+    \end{equation}
+\end{definition}
+
+Для таких подвыборок интуитивно ясно следующее: если мы посчитаем апостериорные распределения параметров модели на них, то они должны быть тем ближе, чем на большем числе данных мы их оценили. Визуализация предлагаемых подходов представлена на рисунке~\ref{fig:posterior}.
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=0.9\linewidth]{posterior_ru.pdf}
+    }
+    \caption{Визуализация критериев KL-достаточности и S-достаточности (близость апостериорных распределений параметров на схожих подвыборках) размера выборки в вероятностной модели линейной регрессии}
+    \label{fig:posterior}
+\end{figure}
+
+Близость вероятностных распределений может быть описана по-разному~\todo{(разные функции дивергенции, в том числе KL-дивергенция, W-distance, JS-distance, etc.)}. Далее мы формулируем два определения, использующих наиболее удобные для использования на практике функции: KL-дивергенцию и функцию близости s-score.
+
+\begin{definition}
+    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется \emph{KL-достаточным}, если для всех $k \geqslant m^*$ при схожих подвыборках $\mathfrak{D}_k$ и $\mathfrak{D}_{k+1}$ выполняется
+    \begin{equation}
+    \label{eq:KL-sufficient}
+    \mathrm{KL}(k+1) = D_{\mathrm{KL}}(p_k \| p_{k+1}) = \int p_k(\mathbf{w}) \log \frac{p_k(\mathbf{w})}{p_{k+1}(\mathbf{w})} \, d\mathbf{w} \leqslant \varepsilon.
+    \end{equation}
+\end{definition}
+
+В качестве альтернативы KL-дивергенции можно использовать функцию s-score~\cite{Aduenko2017}, задающую меру близости двух плотностей:
+\begin{equation}
+    \label{eq:s-score}
+    \mathrm{s}\text{-score}(g_1, g_2) = \frac{\int g_1(\mathbf{w}) g_2(\mathbf{w}) \, d\mathbf{w}}{\max_{\mathbf{b}} \int g_1(\mathbf{w} - \mathbf{b}) g_2(\mathbf{w}) \, d\mathbf{w}}.
+\end{equation}
+Числитель "--- интеграл произведения плотностей; знаменатель нормирует значение. Для идентичных распределений s-score равно 1.
+
+\begin{definition}
+    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется S-достаточным, если для всех $k \geqslant m^*$
+    \begin{equation}
+    \label{eq:S-sufficient}
+    S(k+1) = \mathrm{s}\text{-score}(p_k, p_{k+1}) \geqslant 1 - \varepsilon.
+    \end{equation}
+\end{definition}
+
+Таким образом, введенные определения демонстрируют условия, при которых размер выборки $m^*$ может считаться достаточным в терминах того или иного критерия. Важно отметить, что из приведенных выше эвристических соображений корректность определений никак не следует. Таким образом, мы переходим к следующему разделу, в котором сфокусируемся на исследовании теоретических свойств предложенных подходов.
+
+\section{Асимптотическое поведение оптимизационной поверхности в вероятностной модели линейной регрессии}\label{sec:linear-theory}
+
+В настоящем разделе мы приводим теоретическое обоснование корректности предложенных определений. Сперва введем понятие этой корректности.
+
+\begin{definition}
+    Критерий достаточности называется \emph{корректным}, если при увеличении размера выборки соответствующая функция сходится к предельному значению.
+\end{definition}
+
+Отметим, что по сути корректность критерия позволяет гарантированно достичь заданного порога~$\varepsilon$, ограничивающего целевую функцию, при достаточно большом~$k$. Такое определение позволяет заключить, что введенный критерий непротиворечив и при ряде предположений имеет место быть в заданной постановке задачи.
+
+\subsection{Сходимость распределения параметров модели}
+
+Обозначим $\mathbb{E} \hat{\mathbf{w}}_k = \mathbf{m}_k$ и $\mathbb{D} \hat{\mathbf{w}}_k = \boldsymbol{\Sigma}_k$. Следующая теорема дает достаточное условие для сходимости функции $M(k)$ к нулю при увеличении размера обучающей выборки.
+
+\begin{theorem}\label{th:M-sufficient}
+    Пусть $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$. Тогда в модели линейной регрессии определение M-достаточного размера выборки корректно: для любого $\varepsilon > 0$ существует $m^*$ такое, что для всех $k \geqslant m^*$ выполняется $M(k) \leqslant \varepsilon$.
+\end{theorem}
+
+Важно отметить, что условия теоремы не являются слишком обременительными. Ввиду асимптотической нормальности ОМП $\hat{\mathbf{w}}_k$ и ее сходимости к вектору истинных параметров модели, условия на сходимость моментов кажутся интуитивно понятными, хотя и не следуют ниоткуда напрямую~\todo{(уточнить, может все-таки следуют)}.
+
+Для моделей с нормальным апостериорным распределением параметров (в том числе линейной регрессии с гауссовским априором) KL-дивергенция и s-score допускают явные выражения. Благодаря этому формулируются две следующих теоремы.
+
+\begin{theorem}\label{th:KL-sufficient}
+    Пусть апостериорные распределения $p_k$, $p_{k+1}$ нормальны и $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$, $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$. Тогда определение KL-достаточного размера выборки корректно: для любого $\varepsilon > 0$ существует $m^*$ такое, что $\mathrm{KL}(k) \leqslant \varepsilon$ для всех $k \geqslant m^*$.
+\end{theorem}
+
+\begin{theorem}\label{th:S-sufficient}
+    Пусть апостериорные распределения $p_k$, $p_{k+1}$ нормальны и $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ при $k \to \infty$. Тогда определение S-достаточного размера выборки корректно: для любого $\varepsilon > 0$ существует $m^*$ такое, что $S(k) \geqslant 1 - \varepsilon$ для всех $k \geqslant m^*$.
+\end{theorem}
+
+Утверждения выше, как и теорема~\ref{th:M-sufficient}, не предполагают слишком многого о распределении параметров модели. Как мы увидим далее в экспериментах, и как это известно из раздела~\ref{sec:linear-preliminaries}, эти предположения практически всегда выполняются на практике. Отметим, что для S-достаточности сходимости ковариационных матриц не требуется "--- достаточно сходимости средних. Для применения теорем~\ref{th:M-sufficient}, \ref{th:KL-sufficient}, и \ref{th:S-sufficient} необходимо проверить выполнение условий на моменты. В линейной регрессии с гауссовским априором апостериор нормален, и моменты задаются явными формулами. Следующий результат таким образом обеспечивает сходимость в модели линейной регрессии, переходя к еще более простым условиям.
+
+\begin{theorem}\label{th:moments}
+    Пусть множества значений признаков и целевой переменной ограничены,~т.\:е. $\exists M > 0: \|\mathbf{x}\|_2 \leqslant M$, $|y| \leqslant M$. Пусть минимальное собственное значение матрицы $\mathbf{X}_k^\top \mathbf{X}_k$ удовлетворяет условию $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ при $k \to \infty$. Тогда в линейной регрессии с нормальным априорным распределением параметров $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$.
+\end{theorem}
+
+Условие $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ означает, что минимальное собственное значение растет быстрее $\sqrt{k}$ и гарантирует отсутствие сильной мультиколлинеарности при росте выборки. На практике это условие часто выполняется для <<хорошо обусловленных>> данных.
+
+\subsection{Сходимость полного байесовского прогноза}
+
+В предыдущем разделе было показано, что при увеличении используемого размера выборки в модели линейной регрессии наблюдается сходимость апостериорных распределений параметров на схожих подвыборках. Однако на практике нас больше интересует прогноз, который можно сделать на тестовой выборке, предварительно настроив модель на обучающей. Пусть предварительно было произведено разбиение выборки $\mathfrak{D}_m$ на обучающую и тестовую,~т.\:е.
+\begin{equation}
+    \mathfrak{D}_m = \mathfrak{D}_{m_1}^{\text{train}} \sqcup \mathfrak{D}_{m_2}^{\text{test}},
+\end{equation}
+где $\mathfrak{D}_{m_1}^{\text{train}} = (\mathbf{X}_{\text{train}}, \mathbf{y}_{\text{train}})$ и $\mathfrak{D}_{m_2}^{\text{test}} = (\mathbf{X}_{\text{test}}, \mathbf{y}_{\text{test}})$.
+
+Рассмотрим подвыборку $(\mathbf{X}_k, \mathbf{y}_k) \subset \mathfrak{D}_{m_1}^{\text{train}}$ и сформулируем теорему о близости полных байесовских прогнозов, сделанных на схожих подвыборках обучающей выборки.
+
+\begin{theorem}\label{th:prediction-convergence}
+    Пусть множества значений признаков и целевой переменной ограничены,~т.\:е. $\exists M > 0: \|\mathbf{x}\|_2 \leqslant M$, $|y| \leqslant M$. Если $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ при $k \to \infty$, то в модели линейной регрессии с нормальным априорным распределением параметров при $k \to \infty$ верно, что
+    \begin{equation}
+        \label{eq:prediction-convergence}
+        D_{\mathrm{KL}}\left(p(\mathbf{y}_{\mathrm{test}}|\mathbf{X}_{\mathrm{test}}, \mathbf{X}_k, \mathbf{y}_k) \| p(\mathbf{y}_{\mathrm{test}}|\mathbf{X}_{\mathrm{test}}, \mathbf{X}_{k+1}, \mathbf{y}_{k+1})\right) \to 0.
+    \end{equation}
+\end{theorem}
+
+Сформулированное выше утверждение заключает, что в модели вероятностной линейной регрессии определения KL-достаточности и S-достаточности связаны не просто со сходимостью оптимизационной поверхности, но и со стабилизацией прогноза на отложенной тестовой выборке. Именно это и является ключевым фактором, который дополняет все полученные выше теоретические результаты их применимостью в практических задачах.
+
+\section{Доказательства теоретических результатов}
+
+В данном приводятся доказательства основных теорем настоящей главы: \ref{th:M-sufficient}, \ref{th:KL-sufficient}, \ref{th:S-sufficient}, \ref{th:moments} и \ref{th:prediction-convergence}. Начнем с доказательства теоремы~\ref{th:M-sufficient} о корректности определения M-достаточного размера выборки.
+
+\begin{proof}[Доказательство теоремы~\ref{th:M-sufficient}]
+    Рассмотрим определение M-достаточного размера выборки в терминах логарифма функции правдоподобия. В модели линейной регрессии
+    \begin{align}
+        L\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) &= p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} p(y_i | \mathbf{x}_i, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} \mathcal{N}\left( y_i | \hat{\mathbf{w}}_k^{\top} \mathbf{x}_i, \sigma^2 \right) \notag \\
+        &= \left(2\pi\sigma^2 \right)^{-m/2} \exp\left(-\frac{1}{2\sigma^2}\|\mathbf{y} -\mathbf{X} \hat{\mathbf{w}}_k\|_2^2 \right). \label{eq:proof:M-sufficient:1}
+    \end{align}
+    Логарифмируя~\eqref{eq:proof:M-sufficient:1}, получаем
+    \begin{equation}
+        l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = \log p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = -\frac{m}{2}\log\left( 2\pi\sigma^2 \right) - \frac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \hat{\mathbf{w}}_k \|_2^2. \label{eq:proof:M-sufficient:2}
+    \end{equation}
+    Возьмем математическое ожидание~\eqref{eq:proof:M-sufficient:2} по $\mathfrak{D}_k$, учитывая, что $\mathbb{E}_{\mathfrak{D}_k}\hat{\mathbf{w}}_k=\mathbf{m}_k$ и $\text{cov}(\hat{\mathbf{w}}_k) = \mathbf{\Sigma}_k$, тогда имеем
+    \begin{equation}
+        \mathbb{E}_{\mathfrak{D}_k} l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = -\frac{m}{2}\log\left( 2\pi\sigma^2 \right) - \frac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 + \text{tr}\left( \mathbf{X}^{\top}\mathbf{X} \mathbf{\Sigma}_k \right) \Big). \label{eq:proof:M-sufficient:3}
+    \end{equation}
+    Используя~\eqref{eq:proof:M-sufficient:3} для размеров~$k$ и $k+1$, запишем выражение для разности математических ожиданий, в таком случае получим
+    \begin{align}
+        &\mathbb{E}_{\mathfrak{D}_{k+1}} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\mathfrak{D}_k} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k}) = \notag \\
+        &= \frac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 - \| \mathbf{y} - \mathbf{X} \mathbf{m}_{k+1} \|_2^2 \Big) + \frac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \notag \\
+        &= \frac{1}{\sigma^2} \mathbf{y}^{\top} \mathbf{X} (\mathbf{m}_{k+1} - \mathbf{m}_k) \label{eq:proof:M-sufficient:4} \\
+        &\quad + \frac{1}{2\sigma^2} (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \label{eq:proof:M-sufficient:5} \\
+        &\quad + \frac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big). \label{eq:proof:M-sufficient:6}
+    \end{align}
+    Значение функции $M(k+1)$ есть модуль от выражения выше. Применим неравенство треугольника для модуля, а затем оценим каждое слагаемое. Первое слагаемое~\eqref{eq:proof:M-sufficient:4} оценим, используя неравенство Коши--Буняковского:
+    \begin{equation}
+        \big| \mathbf{y}^{\top}\mathbf{X}(\mathbf{m}_{k+1}-\mathbf{m}_k)\big| \leqslant \| \mathbf{X}^{\top}\mathbf{y} \|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2. \label{eq:proof:M-sufficient:7}
+    \end{equation}
+    Второе слагаемое~\eqref{eq:proof:M-sufficient:5} оценим, используя неравенство Коши--Буняковского, свойство согласованности спектральной матричной нормы, а также ограниченность последовательности векторов $\mathbf{w}_k$, которая следует из предъявленной в условии сходимости:
+    \begin{align}
+        \big| (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \big| &\leqslant \| \mathbf{X} (\mathbf{m}_k - \mathbf{m}_{k+1}) \|_2 \| \mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \|_2 \notag \\
+        &\leqslant \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \| \mathbf{m}_k + \mathbf{m}_{k+1} \|_2 \notag \\
+        &\leqslant C \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2. \label{eq:proof:M-sufficient:8}
+    \end{align}
+    Последнее слагаемое~\eqref{eq:proof:M-sufficient:6} оценим, используя неравенство Гёльдера для нормы Фробениуса:
+    \begin{equation}
+        \Big| \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \Big| \leqslant \| \mathbf{X}^{\top}\mathbf{X} \|_F \| \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \|_F. \label{eq:proof:M-sufficient:9}
+    \end{equation}
+    Наконец, поскольку по условию теоремы $\| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \to 0$ и $\| \boldsymbol{\Sigma}_k - \boldsymbol{\Sigma}_{k+1} \|_{F} \to 0$ при $k \to \infty$, то выражения~\eqref{eq:proof:M-sufficient:7}, \eqref{eq:proof:M-sufficient:8} и \eqref{eq:proof:M-sufficient:9} стремятся к 0 при $k \to \infty$, а следовательно и $M(k) \to 0$ при $k \to \infty$, что доказывает теорему.
+\end{proof}
+
+Теорема~\ref{th:M-sufficient} показывает, что при достаточном объеме выборки добавление очереднего объекта практически не изменяет ожидаемое значение функции правдоподобия на полной выборке. Тем не менее, особый интерес представляют результаты, полученные для полных апостериорных распределений параметров.
+
+\begin{proof}[Доказательство теоремы~\ref{th:KL-sufficient}]
+    Дивергенция Кульбака"--~Лейблера для пары нормальных апостериорных распределений имеет вид
+    \begin{multline}
+        D_{\text{KL}}\left( p_k \| p_{k+1} \right) = \frac{1}{2} \Bigg( \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) + (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) - \\
+        - n + \log{\left( \frac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} \Bigg). \label{eq:proof:KL-sufficient:1}
+    \end{multline}
+    Представим $\boldsymbol{\Sigma}_{k+1}$ как $\boldsymbol{\Sigma}_{k+1} = \boldsymbol{\Sigma}_k + \Delta \boldsymbol{\Sigma}$. Рассмотрим в отдельности каждое слагаемое в~\eqref{eq:proof:KL-sufficient:1}.
+    Для первого слагаемого получаем
+    \begin{equation}
+        \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) = \mathrm{tr}\left( \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)^{-1} \mathbf{\Sigma}_k \right) \to \mathrm{tr} \left( \mathbf{I}_n \right) = n \label{eq:proof:KL-sufficient:2}
+    \end{equation}
+    при $\| \Delta \boldsymbol{\Sigma} \|_F \to 0$. Для второго слагаемого имеем
+    \begin{equation}
+        \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \mathbf{\Sigma}_{k+1}^{-1} \|_2 \to 0 \label{eq:proof:KL-sufficient:3}
+    \end{equation}
+    при $ \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$. Наконец, для последнего слагаемого можем записать
+    \begin{equation}
+        \log{\left( \frac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} = \log{\left( \frac{\det \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)}{\det \mathbf{\Sigma}_{k}} \right)} \to \log \det \mathbf{I}_n = \log 1 = 0 \label{eq:proof:KL-sufficient:4}
+    \end{equation}
+    при $ \| \Delta \boldsymbol{\Sigma} \|_F \to 0$. Объединяя предельные соотношения~\eqref{eq:proof:KL-sufficient:2}, \eqref{eq:proof:KL-sufficient:3} и \eqref{eq:proof:KL-sufficient:4}, получаем требуемое в условиях теоремы.
+\end{proof}
+
+\begin{proof}[Доказательство теоремы~\ref{th:S-sufficient}]
+    Воспользуемся выражением s-score для пары нормальных априорных распределений из \cite{Aduenko2017}:
+    \begin{equation}
+        \text{s-score}(p_k, p_{k+1}) = \exp{\left( -\frac{1}{2} (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right)}. \label{eq:proof:S-sufficient:1}
+    \end{equation}
+    Поскольку
+    \begin{multline}
+        \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \\
+        \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} \|_2 \to 0
+    \end{multline}
+    при $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$, то значение квадратичной формы внутри экспоненты~\eqref{eq:proof:S-sufficient:1} стремится к нулю. Следовательно, $\text{s-score}(p_k, p_{k+1}) \to 1$ при устремлении $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$, что и требовалось доказать.
+\end{proof}
+
+В вероятностной модели линейной регрессии с гауссовским априорным распределением доказывается следующая теорема, определяющая достаточные условия для сходимостей из предыдущих теорем~\ref{th:KL-sufficient} и \ref{th:S-sufficient}.
+
+\begin{proof}[Доказательство теоремы~\ref{th:moments}]
+    Пусть задано нормальное априорное распределение параметров $p(\mathbf{w}) = \mathcal{N}\left( \mathbf{w} | \mathbf{0}, \alpha^{-1} \mathbf{I} \right)$. В модели линейной регрессии правдоподобие является нормальным, а именно
+    \begin{equation}
+        p(\mathbf{y} | \mathbf{X}, \mathbf{w}) = \mathcal{N}\left( \mathbf{y} | \mathbf{X} \mathbf{w}, \sigma^2 \mathbf{I} \right) = \left( 2\pi\sigma^2 \right)^{-m/2} \exp\left( -\frac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \mathbf{w} \|_2^2 \right). \label{eq:proof:moments:1}
+    \end{equation}
+    Используя сопряженность априорного распределения и правдоподобия, легко найти параметры апостериорного распределения:
+    \begin{equation}
+        p(\mathbf{w} | \mathbf{X}, \mathbf{y}) = \mathcal{N}\left( \mathbf{w} | \mathbf{m}, \boldsymbol{\Sigma} \right),
+    \end{equation}
+    где
+    \begin{equation}
+        \boldsymbol{\Sigma} = \left( \alpha \mathbf{I} + \frac{1}{\sigma^2} \mathbf{X}^\top \mathbf{X} \right)^{-1}, \qquad \mathbf{m} = \left( \mathbf{X}^\top \mathbf{X} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}^\top \mathbf{y}.
+        \label{eq:proof:moments:2}
+    \end{equation}
+    Рассмотрим выражение $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2$ нормы разности матриц ковариции для подвыборок размера $k$ и $k+1$. Введем обозначение $\mathbf{A}_k = \frac{1}{\sigma^2} \mathbf{X}^\top_k \mathbf{X}_k$. Учитывая формулы моментов~\eqref{eq:proof:moments:2}, имеем
+    \begin{align}
+        &\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = \notag \\
+        &= \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} - \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \notag \\
+        &= \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \left( \mathbf{A}_{k+1} - \mathbf{A}_k \right) \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \notag \\
+        &\leqslant \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \right\|_2 \left\| \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \label{eq:proof:moments:3} \\
+        &= \frac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \label{eq:proof:moments:4} \\
+        &\leqslant \frac{1}{\lambda_{\min}\left( \mathbf{A}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \notag \\
+        &= \sigma^2  \frac{1}{\lambda_{\min}\left( \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right)} \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2. \label{eq:proof:moments:5}
+    \end{align}
+    Здесь в~\eqref{eq:proof:moments:3} мы воспользовались субмультипликативностью спектральной матричной нормы, а в \eqref{eq:proof:moments:4} "--- выражением спектральной матричной нормы через максимальное собственное значение.
+    Далее, поскольку по условию $\| \mathbf{x} \|_2 \leqslant M$, то мы оцениваем норму разности матриц из~\eqref{eq:proof:moments:5} следующим образом:
+    \begin{align}
+        \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2 
+        &= \left\| \sum\limits_{i=1}^{k+1} \mathbf{x}_i \mathbf{x}_i^\top - \sum\limits_{i=1}^{k} \mathbf{x}_i \mathbf{x}_i^\top \right\|_2 = \left\| \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 \notag \\
+        &= \lambda_{\max}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)  = \mathbf{x}_{k+1}^\top \mathbf{x}_{k+1} = \| \mathbf{x}_{k+1} \|_2^2 \leqslant M^2, \label{eq:proof:moments:6}
+    \end{align}
+    где переход к~\eqref{eq:proof:moments:6} имеет место потому, что матрица единичного ранга имеет единственное ненулевое собственное значение. По условию $\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right) = \omega(\sqrt{k})$, тогда $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1})$ при $k \to \infty$. Пользуясь эквивалентностью матричных норм, получаем требуемую сходимость для матриц ковариации:
+    \begin{equation}
+        \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_F \leqslant \sqrt{k} \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1/2}), \quad k \to \infty.
+    \end{equation}
+    Теперь оценим норму разности математических ожиданий. Пользуясь формулой~\eqref{eq:proof:moments:2}, получаем
+    \begin{align}
+        &\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 = \notag \\
+        &= \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 \notag \\
+        &= \Big\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \left( \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1} \right) \notag \\
+        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \Big\|_2 \notag \\
+        &= \Bigg\| \left[ \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right] \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \notag \\
+        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} y_{k+1} \Bigg\|_2 \label{eq:proof:moments:7} \\
+        &\leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 \notag \\
+        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \label{eq:proof:moments:8}
+    \end{align}
+    Здесь мы учли, что $\mathbf{X}_{k+1}^\top = [\mathbf{X}_k^\top, \mathbf{x}_{k+1}]$ и $\mathbf{y}_{k+1} = [\mathbf{y}_k, y_{k+1}]^\top$, тогда $\mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} = \mathbf{X}_k^\top \mathbf{X}_k + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ и $\mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} = \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1}$.
+    Для перехода к~\eqref{eq:proof:moments:7} мы вынесли множитель в первом слагаемом, после чего вынесли общий множитель у обоих слагаемых. Далее для получения~\eqref{eq:proof:moments:8} мы  применили неравенство треугольника, а также свойства согласованности и субмультипликативности спектральной нормы. Оценим по отдельности каждое слагаемое в~\eqref{eq:proof:moments:8}. В первом множителе первого слагаемого применим формулу для разности обратных матриц, как мы делали с ковариационными матрицами:
+    \begin{align}
+        & \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \leqslant \notag \\
+        &\leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \right\|_2 \left\| \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 \leqslant \notag \\
+        &\leqslant \frac{1}{\lambda_{\min}\left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{\left\| \mathbf{x}_{k+1} \right\|_2^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)} \label{eq:proof:moments:9} \\
+        &\leqslant \frac{1}{1 + \lambda_{\min}\left(\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
+        & \leqslant \frac{1}{1 + \lambda_{\max}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right) \lambda_{\min}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
+        &= \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)}. \label{eq:proof:moments:10}
+    \end{align}
+
+    Выше, при переходе к~\eqref{eq:proof:moments:9}, мы снова использовали субмультипликативность, а также выражение для нормы матрицы единичного ранга. Наконец, для получения~\eqref{eq:proof:moments:10} мы применили, что минимальное собственное значение произведения матриц оценивается произведением их минимальных собственных значений, а минимальное собственное значение матрицы единичного ранга $\mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ равно нулю. Второй и третий множители первого слагаемого оцениваются следующим образом:
+    \begin{align}
+        \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2
+        &\leqslant \frac{\left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} = \frac{\left\| \sum\limits_{i=1}^{k} \mathbf{x}_i y_i \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
+        &\leqslant \frac{k M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)}. \label{eq:proof:moments:11}
+    \end{align}
+    Наконец, оценим второе слагаемое.
+    \begin{equation}
+        \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \leqslant \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} \label{eq:proof:moments:12}
+    \end{equation}
+    Итого, собирая воедино~\eqref{eq:proof:moments:10}, \eqref{eq:proof:moments:11} и \eqref{eq:proof:moments:12}, имеем следующую оценку:
+    \begin{align}
+        \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2
+        &\leqslant \frac{k M^3}{\lambda_{\min}^2\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} + \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} \notag \\
+        &= k \cdot o(k^{-1}) + o(k^{-1/2}) = o(1)
+    \end{align}
+    при $k \to \infty$. Таким образом, получили требуемую сходимость.
+\end{proof}
+
+Наконец, докажем теорему о сходимости полного байесовского прогноза на отложенной выборке.
+
+\begin{proof}[Доказательство теоремы~\ref{th:prediction-convergence}]
+    Полный байесовский прогноз для одиночной модели выражается по формуле
+    \begin{align}
+        p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k)
+        &= \int p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{w}) p(\mathbf{w}|\mathbf{X}_k, \mathbf{y}_k) d\mathbf{w} \notag \\
+        &= \int \mathcal{N}(\mathbf{y}_{\text{test}} | \mathbf{X}_{\text{test}}\mathbf{w}, \sigma^2 \mathbf{I}) \mathcal{N}(\mathbf{w} | \mathbf{m}_k, \boldsymbol{\Sigma}_k) d\mathbf{w} \label{eq:proof:prediction-convergence:1} \\
+        &= \mathcal{N}(\mathbf{y}_{\text{test}} | \mathbf{X}_{\text{test}} \mathbf{m}_k, \sigma^2 \mathbf{I} + \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_k \mathbf{X}_{\text{test}}^\top). \label{eq:proof:prediction-convergence:2}
+    \end{align}
+    Здесь при переходе от~\eqref{eq:proof:prediction-convergence:1} к~\eqref{eq:proof:prediction-convergence:2} мы воспользовались известным выражением из~\cite{bishop2006pattern}. В условиях настоящей теоремы справедливы результаты теоремы~\ref{th:moments}. Следовательно, $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$. Далее, остается показать сходимость математического ожидания и ковариационной матрицы нормального распределения прогноза модели. Для математического ожидания при $k \to \infty$ выполнено
+    \begin{equation}
+        \|\mathbf{X}_{\text{test}} \mathbf{m}_{k+1} - \mathbf{X}_{\text{test}} \mathbf{m}_{k}\|_2 \leqslant \|\mathbf{X}_{\text{test}}\|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0.
+        \label{eq:proof:prediction-convergence:3}
+    \end{equation}
+    Для ковариационной матрицы, ввиду субмультипликативности нормы Фробениуса, при $k \to \infty$ справедливо следующее:
+    \begin{equation}
+        \|\sigma^2 \mathbf{I} + \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_{k+1} \mathbf{X}_{\text{test}}^\top - \sigma^2 \mathbf{I} - \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_{k} \mathbf{X}_{\text{test}}^\top\|_F \leqslant \|\mathbf{X}_{\text{test}}\|_F^2 \|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_{k}\|_F \to 0.
+        \label{eq:proof:prediction-convergence:4}
+    \end{equation}
+    Наконец, имея сходимость математического ожидания~\eqref{eq:proof:prediction-convergence:3} и ковариационной матрицы~\eqref{eq:proof:prediction-convergence:4}, действуем аналогично доказательству теоремы~\ref{th:KL-sufficient} и получаем, что
+    \begin{equation}
+        D_{\mathrm{KL}}\left(p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k) \| p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_{k+1}, \mathbf{y}_{k+1})\right) \to 0
+    \end{equation}
+    при $k \to \infty$, завершая доказательство данной теоремы.
+\end{proof}
+
+\section{Вычислительные эксперименты}
+
+В данном разделе мы проводим эмпирический анализ сходимости распределения оптимальных параметров в линейных моделях. Программный код, реализованный на фреймворке \textbf{PyTorch}, доступен публично по адресам
+\begin{center}
+    \href{https://github.com/kisnikser/Likelihood-Bootstrapping}{\texttt{https://github.com/kisnikser/Likelihood-Bootstrapping}},\\
+    \href{https://github.com/kisnikser/Posterior-Distributions-Proximity}{\texttt{https://github.com/kisnikser/Posterior-Distributions-Proximity}}.
+\end{center}
+
+Эксперимент состоит из нескольких частей. Сперва, в параграфе~\ref{subsec:exp-posterior-plots} мы строим графики апостериорных распределений и показываем их сходимость на модельном примере. Далее, в параграфах~\ref{subsec:exp-d-m} и~\ref{subsec:exp-kl-s} мы проверяем сходимость предложенных критериев достаточности. Затем, в параграфе~\ref{subsec:exp-hyperparam} мы исследуем их зависимость от гиперпараметра-порога. Раздел завершается параграфом~\ref{subsec:exp-comparison}, где мы сравниваем критерии на наборе реальных выборок с задачей регрессии.
+
+\subsection{Близость апостериорных распределений}\label{subsec:exp-posterior-plots}
+
+Используется синтетическая выборка, сгенерированная из модели линейной регрессии \todo{(уточнить параметры)}, причем для наглядности рассматриваются одномерный и двумерный случаи. Число объектов $m = 100$, среднеквадратичное отклонение шума $\sigma = 1$, априорное распределение параметров $p(\mathbf{w}) = \mathcal{N}(\mathbf{w} | \mathbf{0}, \mathbf{I})$. Далее представлены рисунки~\ref{fig:posterior-1d-similarity}~и~\ref{fig:posterior-2d-similarity}, на которых изображено сходство апостериорных распределений, определенных на схожих подвыборках размера $k$ и $k+1$ при варьировании числа $k$.
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=\linewidth]{posterior-1d-similarity.pdf}
+    }
+    \caption{Изменение апостериорных распределений параметров на схожих подвыборка по мере увеличения их размера. Одномерный случай, где на графиках изображены плотности распределений}
+    \label{fig:posterior-1d-similarity}
+\end{figure}
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=\linewidth]{posterior-2d-similarity.pdf}
+    }
+    \caption{Изменение апостериорных распределений параметров на схожих подвыборка по мере увеличения их размера. Двумерный случай, где на графиках изображены линии уровня}
+    \label{fig:posterior-2d-similarity}
+\end{figure}
+
+По построенные графикам видно, что при увеличении числа обучающих объектов оптимизационная поверхность линейных моделей (апостериорное распределение параметров) перестает меняться. Эти результаты подкрепляют идеи, на основе которых построены определения достаточного размера выборки.
+
+\subsection{Корректность определений D- и M-достаточности}\label{subsec:exp-d-m}
+
+Прежде чем перейти к вычислительным экспериментам, сделаем важное замечание. Поскольку на практике нет возможности посчитать указанные в определениях~\eqref{eq:D-sufficient}, \eqref{eq:M-sufficient} математическое ожидание и дисперсию, для их оценки предлагается воспользоваться техникой бутстрап. А именно, сгенерируем из заданной $\mathfrak{D}_m$ некоторое число $B$ подвыборок размера $k$ с возвращением. Для каждой из них получим оценку параметров $\hat{\mathbf{w}}_{k}$ и посчитаем значение $L(\mathfrak{D}_m, \hat{\mathbf{w}}_{k})$. Для оценки будем использовать выборочное среднее и несмещенную выборочную дисперсию (по бутстрап-подвыборкам). Предложенные выше определения можно применять и в тех задачах, когда минимизируется произвольная функция потерь, а не максимизируется функция правдоподобия. Мы не приводим никаких теоретических обоснований этого, однако на практике такая эвристика оказывается достаточно удачной.
+
+Перейдем к эксперименту. Синтетические данные сгенерированы из моделей линейной и логистической регрессий. Число объектов $m = 1000$, число признаков $n = 20$. Используется $B = 1000$ бустрапированных подвыборок для оценки математического ожидания и дисперсии функции ошибки. Подсчитываются значения функций $D(k)$ и $M(k)$. Датасет с задачей регрессии Liver Disorders из UCI~\todo{(ссылка или что-то)} содержит $m = 345$ объектов и $n = 5$ признаков. Мы также используем $B = 1000$ бутстрапированных подвыборок.
+
+На рисунке~\ref{fig:likelihood-convergence}~(а) можно видеть полученные зависимости между используемым размером подвыборки $k$ и рассматриваемыми функциями $D(k)$ и $M(k)$ для синтетической выборки с задачей регрессии. Результаты для синтетической выборки с задачей классификации представлены на рисунке~\ref{fig:likelihood-convergence}~(б). В то же время, на рисунке~\ref{fig:likelihood-convergence}~(в) мы видим аналогичные графики для датасета Liver Disorders. Видно, что во всех случаях значения функций $D(k)$ и $M(k)$ стремятся к нулю при увеличении размера выборки. Эти эмпирические результаты подтверждают теоретические, полученные ранее.
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=\linewidth]{likelihood-synthetic-regression.pdf}
+    }
+    \centering{а) Синтетическая выборка (линейная регрессия)}
+    \centerfloat{
+        \includegraphics[width=\linewidth]{likelihood-synthetic-classification.pdf}
+    }
+    \centering{б) Синтетическая выборка (логистическая регрессия)}
+    \centerfloat{
+        \includegraphics[width=\linewidth]{likelihood-liver-disorders.pdf}
+    }
+    \centering{в) Выборка Liver Disorders (регрессия)}
+    \vspace{1em}
+    \caption{Сходимость функций $D(k)$ и $M(k)$ в различных задачах и на различных выборках. Значения обоих критериев стремятся к нулю при увеличении размера выбори}
+    \label{fig:likelihood-convergence}
+\end{figure}
+
+\subsection{Корректность определений KL- и S-достаточности}\label{subsec:exp-kl-s}
+
+В этом параграфе мы сперва проводим экспериментальное подтверждение предположения из теоремы~\ref{th:moments} о том, что минимальное собственное значение матрицы $\mathbf{X}_k^\top \mathbf{X}_k$ растет быстрее $\sqrt{k}$. Затем мы проверяем сходимость введенных критериев $KL(k)$ и $S(k)$ при изменении обучающей выборки.
+
+\textbf{Асимптотическое поведение минимального собственного значения матрицы $\mathbf{X}_k^\top \mathbf{X}_k$.} Используются синтетические данные, сгенерированные из модели линейной регрессии. Число объектов $m = 500$, число признаков $n = 10$. Один объект последовательно удаляется из данной выборки, пока число объектов в подвыборке не станет равно числу признаков. Для каждого размера выборки $k$ подсчитывается минимальное собственное значение матрицы $\mathbf{X}_k^\top \mathbf{X}_k$. Такой процесс повторяется $B = 100$ раз. Аналогичные действия проводятся и на датасете Liver Disorders с $m = 345$ объектами и $n = 5$ признаками. Результаты представлены на рисунке~\ref{fig:posterior-eigvals}. Видно, что при стремлении размера выборки к бесконечности минимальное собственное значение также стремится к бесконечности. Помимо этого, как и требуется в теореме~\ref{th:moments}, этот график лежит выше, чем $\sqrt{k}$.
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=\linewidth]{posterior-eigvals.pdf}
+    }
+    \caption{Изменение минимального собственного значения матрицы $\mathbf{X}_k^\top \mathbf{X}_k$ при увеличении размера выборки в задачах синтетической линейной регрессии и регрессии на датасете Liver Disorders}
+    \label{fig:posterior-eigvals}
+\end{figure}
+
+\textbf{Сходимость функций $KL(k)$ и $S(k)$.} На рисунке~\ref{fig:posterior-convergence}~(а) мы можем наблюдать полученные зависимости между доступным размером выборки $k$ и предложенными функциями $KL(k)$ и $S(k)$ для синтетической выборки с задачей регрессии. В то же время, на рисунке~\ref{fig:posterior-convergence}~(б) можно видеть аналогичные графики для датасета Liver Disorders. Для обеих выборок значения функции $KL(k)$ стремятся к нулю при увеличении размера выборки, а значения $S(k)$ стремятся к единице. Эти эмпирические результаты подтверждают теоретические, представленные ранее.
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=\linewidth]{posterior-synthetic-regression.pdf}
+    }
+    \centering{а) Синтетическая выборка (линейная регрессия)}
+    \centerfloat{
+        \includegraphics[width=\linewidth]{posterior-liver-disorders.pdf}
+    }
+    \centering{б) Выборка Liver Disorders (регрессия)}
+    \vspace{1em}
+    \caption{Сходимость функций $KL(k)$ и $S(k)$ в различных задачах и на различных выборках. Оба критерия стремятся к предельным значениям при увеличении размера выбори}
+    \label{fig:posterior-convergence}
+\end{figure}
+
+\subsection{Зависимость критериев от гиперпараметра $\varepsilon$}\label{subsec:exp-hyperparam}
+
+В определениях достаточности по каждому из критериев: D, M, KL, S участвует гиперпараметр~$\varepsilon$, который отвечает за порог для достаточного размера выборки $m^*$. С целью изучения зависимости между ними, мы представляем графики на рисунке~\ref{fig:sufficient-vs-threshold}, которые демонстрируют, какой размер выборки следует выбрать, чтобы обеспечить определенный уровень уверенности.
+
+\begin{figure}[ht]
+    \centerfloat{
+        \includegraphics[width=\linewidth]{sufficient-vs-threshold.pdf}
+    }
+    \caption{Зависимость достаточного размера выборки согласно введенным критериям от гиперпараметра $\varepsilon$. Рассматриваются три задачи: синтетическая регрессия и классификация, а также регрессия на датасете Liver Disorders. Чем больше значение гиперпараметра $\varepsilon$, тем меньше требуется обучающих объектов}
+    \label{fig:sufficient-vs-threshold}
+\end{figure}
+
+По результатам эксперимента видно, что все четыре критерия обладают примерно одинаковой зависимостью от значения~$\varepsilon$. Таким образом, важно правильно подбирать значение гиперпараметра для корректного определения достаточного размера выборки.
+
+\subsection{Сравнение критериев на множестве выборок}\label{subsec:exp-comparison}
+
+Чтобы оценить эффективность предложенных методов на разных наборах данных, были выбраны выборки из открытой библиотеки UCI~\todo{(cсылка или как-то еще)}. Подробная информация о каждом наборе данных, количество наблюдений и количество признаков представлены в таблице~\ref{tab:linear-comparison}. Для демонстрационных целей были выбраны такие значения гиперпараметра $\varepsilon$, при которых значения функций $D(k)$ и $M(k)$ уменьшаются в 1000 раз, а значения функций $KL(k)$ и $S(k)$ приближаются к предельным вдвое. Соответствующие результаты приведены в таблице~\ref{tab:linear-comparison}. Пропуски означают, что первоначальный размер выборки недостаточен.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Сравнение предложенных критериев достаточного размера выборки на множестве реальных выборок с задачей регрессии. Пропуски означают, что первоначальный размер выборки недостаточен}
+    \label{tab:linear-comparison}
+    % \renewcommand{\arraystretch}{1.5}
+    \begin{SingleSpace}
+        \begin{tabular}{@{}lcccccc@{}} 
+            \toprule
+            Название выборки & Объектов $m$ & Признаков $n$ & D & M & KL & S \\
+            \midrule
+            Abalone & 4177 & 8 & 96 & 96 & 3921 & 4091 \\
+            Auto MPG & 392 & 8 & 15 & 15 & 62 & --- \\
+            Automobile & 159 & 25 & 70 & 156 & 156 & --- \\
+            Liver Disorders & 345 & 6 & 12 & 19 & --- & --- \\
+            Servo & 167 & 4 & 41 & --- & 163 & 163 \\
+            Forest fires & 517 & 12 & 208 & --- & 507 & --- \\
+            Wine Quality & 6497 & 12 & 144 & 144 & 5305 & 6099 \\
+            Energy Efficiency & 768 & 9 & 24 & 442 & --- & --- \\
+            Student Performance & 649 & 32 & 129 & 177 & 636 & --- \\
+            Facebook Metrics & 495 & 18 & 31 & 388 & 475 & ---  \\
+            Real Estate Valuation & 414 & 7 & 15 & 23 & --- & --- \\
+            Heart Failure & 299 & 12 & 63 & 224 & 276 & 293 \\
+            BMT: children & 142 & 36 & --- & --- & 109 & --- \\
+            \bottomrule
+        \end{tabular}
+    \end{SingleSpace}
+\end{table}
+
+По результатам видно, что критерии D- и M-достаточности часто говорят о схожем значении достаточного размера выборки. Тем временем, критерий S-достаточности часто оказывается более консервативным по сравнению с KL-достаточностью.
+
+\clearpage
+\section{Обсуждение}
+
+\textbf{Логистическая регрессия.} В задаче бинарной классификации с метками $y \in \{0, 1\}$ логистическая регрессия задается правдоподобием
+\begin{equation}
+p(y | \mathbf{x}, \mathbf{w}) = \sigma(\mathbf{w}^\top \mathbf{x})^y (1 - \sigma(\mathbf{w}^\top \mathbf{x}))^{1-y}, \qquad \sigma(z) = \frac{1}{1 + e^{-z}}.
+\end{equation}
+Апостериорное распределение параметров уже не является нормальным; сопряженного априора не существует. Тем не менее при достаточно большом размере выборки апостериор асимптотически нормален (результат Бернштейна"--~фон Мизеса). На практике критерии KL и S применяются к логистической регрессии, а порог достаточности выбирается эмпирически~\cite{MOTRENKO2014743}. Теоретическое обоснование сходимости для логистической регрессии требует дополнительного анализа.
+
+\textbf{Обобщенные линейные модели (GLM).} Обобщенные линейные модели включают линейную и логистическую регрессию как частные случаи~\cite{mccullagh1989generalized}. Модель задается линейным предиктором $\eta = \mathbf{w}^\top \mathbf{x}$, функцией связи и распределением из экспоненциального семейства. Для GLM с канонической функцией связи оценка ММП существует при определенных условиях на данные. Сходимость апостериора и применимость критериев D, M, KL, S зависят от конкретного вида модели; для ряда GLM (например, регрессии Пуассона) возможны аналоги теорем~\ref{th:M-sufficient}, \ref{th:KL-sufficient}, \ref{th:S-sufficient} при дополнительных предположениях.
+
+\textbf{Сравнительный анализ критериев.} Критерии D и M основаны на бутстрапировании подвыборок и вычислении правдоподобия в точке ОМП. Их преимущество "--- простота вычислений: не требуется полное апостериорное распределение. Критерии KL и S требуют знания апостериора на схожих подвыборках; для линейной регрессии с сопряженным априором они вычисляются аналитически. Эмпирические исследования показывают, что KL-достаточный размер, как правило, оказывается наименьшим, а S-достаточный "--- наибольшим при фиксированном пороге $\varepsilon$. Это объясняется различной чувствительностью KL-дивергенции и s-score к различиям распределений. Выбор критерия зависит от задачи: при необходимости консервативной оценки предпочтителен S; при ограничениях на объем данных может быть достаточен критерий KL.

@@ -1,386 +1,2951 @@
-\chapter{Распределение оптимальных параметров в линейных моделях}\label{ch:linear}
+\chapter{Спектральные свойства матриц Гессе нейронных сетей}\label{ch:hessian}
 
-В данной главе рассматриваются методы определения достаточного размера обучающей выборки для вероятностных линейных моделей. Сначала вводится вероятностная постановка линейной регрессии и описывается зависимость апостериорного распределения параметров от размера выборки. Далее формулируются четыре критерия достаточности: D-достаточность (дисперсия правдоподобия), M-достаточность (изменение математического ожидания правдоподобия), KL-достаточность (расхождение Кульбака"--~Лейблера между апостериорами) и S-достаточность (метрика близости s-score). Для каждого критерия приводятся теоремы о корректности и условия сходимости в модели линейной регрессии. В заключение обсуждается обобщение на логистическую регрессию и обобщенные линейные модели.
+В данной главе исследуются спектральные свойства матрицы Гессе для ряда архитектур нейронных сетей. Сначала мы обсуждаем, почему именно матрица Гессе описывает локальные свойства кривизны поверхности функции потерь. Затем рассматривается разложение Гаусса"--~Ньютона матрицы Гессе и предлагается подход к оценке спектральной нормы всей матрицы на основе доминирующей части этого разложения. Доказываются теоремы об общем виде матрицы Гессе матрично-представимых нейронных сетей, после чего доказываются теоремы о верхней оценке ее спектральной нормы для известных архитектур: полносвязной, сверточной и трансформерной.
 
 \section{Введение}
 
 TODO
 
-\section{Обзор существующих методов}
-
-TODO
-
 \section{Предварительные сведения}
 
-\textbf{Вероятностная модель линейной регрессии.} В задаче регрессии объект~--- это пара $(\mathbf{x}, y)$, где $\mathbf{x} \in \mathbb{R}^n$~--- вектор признаков, $y \in \mathbb{R}$~--- целевая переменная. Выборка размера $m$ задается множеством $\mathfrak{D}_m = \{(\mathbf{x}_i, y_i)\}_{i=1}^m$. Матрица объекты"--~признаки $\mathbf{X}_m = [\mathbf{x}_1, \ldots, \mathbf{x}_m]^\top \in \mathbb{R}^{m \times n}$ и вектор ответов $\mathbf{y}_m = [y_1, \ldots, y_m]^\top \in \mathbb{R}^m$ определяют выборку в матричной форме.
+\textbf{Матрица Гессе функции потерь.} Объектом называется пара $(\mathbf{x}, \mathbf{y})$, где $\mathbf{x} \in \mathbb{R}^n$ "--- вектор признакового описания, $\mathbf{y} \in \mathbb{R}^K$ "--- целевая переменная. В задаче регрессии $K = 1$, в задаче классификации $K > 1$ и $\mathbf{y} = [0, \ldots, 1, \ldots, 0]^\top$, где единица стоит на $k$-ой позиции, соответствуя истинной метке класса~$k$. Выборка размера~$m$ задается множеством $\mathfrak{D}_m = \{(\mathbf{x}_i, \mathbf{y}_i)\}_{i=1}^m$ из $m$ независимых реализаций пар~$(\mathbf{x}, \mathbf{y})$. 
 
-Вероятностная модель линейной регрессии задается правдоподобием
+Параметрической моделью называется семейство функций $f_{\mathbf{w}}: \mathbb{R}^{n} \to \mathbb{R}^{K}$, задаваемое вектором параметров $\mathbf{w} \in \mathbb{R}^{N}$. Выбор модели из этого семейства проводится с помощью эмпирической функции потерь, вычисляемой на заданной выборке: 
 \begin{equation}
-\label{eq:linreg-likelihood}
-p(y | \mathbf{x}, \mathbf{w}) = \mathcal{N}(y | \mathbf{w}^\top \mathbf{x}, \sigma^2),
+\label{eq:empirical-loss}
+\mathcal{L}_m(\mathbf{w}) = \frac{1}{m} \sum_{i=1}^m \ell(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i),
 \end{equation}
-где $\mathbf{w} \in \mathbb{R}^n$~--- вектор параметров, $\sigma^2 > 0$~--- известная дисперсия шума. Для простой выборки функция правдоподобия имеет вид
+где $\ell: \mathbb{R}^{K} \times \mathbb{R}^{K} \to \mathbb{R}^+$~--- функция потерь на одном объекте (например, квадратичная или кросс-энтропийная). Обучение модели таким образом есть решение оптимизационной задачи
 \begin{equation}
-\label{eq:likelihood-full}
-L(\mathfrak{D}_m, \mathbf{w}) = p(\mathbf{y}_m | \mathbf{X}_m, \mathbf{w}) = (2\pi\sigma^2)^{-m/2} \exp\left(-\frac{1}{2\sigma^2} \|\mathbf{y}_m - \mathbf{X}_m \mathbf{w}\|_2^2\right),
-\end{equation}
-а логарифмическая функция правдоподобия
-\begin{equation}
-\label{eq:loglikelihood}
-l(\mathfrak{D}_m, \mathbf{w}) = \log L(\mathfrak{D}_m, \mathbf{w}) = -\frac{m}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2} \|\mathbf{y}_m - \mathbf{X}_m \mathbf{w}\|_2^2.
+    \label{eq:min-problem}
+    \mathbf{w}^* \in \argmin_{\mathbf{w} \in \mathbb{R}^{N}} \mathcal{L}_m(\mathbf{w}).
 \end{equation}
 
-Оценкой максимума правдоподобия (ММП) по подвыборке $\mathfrak{D}_k \subseteq \mathfrak{D}_m$ размера $k$ называется
+Локальные свойства оптимизационной поверхности функции $\mathcal{L}_m(\mathbf{w})$ в точке~$\mathbf{w}$ задаются ее производными первого и второго порядка. Вектор градиента
 \begin{equation}
-\label{eq:mle}
-\hat{\mathbf{w}}_k = \argmax_{\mathbf{w}} L(\mathfrak{D}_k, \mathbf{w}) = \argmin_{\mathbf{w}} \|\mathbf{y}_k - \mathbf{X}_k \mathbf{w}\|_2^2.
+    \label{eq:gradient}
+    \nabla_{\mathbf{w}} \mathcal{L}_m(\mathbf{w}) \in \mathbb{R}^{N}
 \end{equation}
-При условии полного столбцового ранга матрицы $\mathbf{X}_k$ оценка ММП единственна и задается формулой
+определяет направление наискорейшего возрастания функции потерь, тогда как матрица Гессе
 \begin{equation}
-\hat{\mathbf{w}}_k = (\mathbf{X}_k^\top \mathbf{X}_k)^{-1} \mathbf{X}_k^\top \mathbf{y}_k.
+    \label{eq:hessian}
+    \mathbf{H}^{(m)}(\mathbf{w}) = \nabla_{\mathbf{w}}^2 \mathcal{L}_m(\mathbf{w}) \in \mathbb{R}^{N \times N}
 \end{equation}
+характеризует локальную кривизну оптимизационной поверхности. Спектральные свойства матрицы $\mathbf{H}^{(m)}(\mathbf{w})$ определяют геометрию в окрестности точки минимума: большие собственные значения соответствуют направлениям высокой кривизны, а малые "--- направлениям слабой кривизны~\todo{(ссылки)}.
 
-\textbf{Апостериорное распределение параметров и его зависимость от размера выборки.} При заданном априорном распределении $p(\mathbf{w})$ апостериорное распределение параметров по правилу Байеса имеет вид
+Поскольку функция потерь~\eqref{eq:empirical-loss} задается усреднением по объектам обучающей выборки, ее матрица Гессе также представляется в виде среднего:
 \begin{equation}
-\label{eq:posterior}
-p(\mathbf{w} | \mathfrak{D}_k) = \frac{p(\mathfrak{D}_k | \mathbf{w}) p(\mathbf{w})}{p(\mathfrak{D}_k)} \propto L(\mathfrak{D}_k, \mathbf{w}) p(\mathbf{w}).
+    \label{eq:hessian-mean}
+    \mathbf{H}^{(m)}(\mathbf{w}) = \frac{1}{m}\sum_{i=1}^m \mathbf{H}_i(\mathbf{w}),
+    \qquad
+    \mathbf{H}_i(\mathbf{w}) = \nabla_{\mathbf{w}}^2 \ell\left(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i\right) \in \mathbb{R}^{N \times N}.
 \end{equation}
+Тем самым исследование спектральных свойств~$\mathbf{H}^{(m)}(\mathbf{w})$ сводится к анализу~$\mathbf{H}_i(\mathbf{w})$ на отдельных объектах $(\mathbf{x}_i, \mathbf{y}_i)$ выборки~$\mathfrak{D}_{m}$.
 
-Для гауссовского априорного распределения $p(\mathbf{w}) = \mathcal{N}(\mathbf{w} | \boldsymbol{\mu}_0, \boldsymbol{\Sigma}_0)$ и правдоподобия \eqref{eq:linreg-likelihood} апостериорное распределение сопряжено и также является гауссовским~\cite{bishop2006pattern}:
+\textbf{Разложение Гаусса"--~Ньютона матрицы Гессе.} \textit{Далее в главе мы опускаем индекс объекта~$i$, переходя к анализу матрицы Гессе~$\mathbf{H}(\mathbf{w})$ на одном объекте $(\mathbf{x}, \mathbf{y})$.} Воспользуемся правилом дифференцирования сложной функции для матрицы Гессе. Обозначим
 \begin{equation}
-\label{eq:posterior-gaussian}
-p(\mathbf{w} | \mathfrak{D}_k) = \mathcal{N}(\mathbf{w} | \mathbf{m}_k, \boldsymbol{\Sigma}_k),
+    \label{eq:outputs-jacobian-curvature}
+    \mathbf{z} = f_{\mathbf{w}}(\mathbf{x}) \in \mathbb{R}^{K},
+    \qquad
+    \mathbf{J}(\mathbf{w}) = \frac{\partial \mathbf{z}}{\partial \mathbf{w}} \in \mathbb{R}^{K \times N},
+    \qquad
+    \mathbf{A}(\mathbf{w}) = \nabla_{\mathbf{z}}^2 \ell(\mathbf{z}, \mathbf{y}) \in \mathbb{R}^{K \times K},
+\end{equation}
+где~$\mathbf{z}$ суть выход модели, $\mathbf{J}(\mathbf{w})$ есть якобиан выхода модели по параметрам, $\mathbf{A}(\mathbf{w})$ "--- матрица кривизны функции потерь по выходу модели. Тогда матрица Гессе на одном объекте допускает разложение
+\begin{equation}
+    \label{eq:gauss-newton-decomposition}
+    \mathbf{H}(\mathbf{w})
+    =
+    \mathbf{G}(\mathbf{w})
+    +
+    \mathbf{R}(\mathbf{w}),
 \end{equation}
 где
 \begin{equation}
-\boldsymbol{\Sigma}_k^{-1} = \boldsymbol{\Sigma}_0^{-1} + \frac{1}{\sigma^2} \mathbf{X}_k^\top \mathbf{X}_k, \qquad \mathbf{m}_k = \boldsymbol{\Sigma}_k \left( \boldsymbol{\Sigma}_0^{-1} \boldsymbol{\mu}_0 + \frac{1}{\sigma^2} \mathbf{X}_k^\top \mathbf{y}_k \right).
+    \label{eq:gauss-newton-term}
+    \mathbf{G}(\mathbf{w})
+    =
+    \mathbf{J}(\mathbf{w})^\top
+    \mathbf{A}(\mathbf{w})
+    \mathbf{J}(\mathbf{w})
 \end{equation}
-
-Математическое ожидание $\mathbf{m}_k$ и матрица ковариации $\boldsymbol{\Sigma}_k$ апостериорного распределения зависят от подвыборки $\mathfrak{D}_k$. При увеличении размера выборки~$k$ матрица $\mathbf{X}_k^\top \mathbf{X}_k$ накапливает информацию о признаках, дисперсия апостериора~$\boldsymbol{\Sigma}_k$ уменьшается, а апостериорное среднее~$\mathbf{m}_k$ приближается к истинным параметрам при выполнении условий регулярности.
-
-\textbf{Сходимость распределения оптимальных параметров.} Для частотного подхода важна сходимость оценки ММП $\hat{\mathbf{w}}_k$. Из асимптотической теории известно, что при стандартных условиях регулярности (ограниченность информационной матрицы Фишера, непрерывность и т.\,д.) выполняется
+есть гаусс-ньютоновская компонента, а
 \begin{equation}
-\sqrt{k} (\hat{\mathbf{w}}_k - \mathbf{w}^*) \xrightarrow{d} \mathcal{N}(0, \mathcal{I}^{-1}(\mathbf{w}^*)),
+    \label{residual-term}
+    \mathbf{R}(\mathbf{w})
+    =
+    \sum_{k=1}^K
+    \frac{\partial \ell(\mathbf{z}, \mathbf{y})}{\partial z_{k}}
+    \nabla_{\mathbf{w}}^2 z_{k}
 \end{equation}
-где $\mathbf{w}^*$~--- истинный вектор параметров, $\mathcal{I}(\mathbf{w})$~--- информационная матрица Фишера. Таким образом, оценка ММП состоятельна и асимптотически нормальна.
+есть остаточная компонента, связанная со вторыми производными выходов модели по параметрам.
 
-Для байесовского подхода ключевым является сходимость моментов апостериорного распределения. При увеличении $k$ естественно ожидать, что $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$, т.\,е. добавление одного объекта все меньше влияет на апостериор. Условия, при которых эта сходимость имеет место, формулируются в разделе~\ref{sec:linear-theory}.
+Разложение~\eqref{eq:gauss-newton-decomposition} разделяет два источника кривизны оптимизационной поверхности. Гаусс-ньютоновская компонента $\mathbf{G}(\mathbf{w})$ определяется кривизной функции потерь по выходу модели и якобианом отображения $\mathbf{w} \mapsto \mathbf{z}$. Остаточная компонента $\mathbf{R}(\mathbf{w})$ определяется нелинейностью самой параметризации модели и зависит от вторых производных выходов по параметрам. Для нейронных сетей спектр матрицы Гессе, как правило, имеет выраженную неоднородную структуру: основная масса собственных значений сосредоточена вблизи нуля, тогда как небольшое число выбросов задает главные направления кривизны~\todo{(ссылки)}. В рамках разложения Гаусса--Ньютона именно гаусс-ньютоновская компонента $\mathbf{G}(\mathbf{w})$ определяет спектрально значимую часть матрицы Гессе. Остаточная компонента $\mathbf{R}(\mathbf{w})$ вносит вклад преимущественно в область малых собственных значений и, кроме того, ослабевает в окрестности точки минимума, поскольку пропорциональна производным функции потерь по выходу модели. По этой причине в дальнейшем основное внимание будет уделено исследованию гаусс-ньютоновской компоненты.
 
-\section{Критерии достаточности для линейных моделей}
+\section{Матрично-представимые нейронные сети и факторизация гаусс-ньютоновской компоненты}
 
-Зафиксируем полную выборку $\mathfrak{D}_m$ и рассмотрим подвыборки $\mathfrak{D}_k \subseteq \mathfrak{D}_m$ размера $k \leqslant m$. Пусть $\hat{\mathbf{w}}_k$~--- оценка ММП по $\mathfrak{D}_k$, $p_k(\mathbf{w}) = p(\mathbf{w} | \mathfrak{D}_k)$~--- апостериорное распределение параметров.
-
-\begin{definition}
-    Размер выборки $m^*$ называется \emph{достаточным} согласно критерию $T$, если $T$ выполняется для всех $k \geqslant m^*$.
-\end{definition}
-
-Ниже вводятся четыре критерия, различающиеся тем, какую характеристику стабильности модели они используют.
-
-\subsection{D-достаточность: дисперсия оптимальных параметров}
-
-Идея D-критерия: при достаточном размере выборки оценка параметров мало меняется от одной реализации подвыборки к другой, поэтому дисперсия значения правдоподобия (или его логарифма) в точке оценки по подвыборкам не должна превышать порога.
+Для получения единых выражений для различных архитектур введем класс матрично-представимых нейронных сетей. Основная идея состоит в том, что каждый слой такой сети задается линейным оператором, зависящим от параметров слоя, а вся сеть представляется как композиция линейных преобразований и нелинейных активаций. Такой подход охватывает полносвязные сети, сверточные сети после матризации операции свертки, а также ряд блоков трансформерных архитектур, содержащих линейные проекции и другие матрично задаваемые преобразования.
 
 \begin{definition}
-    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется \emph{D-достаточным}, если для всех $k \geqslant m^*$
-    \begin{equation}
-    \label{eq:D-sufficient}
-    D(k) = \mathbb{D}_{\hat{\mathbf{w}}_k} L(\mathfrak{D}_m, \hat{\mathbf{w}}_k) \leqslant \varepsilon,
-    \end{equation}
-    где дисперсия берется по распределению оценки $\hat{\mathbf{w}}_k$ (индуцированному случайностью подвыборки $\mathfrak{D}_k$).
-\end{definition}
-
-Вместо $L(\mathfrak{D}_m, \hat{\mathbf{w}}_k)$ можно рассматривать логарифм $l(\mathfrak{D}_m, \hat{\mathbf{w}}_k)$; выбор той или иной формы влияет на масштаб порога $\varepsilon$.
-
-\subsection{M-достаточность: изменение математического ожидания}
-
-M-критерий фиксирует малое изменение математического ожидания правдоподобия при добавлении одного объекта в подвыборку.
-
-\begin{definition}
-    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется \emph{M-достаточным}, если для всех $k \geqslant m^*$
-    \begin{equation}
-    \label{eq:M-sufficient}
-    M(k) = \left| \mathbb{E} L(\mathfrak{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E} L(\mathfrak{D}_m, \hat{\mathbf{w}}_k) \right| \leqslant \varepsilon,
-    \end{equation}
-    где математическое ожидание берется по подвыборкам $\mathfrak{D}_{k+1}$ и $\mathfrak{D}_k$ соответственно.
-\end{definition}
-
-Если $\mathfrak{D}_{k+1}$ получается добавлением одного объекта к $\mathfrak{D}_k$, то M-критерий формализует интуицию: при достаточном объеме данных добавление очередного объекта почти не меняет ожидаемое значение правдоподобия на полной выборке.
-
-\subsection{KL-достаточность: расхождение Кульбака"--~Лейблера апостериорных распределений}
-
-В работе~\cite{MOTRENKO2014743} для логистической регрессии предложено использовать KL-дивергенцию между апостериорными распределениями на <<схожих>> подвыборках (отличающихся одним объектом). Подвыборки $\mathfrak{D}^1$ и $\mathfrak{D}^2$ называются \emph{схожими}, если множества их индексов отличаются ровно одним элементом: $|\mathcal{I}_1 \triangle \mathcal{I}_2| = 1$.
-
-\begin{definition}
-    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется \emph{KL-достаточным}, если для всех $k \geqslant m^*$ при схожих подвыборках $\mathfrak{D}_k$ и $\mathfrak{D}_{k+1}$ выполняется
-    \begin{equation}
-    \label{eq:KL-sufficient}
-    \mathrm{KL}(k) = D_{\mathrm{KL}}(p_k \| p_{k+1}) = \int p_k(\mathbf{w}) \log \frac{p_k(\mathbf{w})}{p_{k+1}(\mathbf{w})} \, d\mathbf{w} \leqslant \varepsilon.
-    \end{equation}
-\end{definition}
-
-KL-дивергенция характеризует <<расстояние>> между распределениями: при близких апостериорах $\mathrm{KL}(k)$ мала.
-
-\subsection{S-достаточность: метрика близости распределений}
-
-В качестве альтернативы KL-дивергенции можно использовать функцию s-score~\cite{Aduenko2017}, задающую меру близости двух плотностей:
+Нейронная сеть называется \emph{матрично-представимой}, если ее выход $\mathbf{z} = f_{\mathbf{w}}(\mathbf{x})$ для входа $\mathbf{x}$ может быть записан в виде композиции
 \begin{equation}
-\label{eq:s-score}
-\mathrm{s}\text{-score}(g_1, g_2) = \frac{\int g_1(\mathbf{w}) g_2(\mathbf{w}) \, d\mathbf{w}}{\max_{\mathbf{b}} \int g_1(\mathbf{w} - \mathbf{b}) g_2(\mathbf{w}) \, d\mathbf{w}}.
+    \label{eq:matricized-networks-1}
+    \mathbf{x}^{(1)} = \mathbf{x},
+    \qquad
+    \mathbf{z}^{(p)} = T^{(p)}_{\mathbf{w}^{(p)}} \left(\mathbf{x}^{(p)}\right),
+    \qquad
+    \mathbf{x}^{(p+1)} = \sigma^{(p)}\left(\mathbf{z}^{(p)}\right),
+    \qquad p = 1, \dots, L-1,
 \end{equation}
-Числитель~--- интеграл произведения плотностей; знаменатель нормирует значение. Для идентичных распределений s-score равно 1.
-
-\begin{definition}
-    Зафиксируем $\varepsilon > 0$. Размер выборки $m^*$ называется S-достаточным, если для всех $k \geqslant m^*$
-    \begin{equation}
-    \label{eq:S-sufficient}
-    S(k) = \mathrm{s}\text{-score}(p_k, p_{k+1}) \geqslant 1 - \varepsilon.
-    \end{equation}
+\begin{equation}
+    \label{eq:matricized-networks-2}
+    f_{\mathbf{w}}(\mathbf{x}) = \mathbf{z}^{(L)} = T^{(L)}_{\mathbf{w}^{(L)}} \left(\mathbf{x}^{(L)}\right),
+\end{equation}
+где
+\begin{equation}
+    \mathbf{w} = \col \left(\mathbf{w}^{(1)}, \ldots, \mathbf{w}^{(L)}\right) = \left[\mathbf{w}^{(1)\top}, \ldots, \mathbf{w}^{(L)\top}\right]^\top,
+\end{equation}
+функции активации
+\begin{equation}
+    \label{eq:matricized-nonlinearities}
+    \sigma^{(p)}: \mathbb{R}^{n_p} \to \mathbb{R}^{n_p}
+\end{equation}
+задают нелинейные преобразования, а каждый оператор
+\begin{equation}
+    \label{eq:matricized-operator}
+    T^{(p)}_{\mathbf{w}^{(p)}} : \mathbb{R}^{n_{p-1}} \to \mathbb{R}^{n_p}
+\end{equation}
+линеен по входу $\mathbf{x}^{(p)}$, причем его зависимость от параметров $\mathbf{w}^{(p)} \in \mathbb{R}^{N_p}$ допускает матричное представление.
 \end{definition}
 
-Таким образом, при достаточном размере выборки апостериоры на схожих подвыборках должны быть близки в смысле s-score.
+Для каждого слоя введем два типа матриц. Во-первых, обозначим через
+\begin{equation}
+    \label{eq:layer-s}
+    \mathbf{S}^{(p)}(\mathbf{w})
+    =
+    \frac{\partial \mathbf{z}}{\partial \mathbf{z}^{(p)}}
+    \in \mathbb{R}^{K \times n_{p}}
+\end{equation}
+матрицу распространения возмущения предактивации $p$-го слоя к выходу сети. Эта матрица аккумулирует влияние всех последующих слоев и нелинейностей. Во-вторых, обозначим через
+\begin{equation}
+    \label{eq:layer-p}
+    \mathbf{P}^{(p)}(\mathbf{w})
+    =
+    \frac{\partial \mathbf{z}^{(p)}}{\partial \mathbf{w}^{(p)}}
+    \in \mathbb{R}^{n_p \times N_p}
+\end{equation}
+параметрический якобиан $p$-го слоя, связывающий приращения параметров слоя с приращениями его выходов под действием соответствующего линейного оператора. Тогда якобиан выхода сети по параметрам $p$-го слоя по правилу дифференцирования сложной функции записывается в виде
+\begin{equation}
+    \label{eq:layer-jacobian}
+    \mathbf{J}^{(p)}(\mathbf{w}) = \frac{\partial \mathbf{z}}{\partial \mathbf{w}^{(p)}} = \frac{\partial \mathbf{z}}{\partial \mathbf{z}^{(p)}} \cdot \frac{\partial \mathbf{z}^{(p)}}{\partial \mathbf{w}^{(p)}} = \mathbf{S}^{(p)}(\mathbf{w}) \mathbf{P}^{(p)}(\mathbf{w}) \in \mathbb{R}^{K \times N_p}.
+\end{equation}
 
-\section{Сходимость оптимизационной поверхности в вероятностной модели линейной регрессии}\label{sec:linear-theory}
+Далее, поскольку вектор параметров имеет блочную структуру $\mathbf{w} = \col \left(\mathbf{w}^{(1)}, \ldots, \mathbf{w}^{(L)}\right)$, полный якобиан выхода сети по всем параметрам представляется в виде горизонтальной конкатенации послойных якобианов:
+\begin{equation}
+    \label{eq:full-jacobian-block}
+    \mathbf{J}(\mathbf{w})
+    =
+    \frac{\partial \mathbf{z}}{\partial \mathbf{w}}
+    =
+    \left[
+    \mathbf{J}^{(1)}(\mathbf{w}), \ldots, \mathbf{J}^{(L)}(\mathbf{w})
+    \right],
+\end{equation}
+откуда с учетом \eqref{eq:layer-jacobian} получаем
+\begin{equation}
+    \label{eq:full-jacobian-factorized}
+    \mathbf{J}(\mathbf{w})
+    =
+    \left[
+    \mathbf{S}^{(1)}(\mathbf{w})\mathbf{P}^{(1)}(\mathbf{w}),
+    \ldots,
+    \mathbf{S}^{(L)}(\mathbf{w})\mathbf{P}^{(L)}(\mathbf{w})
+    \right].
+\end{equation}
 
-\begin{definition}
-    Критерий достаточности называется \emph{корректным}, если при увеличении размера выборки соответствующая функция сходится к предельному значению.
-\end{definition}
+Наконец, учитывая все введенные выше обозначения, мы можем сформулировать лемму о блочной факторизации гаусс-ньютоновской компоненты матрицы Гессе в матрично-представимых нейронных сетях.
 
-Отметим, что по сути корректность критерия позволяет гарантированно достичь заданного порога~$\varepsilon$, ограничивающего целевую функцию, при достаточно большом~$k$.
-
-В этом разделе мы сперва формулируем результаты о сходимости распределений параметров модели в
-
-\subsection{Сходимость распределения параметров модели}
-
-Обозначим $\mathbb{E} \hat{\mathbf{w}}_k = \mathbf{m}_k$ и $\mathbb{D} \hat{\mathbf{w}}_k = \boldsymbol{\Sigma}_k$ (здесь $\mathbf{m}_k$, $\boldsymbol{\Sigma}_k$~--- моменты распределения оценки ММП; в байесовской постановке с сопряженным априором они совпадают с параметрами апостериора).
-
-\begin{theorem}\label{th:M-sufficient}
-    Пусть $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$. Тогда в модели линейной регрессии определение M-достаточного размера выборки корректно: для любого $\varepsilon > 0$ существует $m^*$ такое, что для всех $k \geqslant m^*$ выполняется $M(k) \leqslant \varepsilon$.
-\end{theorem}
-
-Для моделей с нормальным апостериорным распределением параметров (в том числе линейной регрессии с гауссовским априором) KL-дивергенция и s-score допускают явные выражения через $\mathbf{m}_k$, $\mathbf{m}_{k+1}$, $\boldsymbol{\Sigma}_k$, $\boldsymbol{\Sigma}_{k+1}$. Благодаря этому формулируются две следующих теоремы.
-
-\begin{theorem}\label{th:KL-sufficient}
-    Пусть апостериорные распределения $p_k$, $p_{k+1}$ нормальны и $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$, $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$. Тогда определение KL-достаточного размера выборки корректно: для любого $\varepsilon > 0$ существует $m^*$ такое, что $\mathrm{KL}(k) \leqslant \varepsilon$ для всех $k \geqslant m^*$.
-\end{theorem}
-
-\begin{theorem}\label{th:S-sufficient}
-    Пусть апостериорные распределения $p_k$, $p_{k+1}$ нормальны и $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ при $k \to \infty$. Тогда определение S-достаточного размера выборки корректно: для любого $\varepsilon > 0$ существует $m^*$ такое, что $S(k) \geqslant 1 - \varepsilon$ для всех $k \geqslant m^*$.
-\end{theorem}
-
-Отметим, что для S-достаточности сходимости ковариационных матриц не требуется~--- достаточно сходимости средних.
-
-Для применения теорем~\ref{th:M-sufficient}, \ref{th:KL-sufficient}, и \ref{th:S-sufficient} необходимо проверить выполнение условий на моменты. В линейной регрессии с гауссовским априором апостериор нормален, и моменты задаются явными формулами. Следующий результат обеспечивает сходимость в модели линейной регрессии.
-
-\begin{theorem}\label{th:moments}
-    Пусть множества значений признаков и целевой переменной ограничены: $\exists M \in \mathbb{R}: \|\mathbf{x}\|_2 \leqslant M$, $|y| \leqslant M$. Пусть минимальное собственное значение матрицы $\mathbf{X}_k^\top \mathbf{X}_k$ удовлетворяет условию $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ при $k \to \infty$. Тогда в линейной регрессии с нормальным априорным распределением параметров $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$.
-\end{theorem}
-
-Условие $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ означает, что минимальное собственное значение растет быстрее $\sqrt{k}$ и гарантирует отсутствие сильной мультиколлинеарности при росте выборки. На практике это условие часто выполняется для <<хорошо обусловленных>> данных.
-
-\subsection{Сходимость полного байесовского прогноза}
-
-В предыдущем разделе было показано, что при увеличении используемого размера выборки в модели линейной регрессии наблюдается сходимость апостериорных распределений параметров на схожих подвыборках. Однако на практике нас больше интересует прогноз, который можно сделать на тестовой выборке, предварительно настроив модель на обучающей.
-
-Пусть предварительно было произведено разбиение выборки $\mathfrak{D}_m$ на обучающую и тестовую, то есть
-\[
-\mathfrak{D}_m = \mathfrak{D}_{m_1}^{\text{train}} \sqcup \mathfrak{D}_{m_2}^{\text{test}},
-\]
-где $\mathfrak{D}_{m_1}^{\text{train}} = (\mathbf{X}_{\text{train}}, \mathbf{y}_{\text{train}})$ и $\mathfrak{D}_{m_2}^{\text{test}} = (\mathbf{X}_{\text{test}}, \mathbf{y}_{\text{test}})$.
-
-Рассмотрим подвыборку $(\mathbf{X}_k, \mathbf{y}_k) \subset \mathfrak{D}_{m_1}^{\text{train}}$ и сформулируем теорему о близости полных байесовских прогнозов, сделанных на схожих подвыборках обучающей выборки.
-
-\begin{theorem}\label{th:prediction-convergence}
-Пусть множества значений признаков и целевой переменной ограничены, то есть $\exists M \in \mathbb{R}:$ $\|\mathbf{x}\|_2 \leqslant M$ и $|y| \leqslant M$. Если $\lambda_{\min}(\mathbf{X}_k^\top \mathbf{X}_k) = \omega(\sqrt{k})$ при $k \to \infty$, то в модели линейной регрессии с нормальным априорным распределением параметров
-\[
-D_{\mathrm{KL}}\left(p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k) \| p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_{k+1}, \mathbf{y}_{k+1})\right) \to 0
-\]
-при $k \to \infty$.
-\end{theorem}
-
-\section{Доказательства теоретических результатов}
-
-В данном приводятся доказательства основных теорем настоящей главы: \ref{th:M-sufficient}, \ref{th:KL-sufficient}, \ref{th:S-sufficient}, \ref{th:moments} и \ref{th:prediction-convergence}. Начнем с доказательства теоремы~\ref{th:M-sufficient} о корректности определения M-достаточного размера выборки.
-
-\begin{proof}[Доказательство теоремы~\ref{th:M-sufficient}]
-    Рассмотрим определение M-достаточного размера выборки в терминах логарифма функции правдоподобия. В модели линейной регрессии
-    \begin{align}
-        L\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) &= p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} p(y_i | \mathbf{x}_i, \hat{\mathbf{w}}_k) = \prod_{i=1}^{m} \mathcal{N}\left( y_i | \hat{\mathbf{w}}_k^{\top} \mathbf{x}_i, \sigma^2 \right) \notag \\
-        &= \left(2\pi\sigma^2 \right)^{-m/2} \exp\left(-\frac{1}{2\sigma^2}\|\mathbf{y} -\mathbf{X} \hat{\mathbf{w}}_k\|_2^2 \right). \label{eq:proof:M-sufficient:1}
-    \end{align}
-    Логарифмируя~\eqref{eq:proof:M-sufficient:1}, получаем
+\begin{lemma}
+    \label{lemma:GN-block-factorization}
+    Пусть $f_{\mathbf{w}}$ является матрично-представимой нейронной сетью, тогда гаусс-ньютоновская компонента матрицы Гессе имеет блочную структуру
     \begin{equation}
-        l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = \log p(\mathbf{y} | \mathbf{X}, \hat{\mathbf{w}}_k) = -\frac{m}{2}\log\left( 2\pi\sigma^2 \right) - \frac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \hat{\mathbf{w}}_k \|_2^2. \label{eq:proof:M-sufficient:2}
+        \label{eq:GN-factorization}
+        \mathbf{G}(\mathbf{w})
+        =
+        \left[
+        \mathbf{G}^{(p,q)}(\mathbf{w})
+        \right]_{p,q=1}^L,
     \end{equation}
-    Возьмем математическое ожидание~\eqref{eq:proof:M-sufficient:2} по $\mathfrak{D}_k$, учитывая, что $\mathbb{E}_{\mathfrak{D}_k}\hat{\mathbf{w}}_k=\mathbf{m}_k$ и $\text{cov}(\hat{\mathbf{w}}_k) = \mathbf{\Sigma}_k$, тогда имеем
+    где каждый блок $\mathbf{G}^{(p,q)}(\mathbf{w}) \in \mathbb{R}^{N_p\times N_q}$ задается выражением
     \begin{equation}
-        \mathbb{E}_{\mathfrak{D}_k} l\left( \mathfrak{D}_m, \hat{\mathbf{w}}_k \right) = -\frac{m}{2}\log\left( 2\pi\sigma^2 \right) - \frac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 + \text{tr}\left( \mathbf{X}^{\top}\mathbf{X} \mathbf{\Sigma}_k \right) \Big). \label{eq:proof:M-sufficient:3}
+        \label{eq:GN-block}
+        \mathbf{G}^{(p,q)}(\mathbf{w})
+        =
+        \mathbf{P}^{(p)}(\mathbf{w})^\top
+        \mathbf{S}^{(p)}(\mathbf{w})^\top
+        \mathbf{A}(\mathbf{w})
+        \mathbf{S}^{(q)}(\mathbf{w})
+        \mathbf{P}^{(q)}(\mathbf{w}).
     \end{equation}
-    Используя~\eqref{eq:proof:M-sufficient:3} для размеров~$k$ и $k+1$, запишем выражение для разности математических ожиданий, в таком случае получим
-    \begin{align}
-        &\mathbb{E}_{\mathfrak{D}_{k+1}} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k+1}) - \mathbb{E}_{\mathfrak{D}_k} l(\mathfrak{D}_m, \hat{\mathbf{w}}_{k}) = \notag \\
-        &= \frac{1}{2\sigma^2} \Big( \| \mathbf{y} - \mathbf{X} \mathbf{m}_k \|_2^2 - \| \mathbf{y} - \mathbf{X} \mathbf{m}_{k+1} \|_2^2 \Big) + \frac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \notag \\
-        &= \frac{1}{\sigma^2} \mathbf{y}^{\top} \mathbf{X} (\mathbf{m}_{k+1} - \mathbf{m}_k) \label{eq:proof:M-sufficient:4} \\
-        &+ \frac{1}{2\sigma^2} (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \label{eq:proof:M-sufficient:5} \\
-        &+ \frac{1}{2\sigma^2} \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big). \label{eq:proof:M-sufficient:6}
-    \end{align}
-    Значение функции $M(k)$ есть модуль от выражения выше. Применим неравенство треугольника для модуля, а затем оценим каждое слагаемое. Первое слагаемое~\eqref{eq:proof:M-sufficient:4} оценим, используя неравенство Коши--Буняковского:
-    \begin{equation}
-        \big| \mathbf{y}^{\top}\mathbf{X}(\mathbf{m}_{k+1}-\mathbf{m}_k)\big| \leqslant \| \mathbf{X}^{\top}\mathbf{y} \|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2. \label{eq:proof:M-sufficient:7}
-    \end{equation}
-    Второе слагаемое~\eqref{eq:proof:M-sufficient:5} оценим, используя неравенство Коши--Буняковского, свойство согласованности спектральной матричной нормы, а также ограниченность последовательности векторов $\mathbf{w}_k$, которая следует из предъявленной в условии сходимости:
-    \begin{align}
-        \big| (\mathbf{m}_k - \mathbf{m}_{k+1})^{\top} \mathbf{X}^{\top}\mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \big| &\leqslant \| \mathbf{X} (\mathbf{m}_k - \mathbf{m}_{k+1}) \|_2 \| \mathbf{X} (\mathbf{m}_k + \mathbf{m}_{k+1}) \|_2 \notag \\
-        &\leqslant \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \| \mathbf{m}_k + \mathbf{m}_{k+1} \|_2 \notag \\
-        &\leqslant C \| \mathbf{X} \|_2^2 \| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2. \label{eq:proof:M-sufficient:8}
-    \end{align}
-    Последнее слагаемое~\eqref{eq:proof:M-sufficient:6} оценим, используя неравенство Гёльдера для нормы Фробениуса:
-    \begin{equation}
-        \Big| \text{tr} \Big( \mathbf{X}^{\top}\mathbf{X} \left( \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \right) \Big) \Big| \leqslant \| \mathbf{X}^{\top}\mathbf{X} \|_F \| \mathbf{\Sigma}_k - \mathbf{\Sigma}_{k+1} \|_F. \label{eq:proof:M-sufficient:9}
-    \end{equation}
-    Наконец, поскольку по условию теоремы $\| \mathbf{m}_k - \mathbf{m}_{k+1} \|_2 \to 0$ и $\| \boldsymbol{\Sigma}_k - \boldsymbol{\Sigma}_{k+1} \|_{F} \to 0$ при $k \to \infty$, то выражения~\eqref{eq:proof:M-sufficient:7}, \eqref{eq:proof:M-sufficient:8} и \eqref{eq:proof:M-sufficient:9} стремятся к 0 при $k \to \infty$, а следовательно и $M(k) \to 0$ при $k \to \infty$, что доказывает теорему.
+\end{lemma}
+
+\begin{proof}
+По формуле~\eqref{eq:full-jacobian-factorized} имеем выражение якобиана
+\begin{equation}
+    \mathbf{J}(\mathbf{w})
+    =
+    \left[
+    \mathbf{S}^{(1)}(\mathbf{w})\mathbf{P}^{(1)}(\mathbf{w}),
+    \ldots,
+    \mathbf{S}^{(L)}(\mathbf{w})\mathbf{P}^{(L)}(\mathbf{w})
+    \right].
+\end{equation}
+Следовательно, транспонированной якобиан задается формулой
+\begin{equation}
+    \mathbf{J}(\mathbf{w})^\top
+    =
+    \begin{bmatrix}
+    \mathbf{P}^{(1)}(\mathbf{w})^\top \mathbf{S}^{(1)}(\mathbf{w})^\top\\
+    \vdots\\
+    \mathbf{P}^{(L)}(\mathbf{w})^\top \mathbf{S}^{(L)}(\mathbf{w})^\top
+    \end{bmatrix}.
+\end{equation}
+Подставляя эти выражения в определение гаусс-ньютоновской компоненты~\eqref{eq:gauss-newton-term},
+\begin{equation}
+    \mathbf{G}(\mathbf{w})
+    =
+    \mathbf{J}(\mathbf{w})^\top \mathbf{A}(\mathbf{w}) \mathbf{J}(\mathbf{w}),
+\end{equation}
+получаем блочную матрицу, $(p, q)$-й блок которой имеет факторизованный вид
+\begin{equation}
+    \mathbf{G}^{(p,q)}(\mathbf{w})
+    =
+    \mathbf{P}^{(p)}(\mathbf{w})^\top
+    \mathbf{S}^{(p)}(\mathbf{w})^\top
+    \mathbf{A}(\mathbf{w})
+    \mathbf{S}^{(q)}(\mathbf{w})
+    \mathbf{P}^{(q)}(\mathbf{w}),
+\end{equation}
+что и требовалось доказать.
 \end{proof}
 
-Теорема~\ref{th:M-sufficient} показывает, что при достаточном объеме выборки добавление очереднего объекта практически не изменяет ожидаемое значение функции правдоподобия на полной выборке. Тем не менее, особый интерес представляют результаты, полученные для полных апостериорных распределений параметров.
+Лемма~\ref{lemma:GN-block-factorization} показывает, что спектральные свойства гаусс-ньютоновской компоненты определяются тремя типами объектов. Матрица $\mathbf{A}(\mathbf{w})$ описывает кривизну функции потерь по выходу модели и не зависит от ее архитектуры. Матрицы $\mathbf{S}^{(p)}(\mathbf{w})$ характеризуют распространение возмущений от промежуточных слоев к выходу сети. Матрицы $\mathbf{P}^{(p)}(\mathbf{w})$ задают чувствительность выходов отдельных слоев к их параметрам. Поэтому анализ $\mathbf{G}(\mathbf{w})$ для конкретных архитектур сводится к исследованию структуры этих матриц и получению оценок для блоков~\eqref{eq:GN-block}.
 
-\begin{proof}[Доказательство теоремы~\ref{th:KL-sufficient}]
-    Дивергенция Кульбака"--~Лейблера для пары нормальных апостериорных распределений имеет вид
-    \begin{multline}
-        D_{\text{KL}}\left( p_k \| p_{k+1} \right) = \frac{1}{2} \Bigg( \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) + (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) - \\
-        - n + \log{\left( \frac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} \Bigg). \label{eq:proof:KL-sufficient:1}
-    \end{multline}
-    Представим $\boldsymbol{\Sigma}_{k+1}$ как $\boldsymbol{\Sigma}_{k+1} = \boldsymbol{\Sigma}_k + \Delta \boldsymbol{\Sigma}$. Рассмотрим в отдельности каждое слагаемое в~\eqref{eq:proof:KL-sufficient:1}.
-    Для первого слагаемого получаем
+\section{Полносвязные нейронные сети}
+
+Рассмотрим $L$-слойную полносвязную нейронную сеть, заданную рекуррентно:
+\begin{equation}
+    \label{eq:fcnn-1}
+    \mathbf{x}^{(1)} = \mathbf{x},
+    \qquad
+    \mathbf{z}^{(p)} = \mathbf{W}^{(p)}\mathbf{x}^{(p)} + \mathbf{b}^{(p)},
+    \qquad
+    \mathbf{x}^{(p+1)} = \sigma^{(p)}\left(\mathbf{z}^{(p)}\right),
+    \qquad p = 1, \ldots, L-1,
+\end{equation}
+\begin{equation}
+    \label{eq:fcnn-2}
+    f_{\mathbf{w}}(\mathbf{x}) = \mathbf{z}^{(L)} = \mathbf{W}^{(L)}\mathbf{x}^{(L)} + \mathbf{b}^{(L)},
+\end{equation}
+где $\mathbf{W}^{(p)} \in \mathbb{R}^{n_p \times n_{p-1}}$, $\mathbf{b}^{(p)} \in \mathbb{R}^{n_p}$, $\mathbf{w}^{(p)} = \col\left(\vecop\left(\mathbf{W}^{(p)}\right), \mathbf{b}^{(p)}\right)$. Она является матрично-представимой в смысле определения~\eqref{eq:matricized-operator}, т.\:к. для нее оператор~$T_{\mathbf{w}^{(p)}}^{(p)}$ задается умножением на матрицу~$\mathbf{W}^{(p)}$ и смещением на вектор~$\mathbf{b}^{(p)}$. Следовательно, к ней применима лемма~\ref{lemma:GN-block-factorization}. Здесь мы ввели обозначение $\vecop(\cdot)$ для операции векторизации матрицы по столбцам. Существует и другой вариант векторизации, по строкам, который мы будем использовать в следующих разделах, его будем обозначать $\vecrop(\cdot)$. Далее в этом разделе мы получим явные выражения для матриц $\mathbf{S}^{(p)}(\mathbf{w})$ и $\mathbf{P}^{(p)}(\mathbf{w})$, благодаря чему сформулируем теорему о верхней оценке на спектральную норму гаусс-ньютоновской компоненты матрицы Гессе полносвязной сети.
+
+\textbf{Матрица распространения возмущения $\mathbf{S}^{(p)}$} по определению~\eqref{eq:layer-s} и правилу дифференцирования сложной функции записывается в виде
+\begin{equation}
+    \label{eq:fcnn-layer-s-chain-rule}
+    \mathbf{S}^{(p)}(\mathbf{w})
+    =
+    \frac{\partial \mathbf{z}}{\partial \mathbf{z}^{(p)}}
+    =
+    \frac{\partial \mathbf{z}^{(L)}}{\partial \mathbf{z}^{(L-1)}}
+    \frac{\partial \mathbf{z}^{(L-1)}}{\partial \mathbf{z}^{(L-2)}}
+    \cdots
+    \frac{\partial \mathbf{z}^{(p+1)}}{\partial \mathbf{z}^{(p)}},
+\end{equation}
+откуда для явного выражения матрицы $\mathbf{S}^{(p)}(\mathbf{w})$ нам достаточно раскрыть формулу $\partial \mathbf{z}^{(p+1)} / \partial \mathbf{z}^{(p)}$. Поскольку $\mathbf{z}^{(p+1)} = \mathbf{W}^{(p+1)}\mathbf{x}^{(p+1)} + \mathbf{b}^{(p+1)}$ и $\mathbf{x}^{(p+1)} = \sigma^{(p)}\left(\mathbf{z}^{(p)}\right)$, то вновь по правилу дифференцирования сложной функции получаем
+\begin{equation}
+    \frac{\partial \mathbf{z}^{(p+1)}}{\partial \mathbf{z}^{(p)}} = \frac{\partial \mathbf{z}^{(p+1)}}{\partial \mathbf{x}^{(p+1)}} \cdot \frac{\partial \mathbf{x}^{(p+1)}}{\partial \mathbf{z}^{(p)}} = \mathbf{W}^{(p+1)} \mathbf{D}^{(p)}(\mathbf{w}),
+\end{equation}
+где мы обозначили диагональные матрицы производных активации
+\begin{equation}
+    \label{eq:fcnn-layer-d}
+    \mathbf{D}^{(p)}
+    =
+    \diag \left(\sigma^{(p)\prime}\left(\mathbf{z}^{(p)}\right)\right)
+    \in \mathbb{R}^{n_p \times n_p}.
+\end{equation}
+Таким образом, матрица распространения возмущения предактивации $p$-го слоя к выходу сети преобразуется в
+\begin{equation}
+    \label{eq:fcnn-layer-s}
+    \mathbf{S}^{(p)}(\mathbf{w})
+    =
+    \mathbf{W}^{(L)}
+    \mathbf{D}^{(L-1)}
+    \cdots
+    \mathbf{W}^{(p+1)}
+    \mathbf{D}^{(p)},
+    \qquad
+    p=1, \ldots, L-1,
+\end{equation}
+а для последнего слоя отдельно записывается как $\mathbf{S}^{(L)}(\mathbf{w}) = \mathbf{I}_{K}$.
+
+\textbf{Параметрический якобиан $\mathbf{P}^{(p)}$.} Для полносвязного слоя без смещения $\mathbf{z}^{(p)}=\mathbf{W}^{(p)}\mathbf{x}^{(p)}$ параметры естественно отождествляются с вектором $\mathbf{w}^{(p)}=\vecop\left(\mathbf{W}^{(p)}\right)$. Тогда, используя стандартное тождество векторизации
+\begin{equation}
+    \vecop\left(\mathbf{W}^{(p)}\mathbf{x}^{(p)}\right)
+    =
+    \left(\mathbf{x}^{(p)\top} \otimes \mathbf{I}_{n_p}\right)\vecop\left(\mathbf{W}^{(p)}\right),
+\end{equation}
+получаем
+\begin{equation}
+    \frac{\partial \mathbf{z}^{(p)}}{\partial \mathbf{w}^{(p)}}
+    =
+    \frac{\partial \mathbf{z}^{(p)}}{\partial \vecop \left(\mathbf{W}^{(p)}\right)}
+    =
+    \mathbf{x}^{(p)\top} \otimes \mathbf{I}_{n_p}.
+\end{equation}
+При добавлении вектора смещения $\mathbf{b}^{(p)}$ матрица $\partial \mathbf{z}^{(p)} / \partial \mathbf{w}^{(p)}$ дополняется справа столбцами единичной матрицы, а значит в результате имеем
+\begin{equation}
+    \label{eq:fcnn-layer-p}
+    \mathbf{P}^{(p)}(\mathbf{w})
+    =
+    \frac{\partial \mathbf{z}^{(p)}}{\partial \mathbf{w}^{(p)}}
+    =
+    \left[
+    \mathbf{x}^{(p)\top} \otimes \mathbf{I}_{n_p},
+    \mathbf{I}_{n_p}
+    \right].
+\end{equation}
+
+\textbf{Спектральная норма блока гаусс-ньютоновской компоненты} оценивается сверху исходя из выражения~\eqref{eq:GN-block}, для которого мы применяем свойство субмультипликативности спектральной нормы:
+\begin{equation}
+    \|\mathbf{G}^{(p,q)}(\mathbf{w})\|_2
+    \leqslant
+    \|\mathbf{P}^{(p)}(\mathbf{w})\|_2
+    \|\mathbf{S}^{(p)}(\mathbf{w})\|_2
+    \|\mathbf{A}(\mathbf{w})\|_2
+    \|\mathbf{S}^{(q)}(\mathbf{w})\|_2
+    \|\mathbf{P}^{(q)}(\mathbf{w})\|_2.
+\end{equation}
+По тому же свойству для матриц $\mathbf{S}^{(p)}$ можем записать
+\begin{equation}
+    \label{eq:layer-s-norm-bound}
+    \|\mathbf{S}^{(p)}\|_2
+    \leqslant 
+    \|\mathbf{W}^{(L)}\|_2
+    \|\mathbf{D}^{(L-1)}\|_2
+    \cdots
+    \|\mathbf{W}^{(p+1)}\|_2
+    \|\mathbf{D}^{(p)}\|_2.
+\end{equation}
+Далее сформулируем теорему, которая объединяет все проведенные выкладки, и при условии ограчений на вход сети и архитектурные свойства дает оценку на спектральную норму всей гаусс-ньютоновской компоненты матрицы Гессе.
+
+\begin{theorem}
+    \label{thm:fcnn-G-bound}
+    Пусть $f_{\mathbf{w}}$ является $L$-слойной полносвязной нейронной сетью без смещений. Предположим, что существуют такие положительные константы, что для всех слоев $p = 1, \ldots, L$ выполнены ограничения $\|\mathbf{x}\|_2 \leqslant M_{\mathbf{x}}$, $\|\mathbf{A}(\mathbf{w})\|_2 \leqslant M_{\mathbf{A}}$, $\|\mathbf{W}^{(p)}\|_2 \leqslant M_{\mathbf{W}}$ и $\|\mathbf{D}^{(p)}\|_2 \leqslant M_{\sigma}$. Тогда спектральная норма гаусс-ньютоновской компоненты матрицы Гессе удовлетворяет оценке
     \begin{equation}
-        \mathrm{tr}\left( \mathbf{\Sigma}_{k+1}^{-1} \mathbf{\Sigma}_k \right) = \mathrm{tr}\left( \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)^{-1} \mathbf{\Sigma}_k \right) \to \mathrm{tr} \left( \mathbf{I}_n \right) = n \label{eq:proof:KL-sufficient:2}
+        \label{eq:fcnn-G-bound}
+        \|\mathbf{G}(\mathbf{w})\|_2
+        \leqslant
+        L M_{\mathbf{x}}^2 M_{\mathbf{A}} \left(M_{\mathbf{W}} M_{\sigma}\right)^{2L-2}.
     \end{equation}
-    при $\| \Delta \boldsymbol{\Sigma} \|_F \to 0$. Для второго слагаемого имеем
+\end{theorem}
+
+\begin{proof}
+    В условиях теоремы из~\eqref{eq:layer-s-norm-bound} следует оценка
     \begin{equation}
-        \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \mathbf{\Sigma}_{k+1}^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \mathbf{\Sigma}_{k+1}^{-1} \|_2 \to 0 \label{eq:proof:KL-sufficient:3}
+        \label{eq:fcnn-S-bound}
+        \|\mathbf{S}^{(p)}(\mathbf{w})\|_2
+        \leqslant
+        M_{\mathbf{W}}^{L-p} M_{\sigma}^{L-p},
+        \qquad p = 1, \ldots, L.
     \end{equation}
-    при $ \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$. Наконец, для последнего слагаемого можем записать
+    Для параметрического якобиана в отсутствие смещений из формулы
     \begin{equation}
-        \log{\left( \frac{\det \mathbf{\Sigma}_{k+1}}{\det \mathbf{\Sigma}_{k}} \right)} = \log{\left( \frac{\det \left( \mathbf{\Sigma}_k + \Delta \boldsymbol{\Sigma} \right)}{\det \mathbf{\Sigma}_{k}} \right)} \to \log \det \mathbf{I}_n = \log 1 = 0 \label{eq:proof:KL-sufficient:4}
+        \mathbf{P}^{(p)}(\mathbf{w})
+        =
+        \mathbf{x}^{(p)\top} \otimes \mathbf{I}_{n_p}
     \end{equation}
-    при $ \| \Delta \boldsymbol{\Sigma} \|_F \to 0$. Объединяя предельные соотношения~\eqref{eq:proof:KL-sufficient:2}, \eqref{eq:proof:KL-sufficient:3} и \eqref{eq:proof:KL-sufficient:4}, получаем требуемое в условиях теоремы.
+    и свойства спектральной нормы произведения Кронекера получаем
+    \begin{equation}
+        \label{eq:fcnn-P-bound}
+        \|\mathbf{P}^{(p)}(\mathbf{w})\|_2
+        =
+        \|\mathbf{x}^{(p)\top} \otimes \mathbf{I}_{n_p}\|_2
+        =
+        \|\mathbf{x}^{(p)}\|_2.
+    \end{equation}
+    Далее, поскольку сеть не содержит смещений, а активации $\sigma^{(p)}$ являются $M_{\sigma}$-липшицевыми, для промежуточных представлений имеем рекуррентную оценку
+    \begin{equation}
+        \|\mathbf{x}^{(p+1)}\|_2
+        =
+        \|\sigma^{(p)}(\mathbf{z}^{(p)})\|_2
+        \leqslant
+        M_{\sigma}\|\mathbf{z}^{(p)}\|_2
+        \leqslant
+        M_{\sigma}\|\mathbf{W}^{(p)}\|_2\|\mathbf{x}^{(p)}\|_2
+        \leqslant
+        M_{\sigma}M_{\mathbf{W}}\|\mathbf{x}^{(p)}\|_2.
+    \end{equation}
+    Итерируя это неравенство и используя условие $\|\mathbf{x}\|_2 \leqslant M_{\mathbf{x}}$, получаем
+    \begin{equation}
+        \label{eq:fcnn-x-bound}
+        \|\mathbf{x}^{(p)}\|_2
+        \le
+        (M_{\mathbf{W}}M_{\sigma})^{p-1} M_{\mathbf{x}},
+        \qquad p = 1, \ldots, L.
+    \end{equation}
+    Совмещая \eqref{eq:fcnn-P-bound} и \eqref{eq:fcnn-x-bound}, выводим
+    \begin{equation}
+        \label{eq:fcnn-P-bound-final}
+        \|\mathbf{P}^{(p)}(\mathbf{w})\|_2
+        \le
+        (M_{\mathbf{W}}M_{\sigma})^{p-1} M_{\mathbf{x}},
+        \qquad p=1,\dots,L.
+    \end{equation}
+
+    Тогда для послойного якобиана $\mathbf{J}^{(p)}(\mathbf{w}) = \mathbf{S}^{(p)}(\mathbf{w})\mathbf{P}^{(p)}(\mathbf{w})$ по субмультипликативности спектральной нормы имеем
+    \begin{equation}
+        \label{eq:fcnn-Jp-bound}
+        \|\mathbf{J}^{(p)}(\mathbf{w})\|_2
+        \leqslant
+        \|\mathbf{S}^{(p)}(\mathbf{w})\|_2
+        \|\mathbf{P}^{(p)}(\mathbf{w})\|_2
+        \leqslant
+        M_{\mathbf{x}} \left(M_{\mathbf{W}}M_{\sigma}\right)^{L-1},
+        \qquad p = 1, \ldots, L.
+    \end{equation}
+    Далее, из блочного представления полного якобиана
+    \begin{equation}
+        \mathbf{J}(\mathbf{w})
+        =
+        \left[
+        \mathbf{J}^{(1)}(\mathbf{w}), \ldots, \mathbf{J}^{(L)}(\mathbf{w})
+        \right]
+    \end{equation}
+    следует
+    \begin{equation}
+        \mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top
+        =
+        \sum_{p=1}^L
+        \mathbf{J}^{(p)}(\mathbf{w})\mathbf{J}^{(p)}(\mathbf{w})^\top,
+        \qquad
+        \|\mathbf{J}(\mathbf{w})\|_2^2
+        =
+        \|\mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top\|_2.
+    \end{equation}
+    Поэтому
+    \begin{equation}
+        \label{eq:fcnn-J-bound}
+        \|\mathbf{J}(\mathbf{w})\|_2^2
+        \leqslant
+        \sum_{p=1}^L \|\mathbf{J}^{(p)}(\mathbf{w})\|_2^2
+        \leqslant
+        \sum_{p=1}^L M_{\mathbf{x}}^2 (M_{\mathbf{W}}M_{\sigma})^{2L-2}
+        =
+        L M_{\mathbf{x}}^2 \left(M_{\mathbf{W}}M_{\sigma}\right)^{2L-2}.
+    \end{equation}
+    Наконец, по определению гаусс-ньютоновской компоненты
+    \begin{equation}
+        \mathbf{G}(\mathbf{w})
+        =
+        \mathbf{J}(\mathbf{w})^\top \mathbf{A}(\mathbf{w}) \mathbf{J}(\mathbf{w}),
+    \end{equation}
+    откуда
+    \begin{equation}
+        \|\mathbf{G}(\mathbf{w})\|_2
+        \leqslant
+        \|\mathbf{J}(\mathbf{w})^\top\|_2
+        \|\mathbf{A}(\mathbf{w})\|_2
+        \|\mathbf{J}(\mathbf{w})\|_2
+        =
+        \|\mathbf{A}(\mathbf{w})\|_2 \|\mathbf{J}(\mathbf{w})\|_2^2.
+    \end{equation}
+    Подставляя сюда \eqref{eq:fcnn-J-bound} и условие $\|\mathbf{A}(\mathbf{w})\|_2 \leqslant M_{\mathbf{A}}$, получаем
+    \begin{equation}
+        \|\mathbf{G}(\mathbf{w})\|_2
+        \leqslant
+        L M_{\mathbf{x}}^2 M_{\mathbf{A}} \left(M_{\mathbf{W}} M_{\sigma}\right)^{2L-2},
+    \end{equation}
+    что и требовалось доказать.
 \end{proof}
 
-\begin{proof}[Доказательство теоремы~\ref{th:S-sufficient}]
-    Воспользуемся выражением s-score для пары нормальных априорных распределений из \cite{Aduenko2017}:
+Особенный интерес представляют более конкретные случаи применения полносвязных сетей, например, для задачи классификации на $K$ классов с кросс-этропийной функцией потерь:
+\begin{equation}
+    \ell(\mathbf{z}, \mathbf{y})
+    =
+    -\sum_{k=1}^K y_k \log p_k,
+    \qquad
+    p_k
+    =
+    \frac{\exp(z_k)}{\sum_{j=1}^K \exp(z_j)},
+\end{equation}
+где $\mathbf{p} = [p_1, \ldots, p_K]^\top = \mathrm{Softmax}(\mathbf{z})$. Если, кроме того, выбрать конкретную функцию активации, например, $\mathrm{ReLU}(\mathbf{x}) = [\mathbf{x} \geqslant 0] \mathbf{x}$, то можно сформулировать следующее следствие из предыдущей теоремы.
+
+\begin{corollary}
+    \label{cor:fcnn-G-bound-relu-ce}
+    Пусть в условиях теоремы~\ref{thm:fcnn-G-bound} в качестве функции активации выбрана $\mathrm{ReLU}$, а обучение решает задачу $K$-классовой классификации с кросс-энтропийной функцией потерь.
+    Тогда спектральная норма гаусс-ньютоновской компоненты матрицы Гессе удовлетворяет оценке
     \begin{equation}
-        \text{s-score}(p_k, p_{k+1}) = \exp{\left( -\frac{1}{2} (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right)}. \label{eq:proof:S-sufficient:1}
+        \label{eq:fcnn-G-bound-relu-ce}
+        \|\mathbf{G}(\mathbf{w})\|_2
+        \le
+        \sqrt{2} L M_{\mathbf{x}}^2 M_{\mathbf{W}}^{2L-2}.
     \end{equation}
-    Поскольку
-    \begin{multline}
-        \left| (\mathbf{m}_{k+1} - \mathbf{m}_k)^\top \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} (\mathbf{m}_{k+1} - \mathbf{m}_k) \right| \leqslant \\
-        \leqslant \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2^2 \| \left( \mathbf{\Sigma}_k + \mathbf{\Sigma}_{k+1} \right)^{-1} \|_2 \to 0
-    \end{multline}
-    при $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$, то значение квадратичной формы внутри экспоненты~\eqref{eq:proof:S-sufficient:1} стремится к нулю. Следовательно, $\text{s-score}(p_k, p_{k+1}) \to 1$ при устремлении $\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 \to 0$, что и требовалось доказать.
+\end{corollary}
+
+\begin{proof}
+    Известным результатом является формула матрицы Гессе кросс-энтропийной функции потерь по логитам:
+    \begin{equation}
+        \label{eq:ce-hessian}
+        \mathbf{A}(\mathbf{w})
+        =
+        \nabla_{\mathbf{z}}^2 \ell(\mathbf{z}, \mathbf{y})
+        =
+        \diag(\mathbf{p}) - \mathbf{p}\mathbf{p}^\top,
+    \end{equation}
+    на основе которой мы и построим доказательство данного утверждения. По теореме об эквивалетнонсти норм в конечномерном пространстве имеем ограничение спектральной нормы через Фробениусову:
+    \begin{equation}
+        \label{eq:norm-equivalence}
+        \| \mathbf{A} \|_2 \leqslant \| \mathbf{A} \|_F,
+    \end{equation}
+    для которой по определению записываем
+    \begin{equation}
+        \| \mathbf{A} \|_F^2 = \| \diag(\mathbf{p}) - \mathbf{p}\mathbf{p}^\top \|_F^2 = \sum_{k=1}^{K} \left( p_k - p_k^2 \right)^2 + \sum_{k \neq l} p_k^2 p_l^2 = \sum_{k=1}^{K} p_k^2 (1 - p_k)^2 + \sum_{k \neq l} p_k^2 p_l^2.
+    \end{equation}
+    Далее, поскольку для всех $k = 1, \ldots, K$ верно $0 \leqslant p_k \leqslant 1$, справедливо, что $0 \leqslant  p_k^2 \leqslant p_k $ и потому $0 \leqslant (1 - p_k)^2 \leqslant (1 - p_k)$. Следовательно, имеем
+    \begin{equation}
+        \sum_{k=1}^{K} p_k^2 (1 - p_k)^2 \leqslant \sum_{k=1}^{K} p_k (1 - p_k) \leqslant \sum_{k=1}^{K} p_k = 1,
+    \end{equation}
+    \begin{equation}
+        \sum_{k \neq l} p_k^2 p_l^2 \leqslant \sum_{k \neq l} p_k p_l = \left( \sum_{k=1}^{K} p_k \right)^2 - \sum_{k=1}^{K} p_k^2 \leqslant 1 - \sum_{k=1}^{K} p_k^2.
+    \end{equation}
+    Объединяя эти неравенства, получаем
+    \begin{equation}
+        \label{eq:frobenius-norm-bound}
+        \| \mathbf{A} \|_F^2 \leqslant 1 + 1 - \sum_{k=1}^{K} p_k^2 \leqslant 2,
+    \end{equation}
+    откуда, подставляя~\eqref{eq:frobenius-norm-bound} в \eqref{eq:norm-equivalence}, заключаем, что $\| \mathbf{A} \|_2 \leqslant \sqrt{2}$, то есть $M_{\mathbf{A}} = \sqrt{2}$. Для функции $\mathrm{ReLU}(t)=\max\{0, t\}$ имеем липшицевость с константой $1$, то есть $M_{\sigma}=1$. Подставляя эти значения в оценку~\eqref{eq:fcnn-G-bound}, получаем~\eqref{eq:fcnn-G-bound-relu-ce}.
 \end{proof}
 
-В вероятностной модели линейной регрессии с гауссовским априорным распределением доказывается следующая теорема, определяющая достаточные условия для сходимостей из предыдущих теорем~\ref{th:KL-sufficient} и \ref{th:S-sufficient}.
+Теорема~\ref{thm:fcnn-G-bound} показывает, что в полносвязной архитектуре спектральная норма гаусс-ньютоновской компоненты растет линейно по числу слоев и экспоненциально по глубине в терминах верхней границы на операторные нормы матриц весов. Причина заключается в том, что матрицы распространения~$\mathbf{S}^{(p)}(\mathbf{w})$ содержат длинные произведения плотных матриц весов, а параметрические якобианы~$\mathbf{P}^{(p)}(\mathbf{w})$ наследуют рост норм промежуточных представлений~$\mathbf{x}^{(p)}$.
 
-\begin{proof}[Доказательство теоремы~\ref{th:moments}]
-    Пусть задано нормальное априорное распределение параметров $p(\mathbf{w}) = \mathcal{N}\left( \mathbf{w} | \mathbf{0}, \alpha^{-1} \mathbf{I} \right)$. В модели линейной регрессии правдоподобие является нормальным, а именно
+\section{Сверточные нейронные сети}
+
+Рассмотрим $L$-слойную сверточную нейронную сеть (англ. CNN). В отличие от полносвязных сетей, где каждый параметр связывает конкретную пару нейронов, в CNN параметры "--- ядра свертки "--- используются совместно для обработки локальных областей входа. Тем не менее, при фиксированных размерах входных данных операция свертки является линейным оператором и допускает точное матричное представление, что позволяет включить CNN в класс матрично-представимых сетей.
+
+\textbf{Матричное представление свертки.} Для приведения CNN к виду матрично-представимой сети необходимо определить правило векторизации. Пусть вход $p$-го слоя представляет собой тензор $\mathcal{X}^{(p)} \in \mathbb{R}^{C_{p-1} \times H_{p-1} \times W_{p-1}}$, где $C$ "--- число каналов, $H, W$ "--- пространственные размеры. Вектор $\mathbf{x}^{(p)} \in \mathbb{R}^{n_{p-1}}$ получается развертыванием тензора $\mathcal{X}^{(p)}$ по каналам и пространственным координатам (например, в порядке $C, H, W$), где $n_{p-1} = C_{p-1} H_{p-1} W_{p-1}$. Аналогично векторизуются выходы $\mathcal{Z}^{(p)} \in \mathbb{R}^{C_p \times H_p \times W_p} \mapsto \mathbf{z}^{(p)} \in \mathbb{R}^{n_p}$ и ядра свертки $\mathcal{W}^{(p)} \mapsto \mathbf{w}^{(p)} \in \mathbb{R}^{N_p}$. Сеть задается рекуррентно:
+\begin{equation}
+    \label{eq:cnn-recurrence}
+    \mathbf{x}^{(1)} = \mathbf{x},
+    \qquad
+    \mathbf{z}^{(p)} = C^{(p)}_{\mathbf{w}^{(p)}}\left(\mathbf{x}^{(p)}\right) + \mathbf{b}^{(p)},
+    \qquad
+    \mathbf{x}^{(p+1)} = \sigma^{(p)}\left(\mathbf{z}^{(p)}\right),
+\end{equation}
+где $C^{(p)}_{\mathbf{w}^{(p)}}$ "--- оператор дискретной свертки $p$-го слоя. Далее для простоты полагаем $\mathbf{b}^{(p)} = 0$, так как смещения не влияют на оценку спектральной нормы весовой части, и рассматриваем свертку со страйдом $s=1$ и без паддинга.
+
+Ключевым свойством, позволяющим применить лемму~\ref{lemma:GN-block-factorization} к сверточным сетям, является возможность записать оператор свертки двумя эквивалентными способами через матричное умножение. Эта двойственность критически важна для корректного вычисления матриц $\mathbf{S}^{(p)}$ и $\mathbf{P}^{(p)}$, так как они требуют дифференцирования по разным аргументам (входу и параметрам соответственно).
+
+\textbf{Оператор свертки по входу (матрица Тёплица).} Для любого фиксированного ядра $\mathbf{w}^{(p)}$ существует структурированная матрица $\mathbf{T}^{(p)}(\mathbf{w}) \in \mathbb{R}^{n_p \times n_{p-1}}$, такая что:
+\begin{equation}
+    \label{eq:cnn-toeplitz-def}
+    \mathbf{z}^{(p)} = \mathbf{T}^{(p)}(\mathbf{w})  \mathbf{x}^{(p)}.
+\end{equation}
+Структура матрицы $\mathbf{T}^{(p)}$ определяется типом свертки~\cite{singh2023hessian}:
+\begin{itemize}
+    \item \textbf{1D свертка.} Матрица $\mathbf{T}^{(p)}$ является ленточной матрицей Тёплица. Каждая строка содержит веса ядра, сдвинутые на одну позицию вправо относительно предыдущей строки.
+    \item \textbf{2D свертка.} Матрица $\mathbf{T}^{(p)}$ является блочно-тёплицевой матрицей с тёплицевыми блоками (англ. BTTB, Block Toeplitz with Toeplitz Blocks). Блоки соответствуют сдвигам ядра по высоте, а структура внутри блоков "--- сдвигам по ширине.
+    \item \textbf{Многоканальный случай.} Матрица $\mathbf{T}^{(p)}$ состоит из блоков, соответствующих парам входных и выходных каналов.
+\end{itemize}
+
+\begin{example}[1D свертка и матрица Тёплица]
+    Рассмотрим одномерную свертку без паддинга и со страйдом 1.
+    Пусть входной вектор $\mathbf{x} = [x_1, x_2, x_3, x_4]^\top \in \mathbb{R}^4$, а ядро $\mathbf{w} = [w_1, w_2]^\top \in \mathbb{R}^2$.
+    Результат свертки $\mathbf{z} \in \mathbb{R}^3$ имеет вид:
+    \[
+    \mathbf{z} = 
+    \begin{bmatrix}
+    w_1 x_1 + w_2 x_2 \\
+    w_1 x_2 + w_2 x_3 \\
+    w_1 x_3 + w_2 x_4
+    \end{bmatrix}.
+    \]
+    Это выражение можно записать как $\mathbf{z} = \mathbf{T}(\mathbf{w}) \mathbf{x}$, где матрица $\mathbf{T}(\mathbf{w}) \in \mathbb{R}^{3 \times 4}$ имеет вид:
     \begin{equation}
-        p(\mathbf{y} | \mathbf{X}, \mathbf{w}) = \mathcal{N}\left( \mathbf{y} | \mathbf{X} \mathbf{w}, \sigma^2 \mathbf{I} \right) = \left( 2\pi\sigma^2 \right)^{-m/2} \exp\left( -\frac{1}{2\sigma^2} \| \mathbf{y} - \mathbf{X} \mathbf{w} \|_2^2 \right). \label{eq:proof:moments:1}
+    \label{eq:toeplitz-example}
+    \mathbf{T}(\mathbf{w}) = 
+    \begin{bmatrix}
+    w_1 & w_2 & 0 & 0 \\
+    0 & w_1 & w_2 & 0 \\
+    0 & 0 & w_1 & w_2
+    \end{bmatrix}.
     \end{equation}
-    Используя сопряженность априорного распределения и правдоподобия, легко найти параметры апостериорного распределения:
-    \begin{equation*}
-        p(\mathbf{w} | \mathbf{X}, \mathbf{y}) = \mathcal{N}\left( \mathbf{w} | \mathbf{m}, \boldsymbol{\Sigma} \right),
-    \end{equation*}
+    Заметим, что матрица зависит от весов $\mathbf{w}$, но не от входа $\mathbf{x}$.
+\end{example}
+
+Эта матрица используется для вычисления матрицы распространения возмущения $\mathbf{S}^{(p)}$, так как она описывает линейное отображение входа в выход при фиксированных весах.
+
+\textbf{Оператор свертки по весам (матрица патчей).} Та же самая операция свертки может быть записана как линейная зависимость от параметров ядра при фиксированном входе. Существует матрица $\mathbf{X}^{(p)}\left(\mathbf{x}^{(p)}\right) \in \mathbb{R}^{n_p \times N_p}$, называемая матрицей патчей, составленная из локальных фрагментов входа $\mathbf{x}^{(p)}$, такая что:
+\begin{equation}
+    \label{eq:cnn-patch-def}
+    \mathbf{z}^{(p)} = \mathbf{X}^{(p)}\left(\mathbf{x}^{(p)}\right) \mathbf{w}^{(p)}.
+\end{equation}
+Структура $\mathbf{X}^{(p)}$ такова, что каждый ее столбец соответствует одному параметру ядра, а строки содержат значения входа, попадающие в рецептивное поле этого параметра при всех возможных сдвигах.
+
+\begin{example}[1D свертка и патч-матрица]
+    Используем те же данные, что и в предыдущем примере: $\mathbf{x} = [x_1, x_2, x_3, x_4]^\top$, $\mathbf{w} = [w_1, w_2]^\top$.
+    Выразим $\mathbf{z}$ через веса:
+    \[
+    \mathbf{z} = 
+    \begin{bmatrix}
+    x_1 & x_2 \\
+    x_2 & x_3 \\
+    x_3 & x_4
+    \end{bmatrix}
+    \begin{bmatrix}
+    w_1 \\ w_2
+    \end{bmatrix}.
+    \]
+    Здесь матрица $\mathbf{X}(\mathbf{x}) \in \mathbb{R}^{3 \times 2}$ имеет вид:
+    \begin{equation}
+    \label{eq:patch-example}
+    \mathbf{X}(\mathbf{x}) = 
+    \begin{bmatrix}
+    x_1 & x_2 \\
+    x_2 & x_3 \\
+    x_3 & x_4
+    \end{bmatrix}.
+    \end{equation}
+    Заметим, что матрица зависит от входа $\mathbf{x}$, но не от весов $\mathbf{w}$.
+\end{example}
+
+Эта матрица патчей используется для вычисления параметрического якобиана~$\mathbf{P}^{(p)}$. Действительно, по определению~\eqref{eq:layer-p}:
+\begin{equation}
+\mathbf{P}^{(p)}(\mathbf{w}) = \frac{\partial \mathbf{z}^{(p)}}{\partial \mathbf{w}^{(p)}}.
+\end{equation}
+Поскольку зависимость $\mathbf{z}^{(p)}$ от $\mathbf{w}^{(p)}$ в уравнении~\eqref{eq:cnn-patch-def} линейна, производная равна самой матрице коэффициентов:
+\begin{equation}
+\label{eq:cnn-P-identity}
+\mathbf{P}^{(p)}(\mathbf{w}) = \mathbf{X}^{(p)}\left(\mathbf{x}^{(p)}\right).
+\end{equation}
+Таким образом, параметрический якобиан сверточного слоя есть не что иное, как матрица патчей входа. Двойственность представлений~\eqref{eq:cnn-toeplitz-def} и~\eqref{eq:cnn-patch-def} позволяет явно записать компоненты леммы~\ref{lemma:GN-block-factorization} для CNN. Следовательно, анализ гаусс-ньютоновской компоненты $\mathbf{G}(\mathbf{w})$ для сверточных сетей сводится к оценке норм структурированных матриц $\mathbf{T}^{(p)}$ (зависящих от весов) и $\mathbf{X}^{(p)}$ (зависящих от активаций), что будет подробно выполнено в следующих подразделах.
+
+\textbf{Матрица распространения возмущения $\mathbf{S}^{(p)}$.}
+Согласно~\eqref{eq:fcnn-layer-s-chain-rule}, $\mathbf{S}^{(p)}$ есть произведение локальных якобианов $\partial \mathbf{z}^{(k+1)} / \partial \mathbf{z}^{(k)}$. Из~\eqref{eq:cnn-toeplitz-def} и правила дифференцирования сложной функции следует:
+\begin{equation}
+\frac{\partial \mathbf{z}^{(k+1)}}{\partial \mathbf{z}^{(k)}}
+= \frac{\partial \mathbf{z}^{(k+1)}}{\partial \mathbf{x}^{(k+1)}} \cdot \frac{\partial \mathbf{x}^{(k+1)}}{\partial \mathbf{z}^{(k)}}
+= \mathbf{T}^{(k+1)}(\mathbf{w}) \mathbf{D}^{(k)},
+\end{equation}
+где $\mathbf{D}^{(k)} = \diag\left(\sigma^{(k)\prime}\left(\mathbf{z}^{(k)}\right)\right)$. Таким образом, $\mathbf{S}^{(p)}$ представляет собой произведение матриц Тёплица последующих слоев и диагональных матриц активаций:
+\begin{equation}
+\label{eq:cnn-S-final}
+\mathbf{S}^{(p)}(\mathbf{w}) = \mathbf{T}^{(L)} \mathbf{D}^{(L-1)} \cdots \mathbf{T}^{(p+1)} \mathbf{D}^{(p)}.
+\end{equation}
+Для последнего слоя $\mathbf{S}^{(L)}(\mathbf{w}) = \mathbf{I}_{K}$.
+
+\textbf{Параметрический якобиан $\mathbf{P}^{(p)}$.}
+По определению~\eqref{eq:layer-p}, $\mathbf{P}^{(p)} = \partial \mathbf{z}^{(p)} / \partial \mathbf{w}^{(p)}$. Используя линейность свертки по параметрам~\eqref{eq:cnn-patch-def}, получаем:
+\begin{equation}
+\label{eq:cnn-P-final}
+\mathbf{P}^{(p)}(\mathbf{w}) = \mathbf{X}^{(p)}\left(\mathbf{x}^{(p)}\right).
+\end{equation}
+Заметим, что $\mathbf{P}^{(p)}$ не зависит от весов $\mathbf{w}^{(p)}$ (так как свертка линейна по весам), но зависит от активаций предыдущих слоев через $\mathbf{x}^{(p)}$.
+
+Для получения верхней оценки спектральной нормы $\|\mathbf{G}(\mathbf{w})\|_2$ необходимо оценить нормы $\|\mathbf{T}^{(p)}\|_2$ и $\|\mathbf{X}^{(p)}\|_2$.
+
+\begin{lemma}[Норма матрицы Тёплица]
+    \label{lemma:toeplitz-norm}
+    Пусть $\mathbf{T}^{(p)}$ "--- матрица Тёплица (или блочно-тёплицева с тёплицевыми блоками), соответствующая операции свертки с ядром $\mathcal{W}^{(p)}$. Тогда ее спектральная норма ограничена сверху через $\ell_1$-норму ядра:
+    \begin{equation}
+        \|\mathbf{T}^{(p)}\|_2 \leqslant \|\mathcal{W}^{(p)}\|_1 = \sum_{c_{\text{in}}, c_{\text{out}}, i, j} |W^{(p)}_{c_{\text{out}}, c_{\text{in}}, i, j}|.
+    \end{equation}
+    В случае, если веса ограничены по модулю $|W^{(p)}_{ijkl}| \leqslant w_{\max}$, а размер ядра равен $k_h \times k_w$, то
+    \begin{equation}
+        \|\mathbf{T}^{(p)}\|_2 \leqslant C_{\text{in}} C_{\text{out}} k_h k_w w_{\max}.
+    \end{equation}
+\end{lemma}
+\begin{proof}
+    По определению спектральной нормы матрицы, для любого вектора $\mathbf{x}^{(p)} \neq 0$:
+    \begin{equation}
+        \|\mathbf{T}^{(p)}\|_2 = \sup_{\mathbf{x}^{(p)} \neq 0} \frac{\|\mathbf{T}^{(p)} \mathbf{x}^{(p)}\|_2}{\|\mathbf{x}^{(p)}\|_2}.
+    \end{equation}
+    Матрица $\mathbf{T}^{(p)}$ построена таким образом, что умножение $\mathbf{T}^{(p)} \mathbf{x}^{(p)}$ эквивалентно операции дискретной свертки входа $\mathcal{X}^{(p)}$ с ядром $\mathcal{W}^{(p)}$:
+    \begin{equation}
+        \mathbf{T}^{(p)} \mathbf{x}^{(p)} = \vecop\left(\mathcal{W}^{(p)} * \mathcal{X}^{(p)}\right).
+    \end{equation}
+    Поскольку векторизация сохраняет $\ell_2$-норму, имеем:
+    \begin{equation}
+        \|\mathbf{T}^{(p)} \mathbf{x}^{(p)}\|_2 = \|\mathcal{W}^{(p)} * \mathcal{X}^{(p)}\|_2.
+    \end{equation}
+    Для дискретной свертки справедливо неравенство Юнга~\cite{young1912determination}:
+    \begin{equation}
+        \|\mathcal{W}^{(p)} * \mathcal{X}^{(p)}\|_2 \leqslant \|\mathcal{W}^{(p)}\|_1 \cdot \|\mathcal{X}^{(p)}\|_2,
+    \end{equation}
+    где $\|\mathcal{W}^{(p)}\|_1 = \sum_{c_{\text{in}}, c_{\text{out}}, i, j} |W^{(p)}_{c_{\text{out}}, c_{\text{in}}, i, j}|$ "--- $\ell_1$-норма ядра, а $\|\mathcal{X}^{(p)}\|_2 = \|\mathbf{x}^{(p)}\|_2$ "--- $\ell_2$-норма входа. Подставляя неравенство Юнга в определение спектральной нормы:
+    \begin{equation}
+        \|\mathbf{T}^{(p)}\|_2 = \sup_{\mathbf{x}^{(p)} \neq 0} \frac{\|\mathbf{T}^{(p)} \mathbf{x}^{(p)}\|_2}{\|\mathbf{x}^{(p)}\|_2} = \sup_{\mathbf{x}^{(p)} \neq 0} \frac{\|\mathcal{W}^{(p)} * \mathcal{X}^{(p)}\|_2}{\|\mathcal{X}^{(p)}\|_2} \leqslant \|\mathcal{W}^{(p)}\|_1.
+    \end{equation}
+    Если все элементы ядра ограничены по модулю $|W^{(p)}_{ijkl}| \leqslant w_{\max}$, то:
+    \begin{equation}
+        \|\mathcal{W}^{(p)}\|_1 = \sum_{c_{\text{in}}=1}^{C_{\text{in}}} \sum_{c_{\text{out}}=1}^{C_{\text{out}}} \sum_{i=1}^{k_h} \sum_{j=1}^{k_w} |W^{(p)}_{c_{\text{out}}, c_{\text{in}}, i, j}| \leqslant C_{\text{in}} C_{\text{out}} k_h k_w w_{\max}.
+    \end{equation}
+    Откуда следует окончательная оценка: $\|\mathbf{T}^{(p)}\|_2 \leqslant C_{\text{in}} C_{\text{out}} k_h k_w w_{\max}$.
+\end{proof}
+
+\begin{lemma}[Норма матрицы патчей]
+    \label{lemma:patch-norm}
+    Пусть $\mathbf{X}^{(p)} \in \mathbb{R}^{n_p \times N_p}$ "--- матрица патчей, построенная по входу $\mathbf{x}^{(p)} \in \mathbb{R}^{n_{p-1}}$ для сверточного слоя $p$ с ядром размера $k_h \times k_w$ и $C_{out}^{(p)}$ выходными каналами. Тогда спектральная норма матрицы патчей ограничена сверху:
+    \begin{equation}
+        \|\mathbf{X}^{(p)}\|_2 \leqslant \sqrt{K_p}  \|\mathbf{x}^{(p)}\|_2,
+    \end{equation}
+    где $K_p = C_{\text{out}}^{(p)} k_h k_w$ "--- число весов, участвующих в формировании одного выходного элемента (размер ядра с учетом каналов).
+\end{lemma}
+\begin{proof}
+    Матрица $\mathbf{X}^{(p)}$ строится следующим образом: каждый столбец соответствует одному параметру ядра свертки, а каждая строка соответствует одной пространственной позиции выхода. Элемент $X^{(p)}_{ij}$ содержит значение входа $\mathbf{x}^{(p)}$, которое умножается на $j$-й параметр ядра при вычислении $i$-го элемента выхода. Для свертки со страйдом $s=1$ и без паддинга, каждый элемент входа $\mathbf{x}^{(p)}$ участвует в формировании нескольких элементов выхода $\mathbf{z}^{(p)}$. Конкретно, каждый элемент входа попадает в рецептивное поле ядра размером $k_h \times k_w$ для $K_p = C_{\text{out}}^{(p)} k_h k_w$ различных параметров.
+    
+    Спектральная норма матрицы ограничена сверху через норму Фробениуса:
+    \begin{equation}
+        \|\mathbf{X}^{(p)}\|_2 \leqslant \|\mathbf{X}^{(p)}\|_F = \sqrt{\sum_{i,j} \left(X^{(p)}_{ij}\right)^2}.
+    \end{equation}
+    Каждый элемент $x^{(p)}_m$ входа встречается в матрице $\mathbf{X}^{(p)}$ ровно столько раз, сколько различных позиций ядра могут его <<накрыть>> при свертке. Для страйда $s=1$ это число равно произведению:
+    \begin{itemize}
+        \item числа выходных каналов $C_{\text{out}}^{(p)}$ (каждый канал имеет свое ядро),
+        \item числа пространственных позиций ядра $k_h k_w$ (каждая позиция ядра использует данный элемент входа при соответствующем сдвиге).
+    \end{itemize}
+    Таким образом, каждый элемент $x^{(p)}_m$ входит в сумму квадратов элементов $\mathbf{X}^{(p)}$ не более чем $K_p$ раз:
+    \begin{equation}
+        \sum_{i,j} \left(X^{(p)}_{ij}\right)^2 \leqslant \sum_{m=1}^{n_{p-1}} K_p \left(x^{(p)}_m\right)^2 = K_p \|\mathbf{x}^{(p)}\|_2^2.
+    \end{equation}
+    Подставляя оценку нормы Фробениуса:
+    \begin{equation}
+        \|\mathbf{X}^{(p)}\|_2 \leqslant \|\mathbf{X}^{(p)}\|_F = \sqrt{\sum_{i,j} \left(X^{(p)}_{ij}\right)^2} \leqslant \sqrt{K_p \|\mathbf{x}^{(p)}\|_2^2} = \sqrt{K_p}  \|\mathbf{x}^{(p)}\|_2.
+    \end{equation}
+\end{proof}
+
+Теперь сформулируем основную теорему для сверточных сетей, объединяющую лемму~\ref{lemma:GN-block-factorization} и полученные оценки норм. Структура теоремы полностью аналогична теореме~\ref{thm:fcnn-G-bound} для полносвязных сетей.
+
+\begin{theorem}
+\label{thm:cnn-bound}
+Пусть $f_{\mathbf{w}}$ является $L$-слойной сверточной нейронной сетью без смещений. Предположим, что существуют такие положительные константы, что для всех слоев $p = 1, \ldots, L$ выполнены ограничения: $\|\mathbf{x}\|_2 \leqslant M_{\mathbf{x}}$, $\|\mathbf{A}(\mathbf{w})\|_2 \leqslant M_{\mathbf{A}}$, $\|\mathcal{W}^{(p)}\|_1 \leqslant M_{\mathcal{W}}$ и $\|\mathbf{D}^{(p)}\|_2 \leqslant M_{\sigma}$. Пусть $K_{\max} = \max_p \left(C_{\text{out}}^{(p)} k_h k_w\right)$ "--- максимальный <<размер>> ядра. Тогда спектральная норма гаусс-ньютоновской компоненты удовлетворяет оценке:
+\begin{equation}
+    \label{eq:cnn-final-bound}
+    \|\mathbf{G}(\mathbf{w})\|_2 \leqslant
+    L M_{\mathbf{x}}^2 M_{\mathbf{A}}  K_{\max} \,
+    \left( M_{\mathcal{W}} M_{\sigma} \right)^{2L-2}.
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+Воспользуемся блочной структурой~\eqref{eq:GN-factorization} и оценкой нормы блока по субмультипликативности:
+\begin{equation}
+    \|\mathbf{G}^{(p,q)}(\mathbf{w})\|_2 \leqslant \|\mathbf{P}^{(p)}(\mathbf{w})\|_2 \|\mathbf{S}^{(p)}(\mathbf{w})\|_2 \|\mathbf{A}(\mathbf{w})\|_2 \|\mathbf{S}^{(q)}(\mathbf{w})\|_2 \|\mathbf{P}^{(q)}(\mathbf{w})\|_2.
+\end{equation}
+Далее примением те же свойства для оценки $\|\mathbf{S}^{(p)}\|_2$, из~\eqref{eq:cnn-S-final} имеем
+\begin{equation}
+    \|\mathbf{S}^{(p)}\|_2 \leqslant \prod_{k=p+1}^{L} \|\mathbf{T}^{(k)}\|_2 \cdot \prod_{k=p}^{L-1} \|\mathbf{D}^{(k)}\|_2.
+\end{equation}
+Используя лемму~\ref{lemma:toeplitz-norm} о том, что $\|\mathbf{T}\|_2 \leqslant M_{\mathcal{W}}$, и условие на функцию активацию, получаем
+\begin{equation}
+    \|\mathbf{S}^{(p)}\|_2 \leqslant M_{\mathcal{W}}^{L-p} M_{\sigma}^{L-p}.    
+\end{equation}
+Затем перейдем к оценке $\|\mathbf{P}^{(p)}\|_2$ из~\eqref{eq:cnn-P-final} и леммы~\ref{lemma:patch-norm}:
+\begin{equation}
+    \|\mathbf{P}^{(p)}\|_2 \leqslant \sqrt{K_p} \|\mathbf{x}^{(p)}\|_2 \leqslant \sqrt{K_{\text{max}}} \|\mathbf{x}^{(p)}\|_2.    
+\end{equation}
+Оценим норму промежуточного представления $\|\mathbf{x}^{(p)}\|_2$. Поскольку $\mathbf{x}^{(p+1)} = \sigma(\mathbf{T}^{(p)}\mathbf{x}^{(p)})$, то:
+\begin{equation}
+    \|\mathbf{x}^{(p+1)}\|_2 \leqslant M_{\sigma} \|\mathbf{T}^{(p)}\|_2 \|\mathbf{x}^{(p)}\|_2 \leqslant M_{\sigma} M_{\mathcal{W}} \|\mathbf{x}^{(p)}\|_2.
+\end{equation}
+Итерируя от входа $\mathbf{x}^{(1)}=\mathbf{x}$,
+\begin{equation}
+    \|\mathbf{x}^{(p)}\|_2 \leqslant (M_{\sigma} M_{\mathcal{W}})^{p-1} M_{\mathbf{x}}.
+\end{equation}
+Следовательно:
+\begin{equation}
+    \|\mathbf{P}^{(p)}\|_2 \leqslant \sqrt{K_{\text{max}}} (M_{\sigma} M_{\mathcal{W}})^{p-1} M_{\mathbf{x}}.
+\end{equation}
+
+Подставим оценки в выражение для блока $\mathbf{G}^{(p,q)}$:
+\begin{align}
+    \|\mathbf{G}^{(p,q)}\|_2 &\leqslant M_{\mathbf{A}} \cdot \left[ \sqrt{K_{\text{max}}} (M_{\sigma} M_{\mathcal{W}})^{p-1} M_{\mathbf{x}} \cdot M_{\mathcal{W}}^{L-p} M_{\sigma}^{L-p} \right] \\
+    &\quad \times \left[ \sqrt{K_{\text{max}}} (M_{\sigma} M_{\mathcal{W}})^{q-1} M_{\mathbf{x}} \cdot M_{\mathcal{W}}^{L-q} M_{\sigma}^{L-q} \right] \\
+    &= M_{\mathbf{A}} K_{\text{max}} M_{\mathbf{x}}^2 (M_{\sigma} M_{\mathcal{W}})^{p-1 + L-p + q-1 + L-q} \\
+    &= M_{\mathbf{A}} K_{\text{max}} M_{\mathbf{x}}^2 (M_{\sigma} M_{\mathcal{W}})^{2L-2}.
+\end{align}
+Заметим, что степень не зависит от конкретных индексов $p, q$.
+
+Матрица $\mathbf{G}$ состоит из $L \times L$ блоков. Используя оценку нормы блочной матрицы через норму якобиана, как в теореме~\ref{thm:fcnn-G-bound}:
+\begin{equation}
+    \|\mathbf{G}\|_2 \leqslant M_{\mathbf{A}} \|\mathbf{J}\|_2^2.
+\end{equation}
+Якобиан $\mathbf{J} = [\mathbf{S}^{(1)}\mathbf{P}^{(1)}, \dots, \mathbf{S}^{(L)}\mathbf{P}^{(L)}]$.
+Норма каждого блочного столбца $\mathbf{J}^{(p)} = \mathbf{S}^{(p)}\mathbf{P}^{(p)}$:
+\begin{equation}
+    \|\mathbf{J}^{(p)}\|_2 \leqslant M_{\mathcal{W}}^{L-p} M_{\sigma}^{L-p} \cdot \sqrt{K_{\text{max}}} (M_{\sigma} M_{\mathcal{W}})^{p-1} M_{\mathbf{x}} = \sqrt{K_{\text{max}}} M_{\mathbf{x}} (M_{\sigma} M_{\mathcal{W}})^{L-1}.
+\end{equation}
+Тогда $\|\mathbf{J}\|_2^2 \leqslant \sum_{p=1}^L \|\mathbf{J}^{(p)}\|_2^2 = L \cdot K_{\text{max}} M_{\mathbf{x}}^2 (M_{\sigma} M_{\mathcal{W}})^{2L-2}$.
+Умножая на $M_{\mathbf{A}}$, получаем искомую оценку~\eqref{eq:cnn-final-bound}.
+\end{proof}
+
+Сравнение оценки~\eqref{eq:cnn-final-bound} с оценкой для полносвязной сети~\eqref{eq:fcnn-G-bound} показывает качественное сходство экспоненциальной зависимости от глубины $L$. Однако константа $M_{\mathcal{W}}$ для сверточных сетей (норма ядра) обычно значительно меньше нормы полной матрицы весов полносвязного слоя той же размерности из-за разреженности связей и разделения весов. Множитель $K_{\max}$ отражает локальность связей: он пропорционален размеру ядра, а не полной размерности входа, что делает оценку для CNN существенно точнее в реальных сценариях.
+
+Рассотренный подход матричного представления легко обобщается на другие стандартные архитектурные элементы сверточных сетей. Рассмотрим влияние операций пулинга и остаточных связей на структуру матриц $\mathbf{S}^{(p)}$ и итоговые оценки спектральной нормы.
+
+\textbf{Пулинг (Pooling).} Операции пулинга (MaxPool, AvgPool) обычно применяются после сверточных слоев для уменьшения пространственной размерности представлений. В контексте матрично-представимых сетей оператор пулинга $p$-го слоя $\mathcal{M}^{(p)}$ может быть записан как умножение на матрицу $\mathbf{M}^{(p)} \in \mathbb{R}^{n_{p}' \times n_p}$, где $n_{p}' < n_p$ "--- уменьшенная размерность выхода.
+
+\begin{itemize}
+    \item \textbf{AvgPool.} Для усреднения по окну размера $k_{pool}$ без перекрытия, матрица $\mathbf{M}^{(p)}$ состоит из блоков, содержащих значения $1/k_{pool}$ (с нормировкой) или $1$ (без нормировки). Спектральная норма такой матрицы оценивается как:
+    \begin{equation}
+        \|\mathbf{M}^{(p)}\|_2 \leqslant 1 \quad (\text{без нормировки}),
+        \quad \|\mathbf{M}^{(p)}\|_2
+        \leqslant \frac{1}{\sqrt{k_{\text{pool}}}} \quad (\text{с нормировкой}).
+    \end{equation}
+    \item \textbf{MaxPool.} Операция максимума является кусочно-линейной. В областях дифференцируемости ее якобиан представляет собой матрицу выбора (субматрицу единичной матрицы), содержащую ровно одну единицу в каждой строке. Следовательно, ее спектральная норма равна единице:
+    \begin{equation}
+        \|\mathbf{M}^{(p)}\|_2 = 1.
+    \end{equation}
+\end{itemize}
+
+Включение пулинга слегка модифицирует рекуррентную формулу для матрицы распространения~\eqref{eq:cnn-S-final}. Если пулинг применяется после слоя $p$, то в произведение добавляется множитель $\mathbf{M}^{(p)}$:
+\begin{equation}
+    \mathbf{S}^{(p)}(\mathbf{w}) = \mathbf{T}^{(L)} \mathbf{D}^{(L-1)} \mathbf{M}^{(L-1)} \cdots \mathbf{T}^{(p+1)} \mathbf{D}^{(p)}.
+\end{equation}
+Поскольку $\|\mathbf{M}^{(p)}\|_2 \leqslant 1$, наличие пулинга не увеличивает верхнюю оценку нормы $\|\mathbf{S}^{(p)}\|_2$. Более того, уменьшение размерности $n_p$ снижает размерность последующих матриц Тёплица $\mathbf{T}^{(k)}$, что может косвенно уменьшить константу $K_{\text{max}}$ в оценке теоремы~\ref{thm:cnn-bound}.
+
+\textbf{Остаточные связи (Residual Connections).} В архитектурах типа ResNet выход блока задается суммой входа и нелинейного преобразования:
+\begin{equation}
+    \mathbf{x}^{(p+B)} = \mathbf{x}^{(p)} + \mathcal{F}^{(p)}(\mathbf{x}^{(p)}),
+\end{equation}
+где $\mathcal{F}^{(p)}$ "--- последовательность сверток и активаций внутри блока, $B$ "--- глубина блока. Дифференцирование этого выражения по входу блока дает:
+\begin{equation}
+    \frac{\partial \mathbf{x}^{(p+B)}}{\partial \mathbf{x}^{(p)}} = \mathbf{I}_{n_p} + \frac{\partial \mathcal{F}^{(p)}(\mathbf{x}^{(p)})}{\partial \mathbf{x}^{(p)}}.
+\end{equation}
+В терминах матрицы распространения $\mathbf{S}^{(p)} = \partial \mathbf{z} / \partial \mathbf{z}^{(p)}$, это означает, что рекуррентный шаг через остаточный блок включает сумму путей распространения градиента. Пусть $\mathbf{S}^{(p)}_{\text{main}}$ "--- матрица распространения через сверточные слои блока, тогда полная матрица распространения от начала блока удовлетворяет соотношению:
+\begin{equation}
+    \mathbf{S}^{(p)}_{\text{res}} = \mathbf{S}^{(p+B)} \left( \mathbf{I}_{n_p} + \mathbf{S}^{(p)}_{\text{main}} \right).
+\end{equation}
+Используя неравенство треугольника для спектральной нормы, получаем оценку:
+\begin{equation}
+    \|\mathbf{S}^{(p)}_{\text{res}}\|_2 \leqslant \|\mathbf{S}^{(p+B)}\|_2 \left( 1 + \|\mathbf{S}^{(p)}_{\text{main}}\|_2 \right).
+\end{equation}
+В отличие от последовательной сети, где нормы перемножаются, в остаточной сети они суммируются внутри блока. Это меняет характер зависимости от глубины. Если нормы слоев внутри блока малы ($\|\mathbf{S}^{(p)}_{\text{main}}\|_2 < 1$), то остаточные связи способствуют стабилизации нормы $\mathbf{S}^{(p)}$ и предотвращают экспоненциальный рост (или затухание) градиентов. 
+
+Для оценки гаусс-ньютоновской компоненты $\mathbf{G}(\mathbf{w})$ в сети с $N_{res}$ остаточными блоками, оценка теоремы~\ref{thm:cnn-bound} модифицируется заменой множителя $(M_{\mathcal{W}} M_{\sigma})^{2L-2}$ на сумму вкладов путей. В худшем случае (используя субмультипликативность для суммы), константа $L$ в оценке~\eqref{eq:cnn-final-bound} может быть заменена на эффективную глубину с учетом числа блоков, однако на практике наличие единичной матрицы $\mathbf{I}$ в якобиане часто приводит к более обусловленным матрицам Гессе по сравнению с чистыми сетями той же глубины.
+
+% \section{Трансформерные нейронные сети}
+
+% В предыдущих разделах анализ гаусс--ньютоновской компоненты проводился для архитектур, в которых каждый слой задается линейным по входу оператором с последующей покомпонентной нелинейностью. Для стандартного трансформерного блока такая схема уже неприменима. Действительно, механизм self-attention нелинеен по входу из-за softmax от матрицы попарных скалярных произведений, а LayerNorm нелинеен из-за зависимости от построчных средних и дисперсий. Поэтому трансформерный блок не относится к классу матрично-представимых сетей в смысле определения~\eqref{eq:matricized-operator}. Тем не менее для исследования гаусс--ньютоновской компоненты полной матрицы Гессе достаточно вычислить якобиан выхода блока по всем группам параметров. Ниже этот якобиан будет получен в явном виде, после чего будет выведена верхняя оценка спектральной нормы соответствующей гаусс--ньютоновской компоненты.
+
+% Рассмотрим один одно-головый трансформерный блок. Пусть $T$ обозначает длину последовательности, $d$ "--- размерность токенных представлений, $d_k$ "--- размерность запросов и ключей, $d_{\mathrm{ff}}$ "--- скрытую размерность FFN. Вход блока задается матрицей $\mathbf{X} \in \mathbb{R}^{T \times d}$. Для согласования с обозначениями главы используем построчную векторизацию $\mathbf{x} = \vecrop(\mathbf{X}) \in \mathbb{R}^{Td}$, где оператор $\vecrop(\cdot)$ последовательно укладывает строки матрицы в один столбец. Определим матрицу attention-весов
+% \begin{equation}
+%     \label{eq:tr-pi}
+%     \mathbf{\Pi}(\mathbf{X})
+%     =
+%     \softmax\!\left(
+%         \frac{\mathbf{X}\mathbf{W}_Q\mathbf{W}_K^\top\mathbf{X}^\top}{\sqrt{d_k}}
+%     \right)
+%     \in \mathbb{R}^{T\times T},
+% \end{equation}
+% где softmax применяется построчно. Тогда self-attention часть имеет вид
+% \begin{equation}
+%     \label{eq:tr-sa}
+%     \mathrm{SA}(\mathbf{X})
+%     =
+%     \mathbf{\Pi}(\mathbf{X})\mathbf{X}\mathbf{W}_V
+%     \in \mathbb{R}^{T\times d}.
+% \end{equation}
+% После первой остаточной связи и первой нормализации получаем
+% \begin{equation}
+%     \label{eq:tr-u-y}
+%     \mathbf{U} = \mathbf{X} + \mathrm{SA}(\mathbf{X}),
+%     \qquad
+%     \mathbf{Y} = \mathrm{LN}(\mathbf{U}).
+% \end{equation}
+% Feed-forward часть задается формулой
+% \begin{equation}
+%     \label{eq:tr-ffn}
+%     \mathrm{FFN}(\mathbf{Y})
+%     =
+%     \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2,
+% \end{equation}
+% где $\sigma$ действует покомпонентно. После второй остаточной связи и второй нормализации имеем
+% \begin{equation}
+%     \label{eq:tr-s-z}
+%     \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}),
+%     \qquad
+%     \mathbf{Z} = \mathrm{LN}(\mathbf{S}).
+% \end{equation}
+% Выход блока в векторной форме обозначим через $\mathbf{z} = \vecrop(\mathbf{Z}) \in \mathbb{R}^{Td}$.
+
+% Параметры блока разбиваются на пять групп:
+% \begin{equation}
+%     \mathbf{W}_Q,\mathbf{W}_K \in \mathbb{R}^{d\times d_k},
+%     \qquad
+%     \mathbf{W}_V \in \mathbb{R}^{d\times d},
+%     \qquad
+%     \mathbf{W}_1 \in \mathbb{R}^{d\times d_{\mathrm{ff}}},
+%     \qquad
+%     \mathbf{W}_2 \in \mathbb{R}^{d_{\mathrm{ff}}\times d},
+% \end{equation}
+% \begin{equation}
+%     \mathbf{w}_Q = \vecrop(\mathbf{W}_Q),
+%     \qquad
+%     \mathbf{w}_K = \vecrop(\mathbf{W}_K),
+%     \qquad
+%     \mathbf{w}_V = \vecrop(\mathbf{W}_V),
+% \end{equation}
+% \begin{equation}
+%     \mathbf{w}_1 = \vecrop(\mathbf{W}_1),
+%     \qquad
+%     \mathbf{w}_2 = \vecrop(\mathbf{W}_2),
+% \end{equation}
+% \begin{equation}
+%     \mathbf{w}
+%     =
+%     \col(\mathbf{w}_Q,\mathbf{w}_K,\mathbf{w}_V,\mathbf{w}_1,\mathbf{w}_2).
+% \end{equation}
+% Наша цель состоит в явном вычислении матриц
+% \begin{equation}
+%     \mathbf{J}^{(Q)} = \frac{\partial \mathbf{z}}{\partial \mathbf{w}_Q^\top},
+%     \quad
+%     \mathbf{J}^{(K)} = \frac{\partial \mathbf{z}}{\partial \mathbf{w}_K^\top},
+%     \quad
+%     \mathbf{J}^{(V)} = \frac{\partial \mathbf{z}}{\partial \mathbf{w}_V^\top},
+%     \quad
+%     \mathbf{J}^{(1)} = \frac{\partial \mathbf{z}}{\partial \mathbf{w}_1^\top},
+%     \quad
+%     \mathbf{J}^{(2)} = \frac{\partial \mathbf{z}}{\partial \mathbf{w}_2^\top},
+% \end{equation}
+% после чего гаусс--ньютоновская компонента будет получена по общей формуле
+% \begin{equation}
+%     \label{eq:tr-GN-def}
+%     \mathbf{G}(\mathbf{w})
+%     =
+%     \mathbf{J}(\mathbf{w})^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}(\mathbf{w}),
+%     \qquad
+%     \mathbf{J}(\mathbf{w})
+%     =
+%     \left[
+%         \mathbf{J}^{(Q)},
+%         \mathbf{J}^{(K)},
+%         \mathbf{J}^{(V)},
+%         \mathbf{J}^{(1)},
+%         \mathbf{J}^{(2)}
+%     \right].
+% \end{equation}
+
+% \subsection{Якобиан LayerNorm}
+
+% Рассмотрим произвольную матрицу $\mathbf{U} \in \mathbb{R}^{T\times d}$. Введем матрицу центрирования
+% \begin{equation}
+%     \label{eq:tr-Cd}
+%     \mathbf{C}_d
+%     =
+%     \mathbf{I}_d - \frac{1}{d}\mathbf{1}_d\mathbf{1}_d^\top
+%     \in \mathbb{R}^{d\times d}.
+% \end{equation}
+% Тогда центрированное представление матрицы $\mathbf{U}$ имеет вид
+% \begin{equation}
+%     \label{eq:tr-MU}
+%     \mathbf{M}(\mathbf{U})
+%     =
+%     \mathbf{U}\mathbf{C}_d
+%     =
+%     \mathbf{U} - \frac{1}{d}\mathbf{U}\mathbf{1}_d\mathbf{1}_d^\top.
+% \end{equation}
+% Вектор построчных стандартных отклонений определяется формулой
+% \begin{equation}
+%     \label{eq:tr-sigmaU}
+%     \boldsymbol{\sigma}(\mathbf{U})
+%     =
+%     \frac{1}{\sqrt{d}}
+%     \left(
+%         \mathbf{M}(\mathbf{U})^{\circ 2}\mathbf{1}_d
+%     \right)^{\circ \frac12}
+%     \in \mathbb{R}^{T},
+% \end{equation}
+% а диагональная матрица обратных стандартных отклонений "--- формулой
+% \begin{equation}
+%     \label{eq:tr-PU}
+%     \mathbf{P}(\mathbf{U})
+%     =
+%     \diag^{-1}\!\left(\boldsymbol{\sigma}(\mathbf{U})\right)
+%     \in \mathbb{R}^{T\times T}.
+% \end{equation}
+% Тем самым оператор LayerNorm, без учета аффинных параметров, записывается как
+% \begin{equation}
+%     \label{eq:tr-LN-form}
+%     \mathrm{LN}(\mathbf{U})
+%     =
+%     \mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}).
+% \end{equation}
+
+% Для дифференцирования предположим, что все построчные дисперсии положительны:
+% \begin{equation}
+%     \label{eq:tr-ln-positive-var}
+%     \sigma_{\min}(\mathbf{U})
+%     =
+%     \min_{t=1,\ldots,T}\sigma_t(\mathbf{U}) > 0.
+% \end{equation}
+
+% \begin{lemma}
+%     \label{lemma:tr-LN-jacobian}
+%     Якобиан LayerNorm по входу имеет вид
+%     \begin{align}
+%         \label{eq:tr-LN-jacobian}
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%         &=
+%         \frac{\partial \vecrop(\mathrm{LN}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%         \notag\\
+%         &=
+%         \left(
+%             \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%         \right)
+%         \mathbf{G}_d
+%         +
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%         \right)
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top},
+%     \end{align}
+%     где
+%     \begin{equation}
+%         \label{eq:tr-Gd}
+%         \mathbf{G}_d
+%         =
+%         \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%         =
+%         \mathbf{I}_{Td}
+%         -
+%         \frac{1}{d}
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{1}_{d\times d}
+%         \right).
+%     \end{equation}
+% \end{lemma}
+
+% \begin{proof}
+% По формуле~\eqref{eq:tr-LN-form}
+% \begin{equation}
+%     \mathrm{LN}(\mathbf{U})
+%     =
+%     \mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}).
+% \end{equation}
+% Применяя правило дифференцирования матричного произведения к построчной векторизации, получаем
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     =
+%     \left(
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right)
+%     \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     +
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right)
+%     \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}.
+% \end{equation}
+% Остается вычислить первый множитель. Из~\eqref{eq:tr-MU} имеем
+% \begin{equation}
+%     \mathbf{M}(\mathbf{U}) = \mathbf{U}\mathbf{C}_d.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \vecrop(\mathbf{M}(\mathbf{U}))
+%     =
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{C}_d
+%     \right)\vecrop(\mathbf{U}),
+% \end{equation}
+% откуда
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     =
+%     \mathbf{I}_T \otimes \mathbf{C}_d
+%     =
+%     \mathbf{I}_{Td}
+%     -
+%     \frac{1}{d}
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{1}_{d\times d}
+%     \right)
+%     =
+%     \mathbf{G}_d.
+% \end{equation}
+% Подставляя это равенство в предыдущую формулу, получаем~\eqref{eq:tr-LN-jacobian}.
+% \end{proof}
+
+% Следующая оценка потребуется нам далее при исследовании спектральной нормы гаусс--ньютоновской компоненты.
+
+% \begin{lemma}
+%     \label{lemma:tr-LN-jacobian-bound}
+%     Пусть выполнено условие~\eqref{eq:tr-ln-positive-var}. Тогда
+%     \begin{equation}
+%         \label{eq:tr-LN-bound}
+%         \left\|
+%             \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%         \right\|_2
+%         \le
+%         \frac{1}{\sigma_{\min}(\mathbf{U})}
+%         +
+%         \frac{\|\mathbf{U}\|_2^2}{\sqrt{d}\,\sigma_{\min}(\mathbf{U})^3}.
+%     \end{equation}
+% \end{lemma}
+
+% \begin{proof}
+% По лемме~\ref{lemma:tr-LN-jacobian} якобиан LayerNorm имеет представление
+% \begin{equation}
+%     \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     =
+%     \left(
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right)\mathbf{G}_d
+%     +
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right)
+%     \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}.
+% \end{equation}
+% Следовательно, по неравенству треугольника и субмультипликативности спектральной нормы
+% \begin{align}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     &\le
+%     \left\|
+%         \left(
+%             \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%         \right)\mathbf{G}_d
+%     \right\|_2
+%     +
+%     \left\|
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%         \right)
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2 \notag\\
+%     &\le
+%     \left\|
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right\|_2
+%     \|\mathbf{G}_d\|_2
+%     +
+%     \left\|
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right\|_2
+%     \left\|
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2.
+% \end{align}
+% Используя свойство спектральной нормы произведения Кронекера, получаем
+% \begin{equation}
+%     \left\|
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right\|_2
+%     =
+%     \|\mathbf{P}(\mathbf{U})\|_2,
+%     \qquad
+%     \left\|
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right\|_2
+%     =
+%     \|\mathbf{M}(\mathbf{U})\|_2.
+% \end{equation}
+% Поэтому
+% \begin{equation}
+%     \label{eq:tr-ln-bound-step-1}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     \le
+%     \|\mathbf{P}(\mathbf{U})\|_2 \, \|\mathbf{G}_d\|_2
+%     +
+%     \|\mathbf{M}(\mathbf{U})\|_2
+%     \left\|
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2.
+% \end{equation}
+
+% Теперь оценим по отдельности все множители.
+
+% \medskip
+
+% \noindent
+% \textbf{1. Оценка нормы матрицы $\mathbf{G}_d$.}
+% Из формулы~\eqref{eq:tr-Gd} имеем
+% \begin{equation}
+%     \mathbf{G}_d
+%     =
+%     \mathbf{I}_T \otimes \mathbf{C}_d,
+%     \qquad
+%     \mathbf{C}_d
+%     =
+%     \mathbf{I}_d - \frac{1}{d}\mathbf{1}_d\mathbf{1}_d^\top.
+% \end{equation}
+% Матрица $\mathbf{C}_d$ есть ортогональный проектор на подпространство векторов с нулевой суммой координат, следовательно
+% \begin{equation}
+%     \|\mathbf{C}_d\|_2 = 1.
+% \end{equation}
+% Снова используя норму произведения Кронекера, получаем
+% \begin{equation}
+%     \|\mathbf{G}_d\|_2
+%     =
+%     \|\mathbf{I}_T \otimes \mathbf{C}_d\|_2
+%     =
+%     \|\mathbf{I}_T\|_2 \, \|\mathbf{C}_d\|_2
+%     =
+%     1.
+% \end{equation}
+
+% \medskip
+
+% \noindent
+% \textbf{2. Оценка нормы матрицы $\mathbf{P}(\mathbf{U})$.}
+% По определению
+% \begin{equation}
+%     \mathbf{P}(\mathbf{U})
+%     =
+%     \diag^{-1}\!\left(
+%         \boldsymbol{\sigma}(\mathbf{U})
+%     \right),
+% \end{equation}
+% то есть $\mathbf{P}(\mathbf{U})$ --- диагональная матрица с элементами
+% \begin{equation}
+%     \frac{1}{\sigma_1(\mathbf{U})},\ldots,\frac{1}{\sigma_T(\mathbf{U})}
+% \end{equation}
+% на диагонали. Поэтому ее спектральная норма равна максимальному диагональному элементу:
+% \begin{equation}
+%     \|\mathbf{P}(\mathbf{U})\|_2
+%     =
+%     \max_{t=1,\ldots,T}\frac{1}{\sigma_t(\mathbf{U})}
+%     =
+%     \frac{1}{\sigma_{\min}(\mathbf{U})}.
+% \end{equation}
+
+% \medskip
+
+% \noindent
+% \textbf{3. Оценка нормы матрицы $\mathbf{M}(\mathbf{U})$.}
+% Из формулы~\eqref{eq:tr-MU} имеем
+% \begin{equation}
+%     \mathbf{M}(\mathbf{U}) = \mathbf{U}\mathbf{C}_d.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \|\mathbf{M}(\mathbf{U})\|_2
+%     \le
+%     \|\mathbf{U}\|_2 \, \|\mathbf{C}_d\|_2
+%     \le
+%     \|\mathbf{U}\|_2.
+% \end{equation}
+
+% \medskip
+
+% \noindent
+% \textbf{4. Оценка нормы производной $\partial \vecrop(\mathbf{P}(\mathbf{U})) / \partial \vecrop(\mathbf{U})^\top$.}
+% Поскольку
+% \begin{equation}
+%     \mathbf{P}(\mathbf{U})
+%     =
+%     \diag^{-1}\!\left(
+%         \boldsymbol{\sigma}(\mathbf{U})
+%     \right),
+% \end{equation}
+% достаточно оценить производную вектора
+% \begin{equation}
+%     \boldsymbol{\sigma}(\mathbf{U})
+%     =
+%     \frac{1}{\sqrt{d}}
+%     \left(
+%         \mathbf{M}(\mathbf{U})^{\circ 2}\mathbf{1}_d
+%     \right)^{\circ \frac12}.
+% \end{equation}
+% Рассмотрим фиксированную строку $\mathbf{m}_t \in \mathbb{R}^d$ матрицы $\mathbf{M}(\mathbf{U})$. Тогда
+% \begin{equation}
+%     \sigma_t(\mathbf{U})
+%     =
+%     \frac{1}{\sqrt{d}}\|\mathbf{m}_t\|_2.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \frac{\partial}{\partial \mathbf{m}_t}
+%     \left(
+%         \frac{1}{\sigma_t(\mathbf{U})}
+%     \right)
+%     =
+%     \frac{\partial}{\partial \mathbf{m}_t}
+%     \left(
+%         \frac{\sqrt{d}}{\|\mathbf{m}_t\|_2}
+%     \right)
+%     =
+%     -\sqrt{d}\,
+%     \frac{\mathbf{m}_t^\top}{\|\mathbf{m}_t\|_2^3}.
+% \end{equation}
+% Отсюда
+% \begin{equation}
+%     \left\|
+%         \frac{\partial}{\partial \mathbf{m}_t}
+%         \left(
+%             \frac{1}{\sigma_t(\mathbf{U})}
+%         \right)
+%     \right\|_2
+%     =
+%     \sqrt{d}\,
+%     \frac{\|\mathbf{m}_t\|_2}{\|\mathbf{m}_t\|_2^3}
+%     =
+%     \frac{\sqrt{d}}{\|\mathbf{m}_t\|_2^2}
+%     =
+%     \frac{1}{\sqrt{d}\,\sigma_t(\mathbf{U})^2}.
+% \end{equation}
+% Кроме того, отображение $\mathbf{U} \mapsto \mathbf{M}(\mathbf{U})=\mathbf{U}\mathbf{C}_d$ линейно и имеет операторную норму не больше единицы. Поэтому, переходя от производной по $\mathbf{m}_t$ к производной по всей матрице $\mathbf{U}$ и учитывая еще один множитель $1/\sigma_t(\mathbf{U})$ при дифференцировании обратной диагональной матрицы, получаем
+% \begin{equation}
+%     \left\|
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2
+%     \le
+%     \frac{\|\mathbf{U}\|_2}{\sqrt{d}\,\sigma_{\min}(\mathbf{U})^3}.
+% \end{equation}
+
+% \medskip
+
+% Подставляя найденные оценки в~\eqref{eq:tr-ln-bound-step-1}, получаем
+% \begin{equation}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     \le
+%     \frac{1}{\sigma_{\min}(\mathbf{U})}\cdot 1
+%     +
+%     \|\mathbf{U}\|_2
+%     \cdot
+%     \frac{\|\mathbf{U}\|_2}{\sqrt{d}\,\sigma_{\min}(\mathbf{U})^3}.
+% \end{equation}
+% Итак,
+% \begin{equation}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     \le
+%     \frac{1}{\sigma_{\min}(\mathbf{U})}
+%     +
+%     \frac{\|\mathbf{U}\|_2^2}{\sqrt{d}\,\sigma_{\min}(\mathbf{U})^3},
+% \end{equation}
+% что и требовалось доказать.
+% \end{proof}
+
+% \subsection{Якобианы feed-forward части}
+
+% Далее полагаем $\sigma = \mathrm{ReLU}$, действующую покомпонентно. Введем обозначение
+% \begin{equation}
+%     \label{eq:tr-Dsigma}
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     =
+%     \diag\!\left(
+%         \vecrop\!\left(
+%             \mathbf{1}_{\{\mathbf{Y}\mathbf{W}_1 > 0\}}
+%         \right)
+%     \right)
+%     \in \mathbb{R}^{Td_{\mathrm{ff}}\times Td_{\mathrm{ff}}}.
+% \end{equation}
+
+% \begin{lemma}
+%     \label{lemma:tr-ReLU}
+%     Почти всюду по $\mathbf{Y}\mathbf{W}_1$ справедливо
+%     \begin{equation}
+%         \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))}{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)^\top}
+%         =
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1),
+%     \end{equation}
+%     причем вторая производная ReLU почти всюду равна нулю.
+% \end{lemma}
+
+% \begin{proof}
+% Так как ReLU действует покомпонентно, ее производная по каждой координате равна $1$ на положительной полуоси и $0$ на отрицательной. Поэтому якобиан имеет диагональный вид с указанными значениями на диагонали. В точках, где соответствующая координата равна нулю, производная не определена, но это множество имеет меру нуль. Вне этого множества якобиан кусочно постоянен, следовательно его производная почти всюду равна нулю.
+% \end{proof}
+
+% \begin{proposition}
+%     \label{prop:tr-FFN-jacobians}
+%     Для отображения
+%     \begin{equation}
+%         \mathbf{F}(\mathbf{Y})
+%         =
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2
+%         \in \mathbb{R}^{T\times d}
+%     \end{equation}
+%     параметрические якобианы по матрицам $\mathbf{W}_1$ и $\mathbf{W}_2$ задаются формулами
+%     \begin{equation}
+%         \label{eq:tr-FFN-jac-W2}
+%         \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
+%         =
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:tr-FFN-jac-W1}
+%         \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
+%         =
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{Y} \otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%         \right).
+%     \end{equation}
+% \end{proposition}
+
+% \begin{proof}
+% Обозначим
+% \begin{equation}
+%     \mathbf{H} = \sigma(\mathbf{Y}\mathbf{W}_1) \in \mathbb{R}^{T\times d_{\mathrm{ff}}}.
+% \end{equation}
+% Тогда
+% \begin{equation}
+%     \mathbf{F}(\mathbf{Y}) = \mathbf{H}\mathbf{W}_2.
+% \end{equation}
+% Для построчной векторизации выполняется тождество
+% \begin{equation}
+%     \vecrop(\mathbf{H}\mathbf{W}_2)
+%     =
+%     (\mathbf{H}\otimes \mathbf{I}_d)\vecrop(\mathbf{W}_2),
+% \end{equation}
+% откуда непосредственно следует
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
+%     =
+%     \mathbf{H}\otimes \mathbf{I}_d
+%     =
+%     \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d.
+% \end{equation}
+% Это доказывает~\eqref{eq:tr-FFN-jac-W2}.
+
+% Для $\mathbf{W}_1$ рассмотрим композицию
+% \begin{equation}
+%     \mathbf{W}_1
+%     \longmapsto
+%     \mathbf{Y}\mathbf{W}_1
+%     \longmapsto
+%     \sigma(\mathbf{Y}\mathbf{W}_1)
+%     \longmapsto
+%     \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2.
+% \end{equation}
+% По правилу дифференцирования сложной функции
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
+%     =
+%     \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2)}{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))}{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \mathbf{w}_1^\top}.
+% \end{equation}
+% Первый множитель равен
+% \begin{equation}
+%     \mathbf{I}_T \otimes \mathbf{W}_2^\top.
+% \end{equation}
+% Второй множитель по лемме~\ref{lemma:tr-ReLU} есть
+% \begin{equation}
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1).
+% \end{equation}
+% Наконец, из тождества
+% \begin{equation}
+%     \vecrop(\mathbf{Y}\mathbf{W}_1)
+%     =
+%     \left(
+%         \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%     \right)\vecrop(\mathbf{W}_1)
+% \end{equation}
+% следует
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \mathbf{w}_1^\top}
+%     =
+%     \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}.
+% \end{equation}
+% Перемножая эти три множителя, получаем формулу~\eqref{eq:tr-FFN-jac-W1}.
+% \end{proof}
+
+% \begin{lemma}
+%     \label{lemma:tr-FFN-input-jacobian}
+%     Якобиан $\vecrop(\mathrm{FFN}(\mathbf{Y}))$ по входу $\vecrop(\mathbf{Y})$ имеет вид
+%     \begin{equation}
+%         \label{eq:tr-FFN-input-jacobian}
+%         \mathbf{J}_{\mathrm{FFN},Y}
+%         =
+%         \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}
+%         =
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%         \right).
+%     \end{equation}
+% \end{lemma}
+
+% \begin{proof}
+% Композиция
+% \[
+% \mathbf{Y}
+% \longmapsto
+% \mathbf{Y}\mathbf{W}_1
+% \longmapsto
+% \sigma(\mathbf{Y}\mathbf{W}_1)
+% \longmapsto
+% \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2
+% \]
+% дифференцируется точно так же, как в доказательстве предложения~\ref{prop:tr-FFN-jacobians}. Отличие состоит лишь в том, что последний множитель теперь равен
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \vecrop(\mathbf{Y})^\top}
+%     =
+%     \mathbf{I}_T \otimes \mathbf{W}_1^\top.
+% \end{equation}
+% Подстановка этого равенства завершает доказательство.
+% \end{proof}
+
+% \subsection{Якобианы self-attention части}
+
+% Для self-attention части обозначим
+% \begin{equation}
+%     \label{eq:tr-GQGKGV}
+%     \mathbf{G}_Q
+%     =
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_Q^\top},
+%     \qquad
+%     \mathbf{G}_K
+%     =
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_K^\top},
+%     \qquad
+%     \mathbf{G}_V
+%     =
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_V^\top}.
+% \end{equation}
+% Точные выражения для этих матриц получаются в анализе изолированного single-head self-attention блока. В настоящем разделе нам понадобятся только их спектральные оценки.
+
+% \begin{lemma}
+%     \label{lemma:tr-SA-jacobian-bounds}
+%     Для матриц~\eqref{eq:tr-GQGKGV} справедливы оценки
+%     \begin{equation}
+%         \label{eq:tr-GV-bound}
+%         \|\mathbf{G}_V\|_2
+%         \le
+%         T\|\mathbf{X}\|_2,
+%     \end{equation}
+%     а также
+%     \begin{equation}
+%         \|\mathbf{G}_Q\|_2
+%         \le
+%         \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%         \|\mathbf{W}_V\|_2
+%         \|\mathbf{W}_K\|_2
+%         \|\mathbf{X}\|_2^3,
+%         \qquad
+%         \|\mathbf{G}_K\|_2
+%         \le
+%         \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%         \|\mathbf{W}_V\|_2
+%         \|\mathbf{W}_Q\|_2
+%         \|\mathbf{X}\|_2^3,
+%     \end{equation}
+%     где $C_{\mathrm{sm}}$ --- константа Липшица построчного softmax в спектральной норме.
+% \end{lemma}
+
+% \begin{proof}
+% Для матрицы $\mathbf{G}_V$ при фиксированных $\mathbf{X}, \mathbf{W}_Q, \mathbf{W}_K$ отображение self-attention линейно по $\mathbf{W}_V$:
+% \begin{equation}
+%     \mathrm{SA}(\mathbf{X})
+%     =
+%     \mathbf{\Pi}(\mathbf{X})\mathbf{X}\mathbf{W}_V.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \vecrop(\mathrm{SA}(\mathbf{X}))
+%     =
+%     \left(
+%         \mathbf{\Pi}(\mathbf{X})\mathbf{X}\otimes \mathbf{I}_d
+%     \right)\vecrop(\mathbf{W}_V),
+% \end{equation}
+% откуда
+% \begin{equation}
+%     \mathbf{G}_V
+%     =
+%     \mathbf{\Pi}(\mathbf{X})\mathbf{X}\otimes \mathbf{I}_d.
+% \end{equation}
+% Используя свойство спектральной нормы произведения Кронекера, получаем
+% \begin{equation}
+%     \|\mathbf{G}_V\|_2
+%     =
+%     \|\mathbf{\Pi}(\mathbf{X})\mathbf{X}\|_2
+%     \le
+%     \|\mathbf{\Pi}(\mathbf{X})\|_2 \|\mathbf{X}\|_2.
+% \end{equation}
+% Поскольку $\mathbf{\Pi}(\mathbf{X})$ является построчно-стохастической матрицей, имеем грубую оценку
+% \begin{equation}
+%     \|\mathbf{\Pi}(\mathbf{X})\|_2 \le T,
+% \end{equation}
+% и потому
+% \begin{equation}
+%     \|\mathbf{G}_V\|_2 \le T\|\mathbf{X}\|_2.
+% \end{equation}
+
+% Для $\mathbf{G}_Q$ и $\mathbf{G}_K$ используем дифференциальную форму self-attention:
+% \begin{equation}
+%     d\,\mathrm{SA}(\mathbf{X})
+%     =
+%     (d\mathbf{\Pi})\mathbf{X}\mathbf{W}_V.
+% \end{equation}
+% При вариации $d\mathbf{W}_Q$ матрица логитов
+% \begin{equation}
+%     \mathbf{S}
+%     =
+%     \frac{\mathbf{X}\mathbf{W}_Q\mathbf{W}_K^\top\mathbf{X}^\top}{\sqrt{d_k}}
+% \end{equation}
+% изменяется по формуле
+% \begin{equation}
+%     d\mathbf{S}
+%     =
+%     \frac{\mathbf{X}\, d\mathbf{W}_Q\, \mathbf{W}_K^\top\mathbf{X}^\top}{\sqrt{d_k}},
+% \end{equation}
+% поэтому
+% \begin{equation}
+%     \|d\mathbf{S}\|_2
+%     \le
+%     \frac{1}{\sqrt{d_k}}
+%     \|\mathbf{X}\|_2^2
+%     \|\mathbf{W}_K\|_2
+%     \|d\mathbf{W}_Q\|_2.
+% \end{equation}
+% Если $C_{\mathrm{sm}}$ обозначает константу Липшица построчного softmax в спектральной норме, то
+% \begin{equation}
+%     \|d\mathbf{\Pi}\|_2
+%     \le
+%     C_{\mathrm{sm}} \|d\mathbf{S}\|_2.
+% \end{equation}
+% Следовательно,
+% \begin{align}
+%     \|d\,\mathrm{SA}(\mathbf{X})\|_2
+%     &\le
+%     \|d\mathbf{\Pi}\|_2 \|\mathbf{X}\mathbf{W}_V\|_2 \\
+%     &\le
+%     C_{\mathrm{sm}}
+%     \frac{1}{\sqrt{d_k}}
+%     \|\mathbf{X}\|_2^2
+%     \|\mathbf{W}_K\|_2
+%     \|d\mathbf{W}_Q\|_2
+%     \|\mathbf{X}\|_2
+%     \|\mathbf{W}_V\|_2 \\
+%     &=
+%     C_{\mathrm{sm}}
+%     \frac{1}{\sqrt{d_k}}
+%     \|\mathbf{W}_V\|_2
+%     \|\mathbf{W}_K\|_2
+%     \|\mathbf{X}\|_2^3
+%     \|d\mathbf{W}_Q\|_2.
+% \end{align}
+% Отсюда
+% \begin{equation}
+%     \|\mathbf{G}_Q\|_2
+%     \le
+%     \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%     \|\mathbf{W}_V\|_2
+%     \|\mathbf{W}_K\|_2
+%     \|\mathbf{X}\|_2^3.
+% \end{equation}
+% Оценка для $\mathbf{G}_K$ выводится аналогично.
+% \end{proof}
+
+% \subsection{Точные якобианы выхода трансформерного блока}
+
+% Введем обозначения
+% \begin{equation}
+%     \label{eq:tr-JY-JZ}
+%     \mathbf{J}_Y
+%     =
+%     \frac{\partial \vecrop(\mathbf{Y})}{\partial \vecrop(\mathbf{U})^\top}
+%     =
+%     \mathbf{J}_{\mathrm{LN}}(\mathbf{U}),
+%     \qquad
+%     \mathbf{J}_Z
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
+%     =
+%     \mathbf{J}_{\mathrm{LN}}(\mathbf{S}).
+% \end{equation}
+
+% \begin{theorem}
+%     \label{thm:tr-block-jacobians-clean}
+%     Якобианы выхода трансформерного блока по всем пяти группам параметров задаются формулами
+%     \begin{equation}
+%         \label{eq:tr-J1-clean}
+%         \mathbf{J}^{(1)}
+%         =
+%         \mathbf{J}_Z \mathbf{B}_1,
+%         \qquad
+%         \mathbf{B}_1
+%         =
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{Y} \otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%         \right),
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:tr-J2-clean}
+%         \mathbf{J}^{(2)}
+%         =
+%         \mathbf{J}_Z \mathbf{B}_2,
+%         \qquad
+%         \mathbf{B}_2
+%         =
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:tr-JQKV-clean}
+%         \mathbf{J}^{(Q)}
+%         =
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_Q,
+%         \qquad
+%         \mathbf{J}^{(K)}
+%         =
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_K,
+%         \qquad
+%         \mathbf{J}^{(V)}
+%         =
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_V,
+%     \end{equation}
+%     где
+%     \begin{equation}
+%         \label{eq:tr-JSY-clean}
+%         \mathbf{J}_{SY}
+%         =
+%         \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
+%         =
+%         \mathbf{I}_{Td}
+%         +
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%         \right).
+%     \end{equation}
+% \end{theorem}
+
+% \begin{proof}
+% Сначала рассмотрим параметры $\mathbf{W}_1$ и $\mathbf{W}_2$. Из~\eqref{eq:tr-s-z} имеем
+% \begin{equation}
+%     \mathbf{Z} = \mathrm{LN}(\mathbf{S}),
+%     \qquad
+%     \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}).
+% \end{equation}
+% Параметры $\mathbf{W}_1$ и $\mathbf{W}_2$ входят в блок только через отображение $\mathrm{FFN}(\mathbf{Y})$, причем сама матрица $\mathbf{Y}$ от них не зависит. Поэтому по правилу дифференцирования сложной функции
+% \begin{equation}
+%     \mathbf{J}^{(1)}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_1^\top}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{S})}{\partial \mathbf{w}_1^\top}
+%     =
+%     \mathbf{J}_Z
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}.
+% \end{equation}
+% Теперь по предложению~\ref{prop:tr-FFN-jacobians}
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
+%     =
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%     \right)
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     \left(
+%         \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%     \right),
+% \end{equation}
+% что и дает формулу~\eqref{eq:tr-J1-clean}. Аналогично
+% \begin{equation}
+%     \mathbf{J}^{(2)}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_2^\top}
+%     =
+%     \mathbf{J}_Z
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
+%     =
+%     \mathbf{J}_Z
+%     \left(
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d
+%     \right),
+% \end{equation}
+% откуда следует~\eqref{eq:tr-J2-clean}.
+
+% Рассмотрим теперь параметр $\mathbf{w}_k$, где $k\in\{Q,K,V\}$. Его влияние на выход проходит по цепочке
+% \begin{multline}
+%     \mathbf{w}_k
+%     \longmapsto
+%     \mathrm{SA}(\mathbf{X})
+%     \longmapsto
+%     \mathbf{U} = \mathbf{X} + \mathrm{SA}(\mathbf{X})
+%     \longmapsto
+%     \\
+%     \longmapsto
+%     \mathbf{Y} = \mathrm{LN}(\mathbf{U})
+%     \longmapsto
+%     \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y})
+%     \longmapsto
+%     \mathbf{Z} = \mathrm{LN}(\mathbf{S}).
+% \end{multline}
+% Поэтому
+% \begin{equation}
+%     \label{eq:tr-chain-k}
+%     \mathbf{J}^{(k)}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_k^\top}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{Y})}{\partial \vecrop(\mathbf{U})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_k^\top}.
+% \end{equation}
+% Первый множитель в~\eqref{eq:tr-chain-k} равен $\mathbf{J}_Z$, третий "--- $\mathbf{J}_Y$, а четвертый "--- $\mathbf{G}_k$. Остается вычислить второй множитель.
+
+% Из равенства $\mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y})$ следует
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
+%     =
+%     \mathbf{I}_{Td}
+%     +
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}.
+% \end{equation}
+% По лемме~\ref{lemma:tr-FFN-input-jacobian}
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}
+%     =
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%     \right)
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%     \right).
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
+%     =
+%     \mathbf{I}_{Td}
+%     +
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%     \right)
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%     \right)
+%     =
+%     \mathbf{J}_{SY}.
+% \end{equation}
+% Подставляя найденные множители в~\eqref{eq:tr-chain-k}, получаем
+% \begin{equation}
+%     \mathbf{J}^{(k)}
+%     =
+%     \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_k,
+%     \qquad
+%     k\in\{Q,K,V\}.
+% \end{equation}
+% Теорема доказана.
+% \end{proof}
+
+% \subsection{Гаусс--ньютоновская компонента матрицы Гессе}
+
+% Напомним, что
+% \begin{equation}
+%     \mathbf{A}(\mathbf{w})
+%     =
+%     \nabla_{\mathbf{z}}^2 \ell(\mathbf{z},\mathbf{y})
+%     \in \mathbb{R}^{Td\times Td}
+% \end{equation}
+% обозначает матрицу кривизны функции потерь по выходу блока. Тогда полный якобиан по всем параметрам задается формулой
+% \begin{equation}
+%     \label{eq:tr-full-J}
+%     \mathbf{J}(\mathbf{w})
+%     =
+%     \left[
+%         \mathbf{J}^{(Q)},
+%         \mathbf{J}^{(K)},
+%         \mathbf{J}^{(V)},
+%         \mathbf{J}^{(1)},
+%         \mathbf{J}^{(2)}
+%     \right].
+% \end{equation}
+
+% \begin{theorem}
+%     \label{thm:tr-GN-blocks-clean}
+%     Гаусс--ньютоновская компонента матрицы Гессе трансформерного блока имеет блочную структуру
+%     \begin{equation}
+%         \label{eq:tr-GN-block-matrix}
+%         \mathbf{G}(\mathbf{w})
+%         =
+%         \left[
+%             \mathbf{G}^{(i,j)}(\mathbf{w})
+%         \right]_{i,j\in\{Q,K,V,1,2\}},
+%     \end{equation}
+%     где
+%     \begin{equation}
+%         \label{eq:tr-GN-block-clean}
+%         \mathbf{G}^{(i,j)}(\mathbf{w})
+%         =
+%         \mathbf{J}^{(i)\top}
+%         \mathbf{A}(\mathbf{w})
+%         \mathbf{J}^{(j)}.
+%     \end{equation}
+%     В частности,
+%     \begin{equation}
+%         \label{eq:tr-G11}
+%         \mathbf{G}^{(1,1)}
+%         =
+%         \mathbf{B}_1^\top
+%         \mathbf{J}_Z^\top
+%         \mathbf{A}(\mathbf{w})
+%         \mathbf{J}_Z
+%         \mathbf{B}_1,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:tr-G22}
+%         \mathbf{G}^{(2,2)}
+%         =
+%         \mathbf{B}_2^\top
+%         \mathbf{J}_Z^\top
+%         \mathbf{A}(\mathbf{w})
+%         \mathbf{J}_Z
+%         \mathbf{B}_2,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:tr-Gkl}
+%         \mathbf{G}^{(k,\ell)}
+%         =
+%         \mathbf{G}_k^\top
+%         \mathbf{J}_Y^\top
+%         \mathbf{J}_{SY}^\top
+%         \mathbf{J}_Z^\top
+%         \mathbf{A}(\mathbf{w})
+%         \mathbf{J}_Z
+%         \mathbf{J}_{SY}
+%         \mathbf{J}_Y
+%         \mathbf{G}_{\ell},
+%         \qquad
+%         k,\ell\in\{Q,K,V\},
+%     \end{equation}
+%     а смешанные attention--FFN блоки выписываются аналогично.
+% \end{theorem}
+
+% \begin{proof}
+% По определению гаусс--ньютоновской компоненты
+% \begin{equation}
+%     \mathbf{G}(\mathbf{w})
+%     =
+%     \mathbf{J}(\mathbf{w})^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}(\mathbf{w}).
+% \end{equation}
+% Так как $\mathbf{J}(\mathbf{w})$ имеет блочный вид~\eqref{eq:tr-full-J}, матрица $\mathbf{G}(\mathbf{w})$ также имеет блочную структуру, причем ее $(i,j)$-й блок равен
+% \begin{equation}
+%     \mathbf{G}^{(i,j)}(\mathbf{w})
+%     =
+%     \mathbf{J}^{(i)\top}
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}^{(j)}.
+% \end{equation}
+% Это доказывает формулу~\eqref{eq:tr-GN-block-clean}. Дальнейшие равенства получаются прямой подстановкой формул теоремы~\ref{thm:tr-block-jacobians-clean}. Например,
+% \begin{equation}
+%     \mathbf{G}^{(1,1)}
+%     =
+%     (\mathbf{J}_Z\mathbf{B}_1)^\top
+%     \mathbf{A}(\mathbf{w})
+%     (\mathbf{J}_Z\mathbf{B}_1)
+%     =
+%     \mathbf{B}_1^\top
+%     \mathbf{J}_Z^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}_Z
+%     \mathbf{B}_1,
+% \end{equation}
+% что и дает~\eqref{eq:tr-G11}. Формула~\eqref{eq:tr-G22} выводится совершенно аналогично. Для $k,\ell\in\{Q,K,V\}$ имеем
+% \begin{align}
+%     \mathbf{G}^{(k,\ell)}
+%     &=
+%     \left(
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_k
+%     \right)^\top
+%     \mathbf{A}(\mathbf{w})
+%     \left(
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_{\ell}
+%     \right) \\
+%     &=
+%     \mathbf{G}_k^\top
+%     \mathbf{J}_Y^\top
+%     \mathbf{J}_{SY}^\top
+%     \mathbf{J}_Z^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}_Z
+%     \mathbf{J}_{SY}
+%     \mathbf{J}_Y
+%     \mathbf{G}_{\ell},
+% \end{align}
+% что и дает~\eqref{eq:tr-Gkl}.
+% \end{proof}
+
+% \subsection{Оценка спектральной нормы гаусс--ньютоновской компоненты}
+
+% Теперь оценим сверху спектральную норму $\mathbf{G}(\mathbf{w})$.
+
+% \begin{theorem}
+%     \label{thm:tr-GN-general-bound-clean}
+%     Пусть
+%     \begin{equation}
+%         \label{eq:tr-A-bound-clean}
+%         \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}}.
+%     \end{equation}
+%     Тогда
+%     \begin{equation}
+%         \label{eq:tr-GN-general-bound}
+%         \|\mathbf{G}(\mathbf{w})\|_2
+%         \le
+%         M_{\mathbf{A}}
+%         \left(
+%             \|\mathbf{J}^{(Q)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(K)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(V)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(1)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(2)}\|_2^2
+%         \right).
+%     \end{equation}
+%     Кроме того,
+%     \begin{equation}
+%         \label{eq:tr-J1-bound-clean}
+%         \|\mathbf{J}^{(1)}\|_2
+%         \le
+%         \|\mathbf{J}_Z\|_2
+%         \|\mathbf{W}_2\|_2
+%         \|\mathbf{Y}\|_2,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:tr-J2-bound-clean}
+%         \|\mathbf{J}^{(2)}\|_2
+%         \le
+%         \|\mathbf{J}_Z\|_2
+%         \|\sigma(\mathbf{Y}\mathbf{W}_1)\|_2
+%         \le
+%         \|\mathbf{J}_Z\|_2
+%         \|\mathbf{Y}\|_2
+%         \|\mathbf{W}_1\|_2,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:tr-Jk-bound-clean}
+%         \|\mathbf{J}^{(k)}\|_2
+%         \le
+%         \|\mathbf{J}_Z\|_2
+%         \left(
+%             \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%         \right)
+%         \|\mathbf{J}_Y\|_2
+%         \|\mathbf{G}_k\|_2,
+%         \qquad
+%         k\in\{Q,K,V\}.
+%     \end{equation}
+% \end{theorem}
+
+% \begin{proof}
+% Из определения гаусс--ньютоновской компоненты получаем
+% \begin{equation}
+%     \mathbf{G}(\mathbf{w})
+%     =
+%     \mathbf{J}(\mathbf{w})^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}(\mathbf{w}),
+% \end{equation}
+% следовательно,
+% \begin{equation}
+%     \|\mathbf{G}(\mathbf{w})\|_2
+%     \le
+%     \|\mathbf{J}(\mathbf{w})^\top\|_2
+%     \|\mathbf{A}(\mathbf{w})\|_2
+%     \|\mathbf{J}(\mathbf{w})\|_2
+%     =
+%     \|\mathbf{A}(\mathbf{w})\|_2
+%     \|\mathbf{J}(\mathbf{w})\|_2^2.
+% \end{equation}
+% Используя~\eqref{eq:tr-A-bound-clean}, получаем
+% \begin{equation}
+%     \|\mathbf{G}(\mathbf{w})\|_2
+%     \le
+%     M_{\mathbf{A}}
+%     \|\mathbf{J}(\mathbf{w})\|_2^2.
+% \end{equation}
+% Теперь воспользуемся блочным представлением~\eqref{eq:tr-full-J}. Имеем
+% \begin{equation}
+%     \mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top
+%     =
+%     \sum_{i\in\{Q,K,V,1,2\}}
+%     \mathbf{J}^{(i)}\mathbf{J}^{(i)\top},
+% \end{equation}
+% откуда
+% \begin{equation}
+%     \|\mathbf{J}(\mathbf{w})\|_2^2
+%     =
+%     \|\mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top\|_2
+%     \le
+%     \sum_{i\in\{Q,K,V,1,2\}}
+%     \|\mathbf{J}^{(i)}\mathbf{J}^{(i)\top}\|_2
+%     =
+%     \sum_{i\in\{Q,K,V,1,2\}}
+%     \|\mathbf{J}^{(i)}\|_2^2.
+% \end{equation}
+% Тем самым доказано~\eqref{eq:tr-GN-general-bound}.
+
+% Оценим теперь нормы отдельных блоков. По формуле~\eqref{eq:tr-J1-clean}
+% \begin{equation}
+%     \|\mathbf{J}^{(1)}\|_2
+%     \le
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{B}_1\|_2
+%     \le
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{I}_T \otimes \mathbf{W}_2^\top\|_2
+%     \|\mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)\|_2
+%     \|\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}\|_2.
+% \end{equation}
+% Но
+% \begin{equation}
+%     \|\mathbf{I}_T \otimes \mathbf{W}_2^\top\|_2 = \|\mathbf{W}_2\|_2,
+%     \qquad
+%     \|\mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)\|_2 \le 1,
+%     \qquad
+%     \|\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}\|_2 = \|\mathbf{Y}\|_2.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \|\mathbf{J}^{(1)}\|_2
+%     \le
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{W}_2\|_2
+%     \|\mathbf{Y}\|_2.
+% \end{equation}
+% Это доказывает~\eqref{eq:tr-J1-bound-clean}.
+
+% Для блока $\mathbf{J}^{(2)}$ из~\eqref{eq:tr-J2-clean} имеем
+% \begin{equation}
+%     \|\mathbf{J}^{(2)}\|_2
+%     \le
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{B}_2\|_2
+%     =
+%     \|\mathbf{J}_Z\|_2
+%     \|\sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d\|_2
+%     =
+%     \|\mathbf{J}_Z\|_2
+%     \|\sigma(\mathbf{Y}\mathbf{W}_1)\|_2.
+% \end{equation}
+% Так как ReLU является $1$-липшицевой и $\sigma(\mathbf{0})=\mathbf{0}$, то
+% \begin{equation}
+%     \|\sigma(\mathbf{Y}\mathbf{W}_1)\|_2
+%     \le
+%     \|\mathbf{Y}\mathbf{W}_1\|_2
+%     \le
+%     \|\mathbf{Y}\|_2
+%     \|\mathbf{W}_1\|_2,
+% \end{equation}
+% откуда следует~\eqref{eq:tr-J2-bound-clean}.
+
+% Наконец, для $k\in\{Q,K,V\}$ из~\eqref{eq:tr-JQKV-clean} получаем
+% \begin{equation}
+%     \|\mathbf{J}^{(k)}\|_2
+%     \le
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{J}_{SY}\|_2
+%     \|\mathbf{J}_Y\|_2
+%     \|\mathbf{G}_k\|_2.
+% \end{equation}
+% Оценим $\|\mathbf{J}_{SY}\|_2$ по формуле~\eqref{eq:tr-JSY-clean}:
+% \begin{align}
+%     \|\mathbf{J}_{SY}\|_2
+%     &\le
+%     \|\mathbf{I}_{Td}\|_2
+%     +
+%     \left\|
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%         \right)
+%     \right\|_2 \\
+%     &\le
+%     1
+%     +
+%     \|\mathbf{I}_T \otimes \mathbf{W}_2^\top\|_2
+%     \|\mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)\|_2
+%     \|\mathbf{I}_T \otimes \mathbf{W}_1^\top\|_2 \\
+%     &\le
+%     1 + \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2.
+% \end{align}
+% Подставляя эту оценку, получаем~\eqref{eq:tr-Jk-bound-clean}.
+% \end{proof}
+
+% \begin{theorem}
+%     \label{thm:tr-GN-explicit-clean}
+%     Пусть выполнено~\eqref{eq:tr-A-bound-clean}. Тогда
+%     \begin{multline}
+%         \label{eq:tr-GN-explicit}
+%         \|\mathbf{G}(\mathbf{w})\|_2
+%         \le
+%         M_{\mathbf{A}}
+%         \|\mathbf{J}_Z\|_2^2
+%         \Bigg[
+%             \|\mathbf{W}_2\|_2^2\|\mathbf{Y}\|_2^2
+%             +
+%             \|\mathbf{W}_1\|_2^2\|\mathbf{Y}\|_2^2
+%             +
+%             \\
+%             +
+%             \left(
+%                 \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%             \right)^2
+%             \|\mathbf{J}_Y\|_2^2
+%             \Bigg(
+%                 T^2\|\mathbf{X}\|_2^2
+%                 +
+%                 \\
+%                 +
+%                 \frac{\|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2}{T^2 d_k}
+%                 \|\mathbf{X}\|_2^6
+%                 +
+%                 \frac{\|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2}{T^2 d_k}
+%                 \|\mathbf{X}\|_2^6
+%             \Bigg)
+%         \Bigg].
+%     \end{multline}
+% \end{theorem}
+
+% \begin{proof}
+% По теореме~\ref{thm:tr-GN-general-bound-clean}
+% \begin{equation}
+%     \|\mathbf{G}(\mathbf{w})\|_2
+%     \le
+%     M_{\mathbf{A}}
+%     \left(
+%         \|\mathbf{J}^{(Q)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(K)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(V)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(1)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(2)}\|_2^2
+%     \right).
+% \end{equation}
+% Для первых двух слагаемых из~\eqref{eq:tr-J1-bound-clean} и~\eqref{eq:tr-J2-bound-clean} имеем
+% \begin{equation}
+%     \|\mathbf{J}^{(1)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \|\mathbf{W}_2\|_2^2
+%     \|\mathbf{Y}\|_2^2,
+% \end{equation}
+% \begin{equation}
+%     \|\mathbf{J}^{(2)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \|\mathbf{W}_1\|_2^2
+%     \|\mathbf{Y}\|_2^2.
+% \end{equation}
+% Для attention-параметров по~\eqref{eq:tr-Jk-bound-clean} получаем
+% \begin{equation}
+%     \|\mathbf{J}^{(k)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \left(
+%         \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%     \right)^2
+%     \|\mathbf{J}_Y\|_2^2
+%     \|\mathbf{G}_k\|_2^2,
+%     \qquad
+%     k\in\{Q,K,V\}.
+% \end{equation}
+% Суммируя по $k\in\{Q,K,V\}$ и подставляя оценки леммы~\ref{lemma:tr-SA-jacobian-bounds}, получаем
+% \begin{multline}
+%     \|\mathbf{J}^{(Q)}\|_2^2
+%     +
+%     \|\mathbf{J}^{(K)}\|_2^2
+%     +
+%     \|\mathbf{J}^{(V)}\|_2^2
+%     \leqslant
+%     \|\mathbf{J}_Z\|_2^2
+%     \left(
+%         \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%     \right)^2
+%     \|\mathbf{J}_Y\|_2^2
+%     \times
+%     \\
+%     \times
+%     \left(
+%         T^2\|\mathbf{X}\|_2^2
+%         +
+%         \frac{\|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2}{T^2 d_k}\|\mathbf{X}\|_2^6
+%         +
+%         \frac{\|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2}{T^2 d_k}\|\mathbf{X}\|_2^6
+%     \right).
+% \end{multline}
+% Подставляя эти три оценки в исходное неравенство для $\|\mathbf{G}(\mathbf{w})\|_2$, получаем формулу~\eqref{eq:tr-GN-explicit}.
+% \end{proof}
+
+% \begin{corollary}
+%     \label{cor:tr-GN-uniform-clean}
+%     Пусть
+%     \begin{equation}
+%         \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}},
+%         \qquad
+%         \|\mathbf{X}\|_2 \le M_{\mathbf{X}},
+%         \qquad
+%         \|\mathbf{Y}\|_2 \le M_{\mathbf{Y}},
+%     \end{equation}
+%     \begin{equation}
+%         \|\mathbf{W}_Q\|_2,\|\mathbf{W}_K\|_2,\|\mathbf{W}_V\|_2,\|\mathbf{W}_1\|_2,\|\mathbf{W}_2\|_2
+%         \le
+%         M_{\mathbf{W}},
+%     \end{equation}
+%     \begin{equation}
+%         \sigma_{\min}(\mathbf{U}) \ge \sigma_0,
+%         \qquad
+%         \sigma_{\min}(\mathbf{S}) \ge \sigma_0 > 0.
+%     \end{equation}
+%     Обозначим
+%     \begin{equation}
+%         C_{\mathrm{LN}}(M)
+%         =
+%         \frac{1}{\sigma_0}
+%         +
+%         \frac{M^2}{\sqrt{d}\,\sigma_0^3}.
+%     \end{equation}
+%     Тогда
+%     \begin{multline}
+%         \label{eq:tr-GN-uniform}
+%         \|\mathbf{G}(\mathbf{w})\|_2
+%         \leqslant
+%         M_{\mathbf{A}}
+%         C_{\mathrm{LN}}(\|\mathbf{S}\|_2)^2
+%         \Bigg[
+%             2M_{\mathbf{Y}}^2M_{\mathbf{W}}^2
+%             +
+%             \\
+%             +
+%             \left(
+%                 M_{\mathbf{W}}^2 + 1
+%             \right)^2
+%             C_{\mathrm{LN}}(\|\mathbf{U}\|_2)^2
+%             \left(
+%                 T^2 M_{\mathbf{X}}^2
+%                 +
+%                 \frac{2M_{\mathbf{W}}^4}{T^2 d_k}M_{\mathbf{X}}^6
+%             \right)
+%         \Bigg].
+%     \end{multline}
+% \end{corollary}
+
+% Полученная оценка~\eqref{eq:tr-GN-uniform} показывает, что в трансформерном блоке величина гаусс--ньютоновской компоненты определяется тремя основными факторами. Во-первых, существенную роль играет норма входного сигнала $\|\mathbf{X}\|_2$: для блоков, соответствующих матрицам $\mathbf{W}_Q$ и $\mathbf{W}_K$, возникает кубическая зависимость нормы якобиана от $\|\mathbf{X}\|_2$, что после возведения в квадрат приводит к членам порядка $\|\mathbf{X}\|_2^6$. Во-вторых, на итоговую кривизну существенно влияет LayerNorm через множители $\|\mathbf{J}_Y\|_2$ и $\|\mathbf{J}_Z\|_2$, контролируемые снизу построчными дисперсиями промежуточных представлений. В-третьих, остаточная связь во второй половине блока приводит к появлению множителя $1+\|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2$ вместо чистого произведения норм, что качественно отличает трансформер от простой последовательной композиции линейных и нелинейных слоев.
+
+\section{Трансформерные нейронные сети}
+
+В предыдущих разделах анализ гаусс--ньютоновской компоненты проводился для матрично-представимых сетей, где каждый слой задается линейным по входу оператором. Для стандартного трансформерного блока эта схема уже неприменима: self-attention нелинеен по входу из-за softmax от матрицы попарных скалярных произведений, а LayerNorm нелинеен вследствие зависимости от построчных средних и дисперсий. Поэтому в данном разделе мы не пытаемся включить трансформер в класс матрично-представимых сетей, а напрямую исследуем якобиан выхода блока по параметрам. Этого достаточно для анализа гаусс--ньютоновской компоненты~\eqref{eq:gauss-newton-term}.
+
+Рассмотрим одно-головый трансформерный блок. Пусть $T$ обозначает длину последовательности, $d$ --- размерность токенных представлений, $d_k$ --- размерность запросов и ключей, $d_{\text{ff}}$ --- скрытую размерность feed-forward части. Вход блока задается матрицей $\mathbf{X}\in\mathbb{R}^{T\times d}$, а сам блок определяется формулами
+\begin{equation}
+    \label{eq:tr-main-pi}
+    \mathbf{\Pi}(\mathbf{X})
+    =
+    \softmax\!\left(
+        \frac{\mathbf{X}\mathbf{W}_Q\mathbf{W}_K^\top \mathbf{X}^\top}{\sqrt{d_k}}
+    \right)
+    \in \mathbb{R}^{T \times T}
+    ,
+    \qquad
+    \mathrm{SA}(\mathbf{X})
+    =
+    \mathbf{\Pi}(\mathbf{X})\mathbf{X}\mathbf{W}_V
+    \in \mathbb{R}^{T \times d}
+    ,
+\end{equation}
+\begin{equation}
+    \label{eq:tr-main-u-y}
+    \mathbf{U}
+    =
+    \mathbf{X}+\mathrm{SA}(\mathbf{X})
+    \in \mathbb{R}^{T \times d}
+    ,
+    \qquad
+    \mathbf{Y}
+    =
+    \mathrm{LN}(\mathbf{U})
+    \in \mathbb{R}^{T \times d},
+\end{equation}
+\begin{equation}
+    \label{eq:tr-main-s-z}
+    \mathbf{S}
+    =
+    \mathbf{Y}+\sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2
+    \in \mathbb{R}^{T \times d},
+    \qquad
+    \mathbf{Z}
+    =
+    \mathrm{LN}(\mathbf{S})
+    \in \mathbb{R}^{T \times d},
+\end{equation}
+где $\mathbf{W}_{Q}, \mathbf{W}_{K}, \mathbf{W}_{V} \in \mathbb{R}^{d \times d_k}$, $\mathbf{W}_{1} \in \mathbb{R}^{d \times d_{\text{ff}}}$, $\mathbf{W}_{2} \in \mathbb{R}^{d_{\text{ff}} \times d}$, $\sigma = \mathrm{ReLU}$ действует покомпонентно. Для согласования с обозначениями главы используем построчную векторизацию
+\begin{equation}
+    \mathbf{x}=\vecrop(\mathbf{X})\in\mathbb{R}^{Td},
+    \qquad
+    \mathbf{z}=\vecrop(\mathbf{Z})\in\mathbb{R}^{Td}.
+\end{equation}
+
+Параметры блока разбиваются на пять групп:
+\begin{equation}
+    \mathbf{w}_{i} = \vecrop(\mathbf{W}_{i}), \qquad i \in \{Q, K, V, 1, 2\},
+\end{equation}
+\begin{equation}
+    \mathbf{w}
+    =
+    \col
+    \left(
+        \mathbf{w}_1,
+        \mathbf{w}_2,
+        \mathbf{w}_3,
+        \mathbf{w}_4,
+        \mathbf{w}_5
+    \right).
+\end{equation}
+Соответствующие частные якобианы обозначим через
+\begin{equation}
+    \mathbf{J}^{(Q)}=\frac{\partial \mathbf z}{\partial \mathbf w_Q^\top},
+    \quad
+    \mathbf{J}^{(K)}=\frac{\partial \mathbf z}{\partial \mathbf w_K^\top},
+    \quad
+    \mathbf{J}^{(V)}=\frac{\partial \mathbf z}{\partial \mathbf w_V^\top},
+    \quad
+    \mathbf{J}^{(1)}=\frac{\partial \mathbf z}{\partial \mathbf w_1^\top},
+    \quad
+    \mathbf{J}^{(2)}=\frac{\partial \mathbf z}{\partial \mathbf w_2^\top}.
+\end{equation}
+Тогда полный якобиан имеет блочный вид
+\begin{equation}
+    \label{eq:tr-main-full-J}
+    \mathbf{J}(\mathbf{w})
+    =
+    \left[
+        \mathbf{J}^{(Q)},
+        \mathbf{J}^{(K)},
+        \mathbf{J}^{(V)},
+        \mathbf{J}^{(1)},
+        \mathbf{J}^{(2)}
+    \right].
+\end{equation}
+
+Ключевой шаг состоит в том, что якобианы по всем группам параметров можно факторизовать через якобианы двух нормализаций, якобиан feed-forward части по входу и якобианы изолированного self-attention блока. Точные формулы и их доказательства приведены в приложении~\ref{app:transformer-details}; здесь приведем только итоговый результат.
+
+\begin{theorem}
+    \label{thm:tr-main-jacobian-structure}
+    Для одно-голового трансформерного блока справедливы представления
+    \begin{equation}
+        \label{eq:tr-main-J12}
+        \mathbf{J}^{(1)}
+        =
+        \mathbf{J}_Z \mathbf{B}_1,
+        \qquad
+        \mathbf{J}^{(2)}
+        =
+        \mathbf{J}_Z \mathbf{B}_2,
+    \end{equation}
+    \begin{equation}
+        \label{eq:tr-main-JQKV}
+        \mathbf{J}^{(Q)}
+        =
+        \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_Q,
+        \qquad
+        \mathbf{J}^{(K)}
+        =
+        \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_K,
+        \qquad
+        \mathbf{J}^{(V)}
+        =
+        \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_V,
+    \end{equation}
     где
     \begin{equation}
-        \boldsymbol{\Sigma} = \left( \alpha \mathbf{I} + \frac{1}{\sigma^2} \mathbf{X}^\top \mathbf{X} \right)^{-1}, \qquad \mathbf{m} = \left( \mathbf{X}^\top \mathbf{X} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}^\top \mathbf{y}.
-        \label{eq:proof:moments:2}
+        \mathbf{J}_Y
+        =
+        \frac{\partial \vecrop(\mathbf{Y})}{\partial \vecrop(\mathbf{U})^\top},
+        \qquad
+        \mathbf{J}_Z
+        =
+        \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top},
     \end{equation}
-    Рассмотрим выражение $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2$ нормы разности матриц ковариции для подвыборок размера $k$ и $k+1$. Введем обозначение $\mathbf{A}_k = \frac{1}{\sigma^2} \mathbf{X}^\top_k \mathbf{X}_k$. Учитывая формулы моментов~\eqref{eq:proof:moments:2}, имеем
-    \begin{align}
-        &\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = \notag \\
-        &= \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} - \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \notag \\
-        &= \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \left( \mathbf{A}_{k+1} - \mathbf{A}_k \right) \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \notag \\
-        &\leqslant \left\| \left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)^{-1} \right\|_2 \left\| \left( \alpha \mathbf{I} + \mathbf{A}_k \right)^{-1} \right\|_2 \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \label{eq:proof:moments:3} \\
-        &= \frac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \alpha \mathbf{I} + \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \notag \\
-        &\leqslant \frac{1}{\lambda_{\min}\left( \mathbf{A}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \mathbf{A}_k \right)} \left\| \mathbf{A}_{k+1} - \mathbf{A}_k \right\|_2 \notag \\
-        &= \sigma^2  \frac{1}{\lambda_{\min}\left( \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} \right)} \frac{1}{\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right)} \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2. \label{eq:proof:moments:4}
-    \end{align}
-    Здесь в~\eqref{eq:proof:moments:3} мы воспользовались субмультипликативностью спектральной матричной нормы, а в \eqref{eq:proof:moments:3} "--- выражением спектральной матричной нормы через максимальное собственное значение.
-    Далее, поскольку по условию $\| \mathbf{x} \|_2 \leqslant M$, то мы оцениваем норму разности матриц из~\eqref{eq:proof:moments:4} следующим образом:
-    \begin{align}
-        \left\| \mathbf{X}^\top_{k+1} \mathbf{X}_{k+1} - \mathbf{X}^\top_k \mathbf{X}_k \right\|_2 
-        &= \left\| \sum\limits_{i=1}^{k+1} \mathbf{x}_i \mathbf{x}_i^\top - \sum\limits_{i=1}^{k} \mathbf{x}_i \mathbf{x}_i^\top \right\|_2 = \left\| \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 \notag \\
-        &= \lambda_{\max}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)  = \mathbf{x}_{k+1}^\top \mathbf{x}_{k+1} = \| \mathbf{x}_{k+1} \|_2^2 \leqslant M^2, \label{eq:proof:moments:4}
-    \end{align}
-    где переход к~\eqref{eq:proof:moments:4} имеет место потому, что матрица единичного ранга имеет единственное ненулевое собственное значение. По условию $\lambda_{\min}\left( \mathbf{X}^\top_k \mathbf{X}_k \right) = \omega(\sqrt{k})$, тогда $\| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1})$ при $k \to \infty$. Пользуясь эквивалентностью матричных норм, получаем требуемую сходимость для матриц ковариации:
     \begin{equation}
-        \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_F \leqslant \sqrt{k} \| \boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k \|_2 = o(k^{-1/2}), \quad k \to \infty.
+        \label{eq:tr-main-B12}
+        \mathbf{B}_1
+        =
+        \left(
+            \mathbf{I}_T \otimes \mathbf{W}_2^\top
+        \right)
+        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+        \left(
+            \mathbf{Y} \otimes \mathbf{I}_{d_{\mathrm{ff}}}
+        \right),
+        \qquad
+        \mathbf{B}_2
+        =
+        \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d,
     \end{equation}
-    Теперь оценим норму разности математических ожиданий. Пользуясь формулой~\eqref{eq:proof:moments:2}, получаем
-    \begin{align}
-        &\| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2 = \notag \\
-        &= \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 \notag \\
-        &= \Big\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \left( \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1} \right) \notag \\
-        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad - \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \Big\|_2 \notag \\
-        &= \Bigg\| \left[ \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right] \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{X}_k^\top \mathbf{y}_k \notag \\
-        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} y_{k+1} \Bigg\|_2 \label{eq:proof:moments:3} \\
-        &\leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2 \notag \\
-        &\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \label{eq:proof:moments:4}
-    \end{align}
-    Здесь мы учли, что $\mathbf{X}_{k+1}^\top = [\mathbf{X}_k^\top, \mathbf{x}_{k+1}]$ и $\mathbf{y}_{k+1} = [\mathbf{y}_k, y_{k+1}]^\top$, тогда $\mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} = \mathbf{X}_k^\top \mathbf{X}_k + \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ и $\mathbf{X}_{k+1}^\top \mathbf{y}_{k+1} = \mathbf{X}_k^\top \mathbf{y}_k + \mathbf{x}_{k+1} y_{k+1}$.
-    Для перехода к~\eqref{eq:proof:moments:3} мы вынесли множитель в первом слагаемом, после чего вынесли общий множитель у обоих слагаемых. Далее для получения~\eqref{eq:proof:moments:4} мы  применили неравенство треугольника, а также свойства согласованности и субмультипликативности спектральной нормы. Оценим по отдельности каждое слагаемое в~\eqref{eq:proof:moments:4}. В первом множителе первого слагаемого применим формулу для разности обратных матриц, как мы делали с ковариационными матрицами:
-    \begin{align}
-        & \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} - \mathbf{I} \right\|_2 \leqslant \notag \\
-        &\leqslant \left\| \left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)^{-1} \right\|_2 \left\| \mathbf{I} \right\|_2 \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right\|_2 \leqslant \notag \\
-        &\leqslant \frac{1}{\lambda_{\min}\left( \mathbf{I} + \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{\left\| \mathbf{x}_{k+1} \right\|_2^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)} \label{eq:proof:moments:5} \\
-        &\leqslant \frac{1}{1 + \lambda_{\min}\left(\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
-        & \leqslant \frac{1}{1 + \lambda_{\max}\left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right) \lambda_{\min}\left( \mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top \right)} \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
-        &= \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)}. \label{eq:proof:moments:6}
-    \end{align}
+    \begin{equation}
+        \mathbf{G}_Q
+        =
+        \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_Q^\top},
+        \qquad
+        \mathbf{G}_K
+        =
+        \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_K^\top},
+        \qquad
+        \mathbf{G}_V
+        =
+        \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_V^\top},
+    \end{equation}
+    а также
+    \begin{equation}
+        \label{eq:tr-main-JSY}
+        \mathbf{J}_{SY}
+        =
+        \mathbf{I}_{Td}
+        +
+        \left(
+            \mathbf{I}_T \otimes \mathbf{W}_2^\top
+        \right)
+        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+        \left(
+            \mathbf{I}_T \otimes \mathbf{W}_1^\top
+        \right).
+    \end{equation}
+\end{theorem}
 
-    Выше, при переходе к~\eqref{eq:proof:moments:5}, мы снова использовали субмультипликативность, а также выражение для нормы матрицы единичного ранга. Наконец, для получения~\eqref{eq:proof:moments:6} мы применили, что минимальное собственное значение произведения матриц оценивается произведением их минимальных собственных значений, а минимальное собственное значение матрицы единичного ранга $\mathbf{x}_{k+1} \mathbf{x}_{k+1}^\top$ равно нулю. Второй и третий множители первого слагаемого оцениваются следующим образом:
-    \begin{align}
-        \left\| \left( \mathbf{X}_k^\top \mathbf{X}_k + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2
-        &\leqslant \frac{\left\| \mathbf{X}_k^\top \mathbf{y}_k \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} = \frac{\left\| \sum\limits_{i=1}^{k} \mathbf{x}_i y_i \right\|_2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} \notag \\
-        &\leqslant \frac{k M^2}{\lambda_{\min}\left( \mathbf{X}_k^\top \mathbf{X}_k \right)}. \label{eq:proof:moments:7}
-    \end{align}
-    Наконец, оценим второе слагаемое.
+Таким образом, для оценки нормы $\mathbf{G}(\mathbf{w})$ достаточно оценить нормы матриц $\mathbf{J}_Y$, $\mathbf{J}_Z$, $\mathbf{J}_{SY}$, $\mathbf{B}_1$, $\mathbf{B}_2$ и $\mathbf{G}_Q, \mathbf{G}_K, \mathbf{G}_V$. Соответствующие технические оценки собраны в следующей лемме; их доказательства также вынесены в приложение~\ref{app:transformer-details}.
+
+\begin{lemma}
+    \label{lemma:tr-main-aux-bounds}
+    Пусть для матрицы $\mathbf{U}\in\mathbb{R}^{T\times d}$ выполнено условие на дисперсии
     \begin{equation}
-        \left\| \left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} + \alpha \sigma^2 \mathbf{I} \right)^{-1} \right\|_2 \left\| \mathbf{x}_{k+1} y_{k+1} \right\|_2 \leqslant \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} \label{eq:proof:moments:8}
+        \sigma_{\min}(\mathbf{U})
+        =
+        \min_{t=1,\ldots,T}\sigma_t(\mathbf{U})>0.
     \end{equation}
-    Итого, собирая воедино~\eqref{eq:proof:moments:6}, \eqref{eq:proof:moments:7} и \eqref{eq:proof:moments:8}, имеем следующую оценку:
-    \begin{align}
-        \| \mathbf{m}_{k+1} - \mathbf{m}_k \|_2
-        &\leqslant \frac{k M^3}{\lambda_{\min}^2\left( \mathbf{X}_k^\top \mathbf{X}_k \right)} + \frac{M^2}{\lambda_{\min}\left( \mathbf{X}_{k+1}^\top \mathbf{X}_{k+1} \right)} \notag \\
-        &= k \cdot o(k^{-1}) + o(k^{-1/2}) = o(1)
-    \end{align}
-    при $k \to \infty$. Таким образом, получили требуемую сходимость.
+    Тогда якобиан LayerNorm удовлетворяет оценке
+    \begin{equation}
+        \label{eq:tr-main-LN-bound}
+        \left\|
+            \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+        \right\|_2
+        \le
+        \frac{1}{\sigma_{\min}(\mathbf{U})}
+        +
+        \frac{\|\mathbf{U}\|_2^2}{\sqrt d\,\sigma_{\min}(\mathbf{U})^3}.
+    \end{equation}
+    Кроме того,
+    \begin{equation}
+        \label{eq:tr-main-SA-bound-V}
+        \|\mathbf{G}_V\|_2
+        \le
+        T\|\mathbf{X}\|_2,
+    \end{equation}
+    \begin{equation}
+        \label{eq:tr-main-SA-bound-QK}
+        \|\mathbf{G}_Q\|_2
+        \le
+        \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+        \|\mathbf{W}_V\|_2
+        \|\mathbf{W}_K\|_2
+        \|\mathbf{X}\|_2^3,
+        \qquad
+        \|\mathbf{G}_K\|_2
+        \le
+        \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+        \|\mathbf{W}_V\|_2
+        \|\mathbf{W}_Q\|_2
+        \|\mathbf{X}\|_2^3,
+    \end{equation}
+    где $C_{\mathrm{sm}}$ --- константа Липшица построчного softmax в спектральной норме.
+\end{lemma}
+
+Теперь можно перейти к оценке спектральной нормы гаусс--ньютоновской компоненты.
+
+\begin{theorem}
+    \label{thm:tr-main-GN-bound}
+    Пусть
+    \begin{equation}
+        \label{eq:tr-main-A-bound}
+        \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf A}.
+    \end{equation}
+    Тогда
+    \begin{equation}
+        \label{eq:tr-main-GN-reduction}
+        \|\mathbf{G}(\mathbf{w})\|_2
+        \le
+        M_{\mathbf A}
+        \sum_{i \in \{Q, K, V, 1, 2\}}
+        \|\mathbf{J}^{(i)}\|_2^2.
+    \end{equation}
+    Более того, справедливы оценки
+    \begin{equation}
+        \label{eq:tr-main-J12-bound}
+        \|\mathbf{J}^{(1)}\|_2
+        \le
+        \|\mathbf{J}_Z\|_2 \|\mathbf{W}_2\|_2 \|\mathbf{Y}\|_2,
+        \qquad
+        \|\mathbf{J}^{(2)}\|_2
+        \le
+        \|\mathbf{J}_Z\|_2 \|\mathbf{W}_1\|_2 \|\mathbf{Y}\|_2,
+    \end{equation}
+    \begin{equation}
+        \label{eq:tr-main-JQKV-bound}
+        \|\mathbf{J}^{(k)}\|_2
+        \le
+        \|\mathbf{J}_Z\|_2
+        \left(
+            1+\|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2
+        \right)
+        \|\mathbf{J}_Y\|_2
+        \|\mathbf{G}_k\|_2,
+        \qquad
+        k\in\{Q,K,V\}.
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+Первая оценка непосредственно следует из определения
+\[
+\mathbf{G}(\mathbf{w})
+=
+\mathbf{J}(\mathbf{w})^\top \mathbf{A}(\mathbf{w}) \mathbf{J}(\mathbf{w})
+\]
+и блочного представления~\eqref{eq:tr-main-full-J}. Далее, оценки~\eqref{eq:tr-main-J12-bound} получаются из формул~\eqref{eq:tr-main-J12} по субмультипликативности спектральной нормы и неравенству $\|\mathbf{D}_{\sigma}\|_2\le 1$. Наконец, оценки~\eqref{eq:tr-main-JQKV-bound} следуют из~\eqref{eq:tr-main-JQKV} и оценки
+\[
+\|\mathbf{J}_{SY}\|_2
+\le
+1+\|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2,
+\]
+которая непосредственно получается из~\eqref{eq:tr-main-JSY}.
 \end{proof}
 
-Наконец, докажем теорему о сходимости полного байесовского прогноза на отложенной выборке.
+Объединяя теорему~\ref{thm:tr-main-GN-bound} с леммой~\ref{lemma:tr-main-aux-bounds}, получаем явную верхнюю оценку.
 
-\begin{proof}[Доказательство теоремы~\ref{th:prediction-convergence}]
-    Полный байесовский прогноз для одиночной модели выражается по формуле
-    \begin{align}
-        p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k)
-        &= \int p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{w}) p(\mathbf{w}|\mathbf{X}_k, \mathbf{y}_k) d\mathbf{w} \notag \\
-        &= \int \mathcal{N}(\mathbf{y}_{\text{test}} | \mathbf{X}_{\text{test}}\mathbf{w}, \sigma^2 \mathbf{I}) \mathcal{N}(\mathbf{w} | \mathbf{m}_k, \boldsymbol{\Sigma}_k) d\mathbf{w} \label{eq:proof:prediction-convergence:1} \\
-        &= \mathcal{N}(\mathbf{y}_{\text{test}} | \mathbf{X}_{\text{test}} \mathbf{m}_k, \sigma^2 \mathbf{I} + \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_k \mathbf{X}_{\text{test}}^\top). \label{eq:proof:prediction-convergence:2}
-    \end{align}
-    Здесь при переходе от~\eqref{eq:proof:prediction-convergence:1} к~\eqref{eq:proof:prediction-convergence:2} мы воспользовались известным выражением из~\cite{bishop2006pattern}. В условиях настоящей теоремы справедливы результаты теоремы~\ref{th:moments}. Следовательно, $\|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0$ и $\|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_k\|_F \to 0$ при $k \to \infty$. Далее, остается показать сходимость математического ожидания и ковариационной матрицы нормального распределения прогноза модели. Для математического ожидания при $k \to \infty$ выполнено
+\begin{corollary}
+    \label{cor:tr-main-GN-uniform}
+    Пусть
     \begin{equation}
-        \|\mathbf{X}_{\text{test}} \mathbf{m}_{k+1} - \mathbf{X}_{\text{test}} \mathbf{m}_{k}\|_2 \leqslant \|\mathbf{X}_{\text{test}}\|_2 \|\mathbf{m}_{k+1} - \mathbf{m}_k\|_2 \to 0.
-        \label{eq:proof:prediction-convergence:3}
+        \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf A},
+        \qquad
+        \|\mathbf{X}\|_2 \le M_{\mathbf X},
+        \qquad
+        \|\mathbf{Y}\|_2 \le M_{\mathbf Y},
     \end{equation}
-    Для ковариационной матрицы, ввиду субмультипликативности нормы Фробениуса, при $k \to \infty$ справедливо следующее:
     \begin{equation}
-        \|\sigma^2 \mathbf{I} + \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_{k+1} \mathbf{X}_{\text{test}}^\top - \sigma^2 \mathbf{I} - \mathbf{X}_{\text{test}} \boldsymbol{\Sigma}_{k} \mathbf{X}_{\text{test}}^\top\|_F \leqslant \|\mathbf{X}_{\text{test}}\|_F^2 \|\boldsymbol{\Sigma}_{k+1} - \boldsymbol{\Sigma}_{k}\|_F \to 0.
-        \label{eq:proof:prediction-convergence:4}
+        \|\mathbf{W}_Q\|_2,\|\mathbf{W}_K\|_2,\|\mathbf{W}_V\|_2,\|\mathbf{W}_1\|_2,\|\mathbf{W}_2\|_2
+        \le M_{\mathbf W},
     \end{equation}
-    Наконец, имея сходимость математического ожидания~\eqref{eq:proof:prediction-convergence:3} и ковариационной матрицы~\eqref{eq:proof:prediction-convergence:4}, действуем аналогично доказательству теоремы~\ref{th:KL-sufficient} и получаем, что
-    \begin{equation*}
-        D_{\mathrm{KL}}\left(p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_k, \mathbf{y}_k) \| p(\mathbf{y}_{\text{test}}|\mathbf{X}_{\text{test}}, \mathbf{X}_{k+1}, \mathbf{y}_{k+1})\right) \to 0
-    \end{equation*}
-    при $k \to \infty$, завершая доказательство данной теоремы.
-\end{proof}
+    \begin{equation}
+        \sigma_{\min}(\mathbf{U})\ge \sigma_0,
+        \qquad
+        \sigma_{\min}(\mathbf{S})\ge \sigma_0>0.
+    \end{equation}
+    Обозначим
+    \begin{equation}
+        C_{\mathrm{LN}}(M)
+        =
+        \frac{1}{\sigma_0}
+        +
+        \frac{M^2}{\sqrt d\,\sigma_0^3}.
+    \end{equation}
+    Тогда
+    \begin{multline}
+        \label{eq:tr-main-GN-uniform}
+        \|\mathbf{G}(\mathbf{w})\|_2
+        \le
+        M_{\mathbf A}\,
+        C_{\mathrm{LN}}(\|\mathbf{S}\|_2)^2
+        \Bigg[
+            2M_{\mathbf Y}^2 M_{\mathbf W}^2
+            +
+            \\
+            +
+            \left(
+                1+M_{\mathbf W}^2
+            \right)^2
+            C_{\mathrm{LN}}(\|\mathbf{U}\|_2)^2
+            \left(
+                T^2 M_{\mathbf X}^2
+                +
+                \frac{2C_{\mathrm{sm}}^2 M_{\mathbf W}^4}{d_k} M_{\mathbf X}^6
+            \right)
+        \Bigg].
+    \end{multline}
+\end{corollary}
+
+Следствие~\ref{cor:tr-main-GN-uniform} показывает, что в трансформерном блоке спектральная норма гаусс--ньютоновской компоненты определяется тремя основными факторами. Во-первых, вклад attention-параметров существенно зависит от нормы входного сигнала: для параметров $\mathbf{W}_Q$ и $\mathbf{W}_K$ возникает кубическая зависимость по $\|\mathbf{X}\|_2$, которая после возведения в квадрат дает члены порядка $\|\mathbf{X}\|_2^6$. Во-вторых, существенную роль играет LayerNorm, поскольку нормы $\|\mathbf{J}_Y\|_2$ и $\|\mathbf{J}_Z\|_2$ контролируются снизу построчными дисперсиями промежуточных представлений. В-третьих, остаточная связь во второй половине блока приводит к множителю $1+\|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2$, а не к простому произведению норм, что качественно отличает трансформерный блок от последовательной композиции линейных слоев.
+
+% \section{Вычислительные эксперименты}
+
+% Цель вычислительных экспериментов состоит в эмпирической проверке теоретических выводов, полученных в предыдущих разделах, и в сопоставлении архитектурных различий полносвязных, сверточных и трансформерных сетей с наблюдаемыми спектральными свойствами гаусс--ньютоновской компоненты матрицы Гессе. Поскольку основным объектом анализа в главе является спектральная норма матрицы
+% \begin{equation}
+%     \mathbf{G}(\mathbf{w})
+%     =
+%     \mathbf{J}(\mathbf{w})^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}(\mathbf{w}),
+% \end{equation}
+% эксперименты должны отвечать на три вопроса:
+% \begin{enumerate}
+%     \item насколько хорошо полученные теоретические верхние оценки отражают реальные изменения спектральной нормы $\|\mathbf{G}(\mathbf{w})\|_2$;
+%     \item как величина $\|\mathbf{G}(\mathbf{w})\|_2$ зависит от глубины сети, норм весов и норм промежуточных представлений;
+%     \item насколько доминирует гаусс--ньютоновская компонента $\mathbf{G}(\mathbf{w})$ в сравнении с полной матрицей Гессе $\mathbf{H}(\mathbf{w})$ в окрестности обученного решения.
+% \end{enumerate}
+
+% Для ответа на эти вопросы предлагается единый экспериментальный протокол для трех семейств архитектур:
+% \begin{itemize}
+%     \item полносвязные сети различной глубины;
+%     \item сверточные сети с одинаковым числом сверточных блоков и фиксированным размером ядер;
+%     \item однотипные трансформерные блоки с варьируемым числом слоев и скрытой размерностью.
+% \end{itemize}
+% Во всех случаях рассматривается задача классификации с кросс-энтропийной функцией потерь, поскольку в этом случае матрица
+% \begin{equation}
+%     \mathbf{A}(\mathbf{w})
+%     =
+%     \nabla_{\mathbf z}^2 \ell(\mathbf z,\mathbf y)
+% \end{equation}
+% имеет стандартный вид и допускает устойчивое численное вычисление. Для полносвязных и сверточных сетей в качестве базовых датасетов удобно использовать MNIST и CIFAR-10: первый позволяет исследовать зависимость спектра от глубины и масштаба параметров в относительно малых моделях, а второй --- проверить устойчивость наблюдаемых закономерностей на более сложных изображениях. Для трансформерных блоков можно использовать задачу классификации последовательностей фиксированной длины, полученных либо из токенизированных текстовых данных, либо из искусственно сгенерированных последовательностей, что позволяет контролировать параметры $T$, $d$ и $d_k$.
+
+% \subsection*{Архитектуры и варьируемые параметры}
+
+% Для полносвязных сетей предлагается рассматривать модели глубины
+% \begin{equation}
+%     L \in \{2,4,6,8,12\}
+% \end{equation}
+% при фиксированной ширине скрытых слоев. Это позволяет проверить предсказанную в теореме~\ref{thm:fcnn-G-bound} зависимость верхней оценки от глубины и норм матриц весов. Для сверточных сетей целесообразно использовать последовательности из $L$ сверточных слоев с ядрами размера $3\times 3$ и одинаковым числом каналов внутри сети. Для проверки влияния локальности свертки следует дополнительно сравнить модели с ядрами $3\times 3$ и $5\times 5$, поскольку теорема~\ref{thm:cnn-bound} напрямую связывает верхнюю оценку с величиной $K_{\max}$. Для трансформеров предлагается рассматривать стеки из одинаковых одно-головых блоков с параметрами
+% \begin{equation}
+%     T \in \{16,32,64\},
+%     \qquad
+%     d \in \{64,128,256\},
+%     \qquad
+%     d_k \in \{32,64\},
+% \end{equation}
+% что позволяет проверить чувствительность оценки~\eqref{eq:tr-main-GN-uniform} к длине последовательности и размерности attention-пространства.
+
+% Во всех архитектурах дополнительно варьируется масштаб начальной и обученной нормы весов. Для этого после стандартного обучения рассматриваются семейства параметров вида
+% \begin{equation}
+%     \mathbf{w}_{\alpha} = \alpha \mathbf{w},
+%     \qquad
+%     \alpha \in \{0.5, 1, 2, 4\}.
+% \end{equation}
+% Такой прием позволяет отделить влияние архитектуры от влияния общего масштаба операторных норм весов и непосредственно проверить чувствительность $\|\mathbf{G}(\mathbf{w})\|_2$ к величинам $M_{\mathbf{W}}$ и $M_{\mathcal W}$, входящим в теоретические оценки.
+
+% \subsection*{Этапы обучения и точки анализа}
+
+% Для каждой архитектуры эксперимент проводится в трех характерных режимах:
+% \begin{enumerate}
+%     \item \textit{до обучения}, когда параметры инициализированы случайно;
+%     \item \textit{в процессе обучения}, на нескольких фиксированных эпохах;
+%     \item \textit{после обучения}, в точке с малым значением эмпирической функции потерь.
+% \end{enumerate}
+% Такой выбор важен по двум причинам. Во-первых, теория предсказывает, что именно вблизи решения гаусс--ньютоновская компонента должна лучше отражать спектрально значимую часть полной матрицы Гессе. Во-вторых, для трансформеров и глубоких нелинейных сетей промежуточные представления и нормы якобианов существенно меняются в ходе обучения, поэтому фиксирование только конечной точки не позволяет проследить, каким образом формируется наблюдаемая кривизна.
+
+% Во всех точках анализа вычисления проводятся не на одном объекте, а на случайно выбранном подмножестве объектов из обучающей выборки. Для этого из датасета формируется подвыборка
+% \begin{equation}
+%     \mathfrak{B} = \{(\mathbf{x}_i,\mathbf{y}_i)\}_{i=1}^{m_{\mathrm{eval}}},
+%     \qquad
+%     m_{\mathrm{eval}} \in \{128,256,512\},
+% \end{equation}
+% после чего оцениваются как пообъектные матрицы $\mathbf{G}_i(\mathbf{w})$, так и их среднее
+% \begin{equation}
+%     \mathbf{G}^{(m_{\mathrm{eval}})}(\mathbf{w})
+%     =
+%     \frac{1}{m_{\mathrm{eval}}}
+%     \sum_{i=1}^{m_{\mathrm{eval}}}
+%     \mathbf{G}_i(\mathbf{w}).
+% \end{equation}
+% Это позволяет сопоставить результаты с постановкой главы, где матрица Гессе рассматривается как среднее по объектам.
+
+% \subsection*{Численное вычисление спектральных характеристик}
+
+% Прямое формирование полной матрицы Гессе и даже полной матрицы $\mathbf{G}(\mathbf{w})$ возможно только для малых моделей. Поэтому в вычислительном эксперименте целесообразно использовать два режима.
+
+% Для малых архитектур, где число параметров не слишком велико, можно явно формировать матрицы
+% \begin{equation}
+%     \mathbf{H}(\mathbf{w}),
+%     \qquad
+%     \mathbf{G}(\mathbf{w})
+% \end{equation}
+% и вычислять их спектральные нормы непосредственно. Это позволяет получить эталонные результаты и проверить точность численных процедур.
+
+% Для моделей средней размерности следует использовать итерационные методы, основанные на произведении матрицы на вектор. Спектральная норма симметричной неотрицательно полуопределенной матрицы $\mathbf{G}(\mathbf{w})$ оценивается степенным методом:
+% \begin{equation}
+%     \lambda_{\max}\!\left(\mathbf{G}(\mathbf{w})\right)
+%     =
+%     \sup_{\|\mathbf{v}\|_2=1}
+%     \mathbf{v}^\top \mathbf{G}(\mathbf{w}) \mathbf{v}.
+% \end{equation}
+% На каждом шаге требуется вычислять произведение
+% \begin{equation}
+%     \mathbf{v}
+%     \longmapsto
+%     \mathbf{G}(\mathbf{w})\mathbf{v}
+%     =
+%     \mathbf{J}(\mathbf{w})^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}(\mathbf{w})\mathbf{v},
+% \end{equation}
+% что может быть реализовано через последовательное вычисление произведений Якобиана на вектор и транспонированного Якобиана на вектор средствами автоматического дифференцирования. Аналогично оценивается наибольшее по модулю собственное значение полной матрицы Гессе
+% \begin{equation}
+%     \mathbf{H}(\mathbf{w}) = \nabla_{\mathbf w}^2 \mathcal{L}_m(\mathbf{w})
+% \end{equation}
+% с использованием гессиан-векторных произведений.
+
+% Помимо самой спектральной нормы, для каждого состояния модели предлагается вычислять следующие величины:
+% \begin{equation}
+%     \rho_{\mathrm{GN/H}}
+%     =
+%     \frac{\|\mathbf{G}(\mathbf{w})\|_2}{\|\mathbf{H}(\mathbf{w})\|_2},
+% \end{equation}
+% \begin{equation}
+%     \rho_{\mathrm{R/H}}
+%     =
+%     \frac{\|\mathbf{H}(\mathbf{w})-\mathbf{G}(\mathbf{w})\|_2}{\|\mathbf{H}(\mathbf{w})\|_2},
+% \end{equation}
+% а также эмпирические значения основных множителей, входящих в теоретические оценки:
+% \begin{equation}
+%     \|\mathbf{x}^{(p)}\|_2,
+%     \qquad
+%     \|\mathbf{W}^{(p)}\|_2,
+%     \qquad
+%     \|\mathcal{W}^{(p)}\|_1,
+%     \qquad
+%     \|\mathbf{J}_{\mathrm{LN}}\|_2,
+%     \qquad
+%     \sigma_{\min}(\mathbf{U}),
+%     \qquad
+%     \sigma_{\min}(\mathbf{S}).
+% \end{equation}
+% Такие измерения позволяют проверить не только итоговую оценку, но и отдельные промежуточные механизмы роста кривизны, предсказанные теорией.
+
+% \subsection*{Проверяемые гипотезы}
+
+% Предлагаемый экспериментальный протокол ориентирован на проверку следующих гипотез.
+
+% \textbf{1. Полносвязные сети.}
+% Для полносвязных архитектур ожидается, что величина $\|\mathbf{G}(\mathbf{w})\|_2$ будет расти с глубиной быстрее, чем в сверточных и трансформерных моделях сопоставимого масштаба, а также будет особенно чувствительна к увеличению операторных норм матриц весов. Это соответствует теореме~\ref{thm:fcnn-G-bound}, в которой глубина входит через степень $2L-2$.
+
+% \textbf{2. Сверточные сети.}
+% Для сверточных сетей ожидается качественно сходная зависимость от глубины, но с меньшими константами за счет локальности операции свертки и меньшей величины параметра $K_{\max}$. Кроме того, при переходе от ядер $3\times 3$ к $5\times 5$ должно наблюдаться систематическое увеличение $\|\mathbf{G}(\mathbf{w})\|_2$.
+
+% \textbf{3. Трансформеры.}
+% Для трансформерных блоков ожидается наиболее выраженная зависимость от нормы входного сигнала и длины последовательности. В частности, увеличение $\|\mathbf{X}\|_2$ и $T$ должно приводить к заметному росту вклада attention-части, тогда как уменьшение минимальных построчных дисперсий в LayerNorm должно сопровождаться ростом норм $\|\mathbf{J}_Y\|_2$ и $\|\mathbf{J}_Z\|_2$.
+
+% \textbf{4. Доминирование гаусс--ньютоновской компоненты.}
+% После обучения и особенно в окрестности минимума ожидается увеличение отношения $\rho_{\mathrm{GN/H}}$ и уменьшение $\rho_{\mathrm{R/H}}$. Это будет служить эмпирическим подтверждением тезиса о том, что именно $\mathbf{G}(\mathbf{w})$ определяет спектрально значимую часть полной матрицы Гессе.
+
+% \subsection*{Форма представления результатов}
+
+% Результаты экспериментов целесообразно представлять в четырех типах графиков и таблиц.
+
+% Во-первых, для каждой архитектуры следует построить графики зависимости
+% \begin{equation}
+%     \|\mathbf{G}(\mathbf{w})\|_2
+%     \quad \text{и} \quad
+%     \|\mathbf{H}(\mathbf{w})\|_2
+% \end{equation}
+% от номера эпохи обучения.
+
+% Во-вторых, полезно строить графики зависимости
+% \begin{equation}
+%     \log \|\mathbf{G}(\mathbf{w})\|_2
+% \end{equation}
+% от глубины сети, что позволяет визуально проверить характер роста, предсказанный теоретическими оценками.
+
+% В-третьих, для трансформеров следует отдельно визуализировать связь между
+% \begin{equation}
+%     \|\mathbf{G}(\mathbf{w})\|_2,
+%     \qquad
+%     \|\mathbf{X}\|_2,
+%     \qquad
+%     \sigma_{\min}(\mathbf{U}),
+%     \qquad
+%     \sigma_{\min}(\mathbf{S}),
+% \end{equation}
+% чтобы увидеть вклад attention и LayerNorm в итоговую кривизну.
+
+% Наконец, в сводных таблицах для каждой модели предлагается приводить:
+% \begin{equation}
+%     \|\mathbf{H}(\mathbf{w})\|_2,
+%     \qquad
+%     \|\mathbf{G}(\mathbf{w})\|_2,
+%     \qquad
+%     \rho_{\mathrm{GN/H}},
+%     \qquad
+%     \rho_{\mathrm{R/H}},
+% \end{equation}
+% а также значения соответствующих теоретических верхних границ. Это позволяет оценить не только качественную, но и количественную адекватность полученных оценок.
+
+% \section{Обсуждение}
+
+% Полученные в главе результаты показывают, что анализ гаусс--ньютоновской компоненты матрицы Гессе позволяет единообразно описывать спектрально значимую часть кривизны для существенно различных архитектур. При этом сама структура оценок естественным образом отражает различия между полносвязными, сверточными и трансформерными сетями.
+
+% Для полносвязных сетей ключевую роль играет последовательное перемножение плотных матриц весов и диагональных матриц производных активаций. Именно поэтому в оценке теоремы~\ref{thm:fcnn-G-bound} глубина входит через степень $2L-2$: длинные произведения матриц в $\mathbf{S}^{(p)}(\mathbf{w})$ и рост норм промежуточных представлений в $\mathbf{P}^{(p)}(\mathbf{w})$ приводят к потенциально быстрому увеличению спектральной нормы $\|\mathbf{G}(\mathbf{w})\|_2$. С теоретической точки зрения это означает, что даже при умеренных операторных нормах отдельных слоев полносвязная архитектура может обладать существенно более высокой кривизной, чем архитектуры с локальными или структурированными связями.
+
+% Для сверточных сетей общая схема факторизации гаусс--ньютоновской компоненты сохраняется, однако сама геометрия слоя оказывается более благоприятной. Локальность свертки, совместное использование весов и матричное представление через структурированные матрицы Тёплица и матрицы патчей приводят к тому, что рост верхней оценки контролируется не полной размерностью входа, а размером рецептивного поля и числом каналов. Это выражается в появлении величины $K_{\max}$ в теореме~\ref{thm:cnn-bound}. Тем самым теория подтверждает интуитивное представление о том, что сверточные архитектуры обладают более жесткими структурными ограничениями на кривизну, чем полносвязные сети сопоставимой глубины.
+
+% В случае трансформерных блоков источник роста кривизны становится более сложным. В отличие от предыдущих архитектур, здесь существенный вклад вносят не только нормы матриц весов, но и геометрические характеристики самих промежуточных представлений. Из следствия~\ref{cor:tr-main-GN-uniform} видно, что внимание сосредотачивается вокруг трех факторов. Во-первых, attention-механизм порождает члены порядка $\|\mathbf{X}\|_2^6$, что делает трансформер особенно чувствительным к масштабу входных представлений. Во-вторых, LayerNorm вносит отдельный источник нестабильности через величины $\sigma_{\min}(\mathbf{U})$ и $\sigma_{\min}(\mathbf{S})$: при уменьшении построчных дисперсий нормы якобианов нормализации возрастают, а вместе с ними растет и оценка для всей гаусс--ньютоновской компоненты. В-третьих, residual-структура изменяет чисто мультипликативный характер оценки, приводя к появлению слагаемого $1+\|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2$. Это означает, что остаточные связи не просто добавляют еще один оператор в композицию, а качественно меняют механизм накопления кривизны.
+
+% С практической точки зрения важным выводом главы является то, что верхние оценки на $\|\mathbf{G}(\mathbf{w})\|_2$ можно использовать как инструмент интерпретации того, какие именно архитектурные элементы делают оптимизационную поверхность более или менее жесткой. Для полносвязных сетей таким элементом является прежде всего глубина как длина последовательного произведения матриц. Для CNN --- размер рецептивного поля и число активных параметров на локальном патче. Для трансформеров --- совместное действие attention, LayerNorm и residual-связей. В этом смысле полученные оценки не только ограничивают спектральную норму сверху, но и дают содержательную декомпозицию источников кривизны.
+
+% Вместе с тем следует подчеркнуть, что полученные границы являются \emph{верхними} и в общем случае заведомо грубыми. В частности, при выводе оценок неоднократно использовались субмультипликативность спектральной нормы, замена точных спектральных характеристик произведений матриц произведением их норм, а также грубые универсальные оценки для стохастических и структурированных операторов. По этой причине ожидать точного количественного совпадения между теоретическими границами и фактическими значениями $\|\mathbf{G}(\mathbf{w})\|_2$ не следует. Главная ценность этих результатов состоит не в точном предсказании спектра, а в правильном отражении качественных зависимостей от глубины, масштаба весов, размера входа и особенностей архитектуры.
+
+% Еще одно важное ограничение состоит в том, что в главе основное внимание сосредоточено на гаусс--ньютоновской компоненте, а не на полной матрице Гессе. Такой выбор оправдан как с теоретической, так и с практической точки зрения: матрица
+% \begin{equation}
+%     \mathbf{G}(\mathbf{w})
+%     =
+%     \mathbf{J}(\mathbf{w})^\top \mathbf{A}(\mathbf{w}) \mathbf{J}(\mathbf{w})
+% \end{equation}
+% имеет прозрачную факторизацию и непосредственно связана с кривизной функции потерь по выходу модели. Однако остаточная компонента
+% \begin{equation}
+%     \mathbf{R}(\mathbf{w})
+%     =
+%     \sum_{k=1}^K
+%     \frac{\partial \ell(\mathbf{z},\mathbf{y})}{\partial z_k}
+%     \nabla_{\mathbf w}^2 z_k
+% \end{equation}
+% может играть заметную роль вне окрестности минимума, особенно на ранних этапах обучения и в сильно нелинейных режимах. Поэтому интерпретация $\mathbf{G}(\mathbf{w})$ как главной части $\mathbf{H}(\mathbf{w})$ является наиболее убедительной именно после обучения или вблизи стационарных точек.
+
+% С методологической точки зрения глава также показывает, что техника факторизации якобиана по архитектурным блокам оказывается достаточно универсальной. Для матрично-представимых сетей она приводит к естественному блочному представлению гаусс--ньютоновской компоненты через матрицы $\mathbf{S}^{(p)}(\mathbf{w})$ и $\mathbf{P}^{(p)}(\mathbf{w})$. Для трансформеров, которые уже не укладываются в этот класс, тот же принцип сохраняется на уровне decomposition-by-block: LayerNorm, self-attention и feed-forward часть исследуются отдельно, а затем объединяются в общую оценку. Это указывает на возможность дальнейшего обобщения предложенного подхода на более сложные архитектуры, например многоголовые трансформеры, сверточные сети с нормализацией, гибридные vision-transformer модели и residual-архитектуры.
+
+% Наконец, вычислительный эксперимент, предложенный в предыдущем разделе, имеет двоякое значение. С одной стороны, он позволяет проверить, насколько полученные оценки действительно отражают реальные спектральные свойства обученных моделей. С другой стороны, он служит средством выявления тех мест, где теория остается слишком грубой. Если экспериментально окажется, что зависимость от глубины, длины последовательности или норм весов существенно слабее предсказанной верхней границей, это будет означать, что дальнейшее развитие теории должно быть направлено на учет более тонкой структуры операторов, чем простое произведение их спектральных норм.
+
+% Таким образом, основным итогом главы является не только получение явных верхних оценок для $\|\mathbf{G}(\mathbf{w})\|_2$ в трех важных классах архитектур, но и демонстрация того, что спектральные свойства гаусс--ньютоновской компоненты тесно связаны со структурой самой сети. Полносвязность, локальность свертки, наличие attention-механизма, нормализации и остаточных связей проявляются в оценках не формально, а через конкретные механизмы роста кривизны. Именно это делает исследование гаусс--ньютоновской компоненты полезным инструментом для дальнейшего анализа геометрии оптимизационного ландшафта нейронных сетей.
 
 \section{Вычислительные эксперименты}
 
@@ -388,14 +2953,4 @@ TODO
 
 \section{Обсуждение}
 
-\textbf{Логистическая регрессия.} В задаче бинарной классификации с метками $y \in \{0, 1\}$ логистическая регрессия задается правдоподобием
-\begin{equation}
-p(y | \mathbf{x}, \mathbf{w}) = \sigma(\mathbf{w}^\top \mathbf{x})^y (1 - \sigma(\mathbf{w}^\top \mathbf{x}))^{1-y}, \qquad \sigma(z) = \frac{1}{1 + e^{-z}}.
-\end{equation}
-Апостериорное распределение параметров уже не является нормальным; сопряженного априора не существует. Тем не менее при достаточно большом размере выборки апостериор асимптотически нормален (результат Бернштейна"--~фон Мизеса). На практике критерии KL и S применяются к логистической регрессии, а порог достаточности выбирается эмпирически~\cite{MOTRENKO2014743}. Теоретическое обоснование сходимости для логистической регрессии требует дополнительного анализа.
-
-\textbf{Обобщенные линейные модели (GLM).} Обобщенные линейные модели включают линейную и логистическую регрессию как частные случаи~\cite{mccullagh1989generalized}. Модель задается линейным предиктором $\eta = \mathbf{w}^\top \mathbf{x}$, функцией связи и распределением из экспоненциального семейства. Для GLM с канонической функцией связи оценка ММП существует при определенных условиях на данные. Сходимость апостериора и применимость критериев D, M, KL, S зависят от конкретного вида модели; для ряда GLM (например, регрессии Пуассона) возможны аналоги теорем 2.1"--~2.4 при дополнительных предположениях~\cite{Grabovoy2022}.
-
-\textbf{Сравнительный анализ критериев.} Критерии D и M основаны на бутстрапировании подвыборок и вычислении правдоподобия в точке ММП. Их преимущество~--- простота вычислений: не требуется полное апостериорное распределение. Критерии KL и S требуют знания апостериора на схожих подвыборках; для линейной регрессии с сопряженным априором они вычисляются аналитически.
-
-Эмпирические исследования показывают, что KL-достаточный размер, как правило, оказывается наибольшим, а S-достаточный~--- наименьшим при фиксированном пороге $\varepsilon$. Это объясняется различной чувствительностью KL-дивергенции и s-score к различиям распределений. Выбор критерия зависит от задачи: при необходимости консервативной оценки предпочтителен KL; при ограничениях на объем данных может быть достаточен критерий S.
+TODO
