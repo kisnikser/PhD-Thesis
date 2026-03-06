@@ -19,12 +19,12 @@
 \textbf{Оптимизационная поверхность.} Объектом называется пара $(\mathbf{x}, \mathbf{y})$, где $\mathbf{x} \in \mathbb{X}$ "--- признаковое описание, $\mathbf{y} \in \mathbb{Y}$ "--- целевая переменная. Выборка размера~$m$ задается множеством $\mathfrak{D}_m = \{(\mathbf{x}_i, \mathbf{y}_i)\}_{i=1}^m$ из $m$ независимых реализаций пар~$(\mathbf{x}, \mathbf{y})$, распределенных согласно неизвестному распределению $p(\mathbf{x}, \mathbf{y})$. Параметрической моделью называется семейство функций $f_{\mathbf{w}}: \mathbb{X} \to \mathbb{Y}$, задаваемое вектором параметров $\mathbf{w} \in \mathbb{R}^{N}$. Выбор модели из этого семейства проводится с помощью эмпирической функции потерь, вычисляемой на заданной выборке: 
 \begin{equation}
     \label{eq:landscape-empirical-loss}
-    \mathcal{L}_m(\mathbf{w}) = \frac{1}{m} \sum_{i=1}^m \ell(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i),
+    \mathcal{L}_m(\mathbf{w}) = \frac{1}{m} \sum_{i=1}^m \ell(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i) = \frac{1}{m} \sum_{i=1}^m \ell_i(\mathbf{w}),
 \end{equation}
 где $\ell: \mathbb{Y} \times \mathbb{Y} \to \mathbb{R}^+$ "--- функция потерь на одном объекте. Обучение модели таким образом есть решение оптимизационной задачи
 \begin{equation}
     \label{eq:landscape-min-problem}
-    \mathbf{w}^* \in \argmin_{\mathbf{w} \in \mathbb{R}^{N}} \mathcal{L}_m(\mathbf{w}).
+    \mathbf{w}_m^* \in \argmin_{\mathbf{w} \in \mathbb{R}^{N}} \mathcal{L}_m(\mathbf{w}).
 \end{equation}
 
 Оптимизационной поверхностью или ландшафтом функции потерь (англ. loss landscape) называется график $\mathcal{L}_{m}(\mathbf{w})$ как функции от $\mathbf{w} \in \mathbb{R}^N$. Поскольку эмпирическая функция потерь~\eqref{eq:landscape-empirical-loss} вычисляется по конечной выборке, она случайна, и при другой реализации выборки $\mathfrak{D}_{m}^{\prime}$ множество минимизаторов~\eqref{eq:landscape-min-problem}, как правило, поменяется. Однако согласно закону больших чисел (ЗБЧ) эмпирическая функция потерь сходится к популяционной
@@ -34,20 +34,36 @@
 \end{equation}
 поэтому естественно ожидать, что множество решений~\eqref{eq:landscape-min-problem} стабилизируется. Таким образом, изменение оптимизационной поверхности вблизи точек минимума~\eqref{eq:landscape-min-problem} при добавлении обучающих объектов является ключевым объектом исследования настоящей главы.
 
-\textbf{Формула Тейлора для функции потерь.} Рассмотрим одно из решений задачи оптимизации~\eqref{eq:landscape-min-problem}, т.\:е. точку локального минимума эмпирической функции потерь $\mathbf{w}^* \in \mathbb{R}^{N}$. Согласно формуле Тейлора, аппроксимация второго порядка значения $\mathcal{L}_{m}(\mathbf{w})$ в точке $\mathbf{w} \in \mathcal{U}_{R}(\mathbf{w}^*)$ из окрестности радиуса $R > 0$ точки локального минимума есть
+\textbf{Формула Тейлора для функции потерь.} Рассмотрим точку $\mathbf{w}_0 \in \mathbb{R}^{N}$, в окрестности $\mathcal{U}_{R}(\mathbf{w}_0)$ радиуса $R>0$ которой эмпирическая функция потерь $\mathcal{L}_{m}(\mathbf{w})$ дважды непрерывно дифференцируема. На практике это условие выполнено практически для всех параметрических моделей машинного обучения. По формуле Тейлора с остаточным членом в форме Пеано при $\mathbf{w} \to \mathbf{w}_0$ имеем
+\begin{multline}
+    \label{eq:taylor}
+    \mathcal{L}_{m}(\mathbf{w}) = \mathcal{L}_{m}(\mathbf{w}_0)
+    +
+    \nabla_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}_0)^{\top} (\mathbf{w} - \mathbf{w}_0)
+    +
+    \\
+    +
+    \frac{1}{2} (\mathbf{w} - \mathbf{w}_0)^{\top} \nabla^{2}_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}_0) (\mathbf{w} - \mathbf{w}_0)
+    +
+    o(\| \mathbf{w} - \mathbf{w}_0 \|_2^2).
+\end{multline}
+Далее, если не оговорено иное, работаем в рамках квадратичной аппроксимации и опускаем остаточный член более высокого порядка. Обозначим вектор градиента и матрицу Гессе функции потерь на выборке размера $m$ через
 \begin{equation}
-    \label{eq:taylor-second-order}
-    \mathcal{L}_{m}(\mathbf{w}) \approx \mathcal{L}_{m}(\mathbf{w}^*) + \nabla_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}^*)^{\top} (\mathbf{w} - \mathbf{w}^*) + \frac{1}{2} (\mathbf{w} - \mathbf{w}^*)^{\top} \nabla^{2}_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}^*) (\mathbf{w} - \mathbf{w}^*).
+    \label{eq:taylor-gradient}
+    \mathbf{g}^{(m)}(\mathbf{w}) = \nabla_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}) = \frac{1}{m}\sum_{i=1}^m \nabla_{\mathbf{w}} \ell_{i}(\mathbf{w}) = \frac{1}{m}\sum_{i=1}^m \mathbf{g}_i(\mathbf{w}) \in \mathbb{R}^{N},
 \end{equation}
-Поскольку $\mathbf{w}^*$ есть точка локального минимума, то по необходимому условию вытекает $\nabla_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}^*) = \mathbf{0}$. Обозначим матрицу Гессе функции потерь на выборке размера $m$ через
 \begin{equation}
     \label{eq:taylor-hessian}
-    \mathbf{H}^{(m)}(\mathbf{w}) = \nabla^{2}_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}) = \frac{1}{m}\sum_{i=1}^m \nabla_{\mathbf{w}}^2 \ell\left(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i\right) = \frac{1}{m}\sum_{i=1}^m \mathbf{H}_i(\mathbf{w}) \in \mathbb{R}^{N \times N},
+    \mathbf{H}^{(m)}(\mathbf{w}) = \nabla^{2}_{\mathbf{w}} \mathcal{L}_{m}(\mathbf{w}) = \frac{1}{m}\sum_{i=1}^m \nabla_{\mathbf{w}}^2 \ell_{i}(\mathbf{w}) = \frac{1}{m}\sum_{i=1}^m \mathbf{H}_i(\mathbf{w}) \in \mathbb{R}^{N \times N},
 \end{equation}
-в таком случае формула~\eqref{eq:taylor-second-order} перепишется в виде
+в таком случае формула~\eqref{eq:taylor} перепишется в виде
 \begin{equation}
-    \label{eq:taylor-second-order-hessian}
-    \mathcal{L}_{m}(\mathbf{w}) \approx \mathcal{L}_{m}(\mathbf{w}^*) + \frac{1}{2} (\mathbf{w} - \mathbf{w}^*)^{\top} \mathbf{H}^{(m)}(\mathbf{w}^*) (\mathbf{w} - \mathbf{w}^*).
+    \label{eq:taylor-second-order}
+    \mathcal{L}_{m}(\mathbf{w}) = \mathcal{L}_{m}(\mathbf{w}_0)
+    +
+    \mathbf{g}^{(m)}(\mathbf{w}_0)^{\top} (\mathbf{w} - \mathbf{w}_0)
+    +
+    \frac{1}{2} (\mathbf{w} - \mathbf{w}_0)^{\top} \mathbf{H}^{(m)}(\mathbf{w}_0) (\mathbf{w} - \mathbf{w}_0).
 \end{equation}
 
 \textbf{Добавление одного объекта} $(\mathbf{x}_{k+1}, \mathbf{y}_{k+1})$ к обучающей выборке $\mathfrak{D}_k = \{(\mathbf{x}_i, \mathbf{y}_i)\}_{i=1}^k$ размера~$k$ влечет изменение значения функции потерь, которое выражается формулой
@@ -55,58 +71,56 @@
     \label{eq:losses-difference}
     \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w})
     &=
-    \frac{1}{k+1} \sum_{i=1}^{k+1} \ell(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i)
+    \frac{1}{k+1} \sum_{i=1}^{k+1} \ell_{i}(\mathbf{w})
     -
     \mathcal{L}_{k}(\mathbf{w})
     \notag \\
     &=
-    \frac{1}{k+1} \Big( k \cdot \mathcal{L}_{k}(\mathbf{w}) + \ell(f_{\mathbf{w}}(\mathbf{x}_{k+1}), \mathbf{y}_{k+1}) \Big)
+    \frac{1}{k+1} \Big( k \cdot \mathcal{L}_{k}(\mathbf{w}) + \ell_{k+1}(\mathbf{w}) \Big)
     -
     \mathcal{L}_{k}(\mathbf{w})
     \notag \\
     &=
-    \frac{1}{k+1} \Big( \ell(f_{\mathbf{w}}(\mathbf{x}_{k+1}), \mathbf{y}_{k+1}) - \mathcal{L}_{k}(\mathbf{w}) \Big)
+    \frac{1}{k+1} \Big( \ell_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) \Big)
 \end{align}
-Дальнейшее исследование сходимости ландшафта построено на анализе этой разности. Введем предположение, проиллюстрированное на рисунке~\ref{fig:losses-assumption}, которое упрощает теоретические выкладки.
+Дальнейшее исследование сходимости ландшафта построено на анализе этой разности. Воспользуемся выражением~\eqref{eq:taylor-second-order} и перепишем разность~\eqref{eq:losses-difference} в условиях аппроксимации второго порядка:
+\begin{multline}
+    \label{eq:losses-difference-second-order}
+    \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) = \mathcal{L}_{k+1}(\mathbf{w}_0) - \mathcal{L}_{k}(\mathbf{w}_0) + \\ + \Big( \mathbf{g}^{(k+1)}(\mathbf{w}_0) - \mathbf{g}^{(k)}(\mathbf{w}_0) \Big)^\top (\mathbf{w} - \mathbf{w}_0) + \\ + \frac{1}{2} (\mathbf{w} - \mathbf{w}_0)^{\top} \left( \mathbf{H}^{(k+1)}(\mathbf{w}_0) - \mathbf{H}^{(k)}(\mathbf{w}_0) \right) (\mathbf{w} - \mathbf{w}_0).
+\end{multline}
 
-\begin{assumption}
+Рассмотрим точку минимума $\mathbf{w}_{k}^{*} \in \mathbb{R}^{N}$ эмпирической функции потерь $\mathcal{L}_{k}(\mathbf{w})$ на $k$ объектах. В точке $\mathbf{w} \in \mathcal{U}_{R}(\mathbf{w}_{k}^{*})$ из ее окрестности справедливо представление~\eqref{eq:losses-difference-second-order}. В силу необходимого условия локального минимума $\mathbf{g}^{(k)}(\mathbf{w}_{k}^{*}) = \mathbf{0}$, а значит
+\begin{multline}
+    \label{eq:losses-difference-second-order-minimum}
+    \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) = \mathcal{L}_{k+1}(\mathbf{w}_{k}^{*}) - \mathcal{L}_{k}(\mathbf{w}_{k}^{*}) + \mathbf{g}^{(k+1)}(\mathbf{w}_{k}^{*})^\top (\mathbf{w} - \mathbf{w}_{k}^{*}) + \\ + \frac{1}{2} (\mathbf{w} - \mathbf{w}_{k}^{*})^{\top} \left( \mathbf{H}^{(k+1)}(\mathbf{w}_{k}^{*}) - \mathbf{H}^{(k)}(\mathbf{w}_{k}^{*}) \right) (\mathbf{w} - \mathbf{w}_{k}^{*}),
+\end{multline}
+причем
+\begin{equation}
+    \mathbf{g}^{(k+1)}(\mathbf{w}_{k}^{*}) = \frac{1}{k+1}\Big( k \cdot \cancel{\nabla_{\mathbf{w}}\mathcal{L}_k(\mathbf{w}_k^*)} + \nabla_{\mathbf{w}} \ell_{k+1}(\mathbf{w}_k^*) \Big) = \frac{1}{k+1} \mathbf{g}_{k+1}(\mathbf{w}_k^*).
+\end{equation}
+
+Таким образом, вопрос о стабилизации оптимизационной поверхности в окрестности точек оптимума сводится к анализу выражения~\eqref{eq:losses-difference-second-order-minimum} и формулировке конкретных критериев на его основе. Введем предположение, проиллюстрированное на рисунке~\ref{fig:losses-assumption}, которое позволит сформулировать ряд теоретических утверждений о сходимости.
+
+\begin{assumption}[О слабом градиентном рассогласовании]
     \label{assumption:minima}
-    Пусть точка $\mathbf{w}^* \in \mathbb{R}^{N}$ является локальным минимумом обеих эмпирических функций потерь $\mathcal{L}_{k}(\mathbf{w})$ и $\mathcal{L}_{k+1}(\mathbf{w})$, т.\:е.
+    Пусть в точке $\mathbf{w}_{k}^{*} \in \mathbb{R}^{N}$ минимума эмпирической функции потерь $\mathcal{L}_{k}(\mathbf{w})$ справедлива ограниченность нормы градиента функции потерь на $(k+1)$-м объекте:
     \begin{equation}
         \label{eq:assumption-minima}
-        \nabla_{\mathbf{w}} \mathcal{L}_{k}(\mathbf{w}^*)
-        =
-        \nabla_{\mathbf{w}} \mathcal{L}_{k+1}(\mathbf{w}^*)
-        =
-        \mathbf{0}.
+        \|\mathbf{g}_{k+1}(\mathbf{w}_{k}^{*})\|_2 \leqslant M_{\mathbf{g}}.
     \end{equation}
 \end{assumption}
 
 \begin{figure}[ht]
     \centerfloat{
-        \includegraphics[width=0.45\linewidth]{losses_assumption.pdf}
+        \includegraphics[width=0.62\linewidth]{losses_assumption.pdf}
     }
-    \caption{Визуализация предположения~\ref{assumption:minima} об общем локальном минимуме для эмпирических функций потерь на $k$ и $k+1$ объектах}
+    \caption{Визуализация предположения~\ref{assumption:minima} о слабом градиентном рассогласовании для эмпирических функций потерь на $k$ и $k+1$ объектах}
     \label{fig:losses-assumption}
 \end{figure}
 
-Теоретическое обоснование предположения~\ref{assumption:minima} основано на нескольких фундаментальных принципах теории оптимизации. Во-первых, при увеличении объема выборки~$k$ эмпирическая функция потерь~\eqref{eq:landscape-empirical-loss} сходится к популяционной~\eqref{eq:landscape-theoretical-loss} в соответствии с законом больших чисел (ЗБЧ), а потому и локальные минимумы перестают меняться. Во-вторых, добавление одного объекта согласно~\eqref{eq:losses-difference} приводит к абсолютному изменению эмпирического риска порядка $\mathcal{O}(k^{-1})$, что при больших~$k$ дает незначительный вклад.
-
-В условиях предположения~\ref{assumption:minima} мы можем записать~\eqref{eq:taylor-second-order-hessian} для каждой из эмпирических функций потерь на~$k$ и $k+1$ объектах, благодаря чему получим аппроксимацию выражения~\eqref{eq:losses-difference} в окрестности точки минимума:
-\begin{multline}
-    \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) \approx \mathcal{L}_{k+1}(\mathbf{w}^*) - \mathcal{L}_{k}(\mathbf{w}^*) + \\ + \frac{1}{2} (\mathbf{w} - \mathbf{w}^*)^{\top} \left( \mathbf{H}^{(k+1)}(\mathbf{w}^*) - \mathbf{H}^{(k)}(\mathbf{w}^*) \right) (\mathbf{w} - \mathbf{w}^*).
-\end{multline}
-Аналогично введенному предположению обосновывается и тот факт, что $\mathcal{L}_{k+1}(\mathbf{w}^*) \approx \mathcal{L}_{k}(\mathbf{w}^*)$, а значит итоговое выражение разности~\eqref{eq:losses-difference} аппроксимируется
-\begin{equation}
-    \label{eq:losses-difference-hessian}
-    \mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w}) \approx \frac{1}{2} (\mathbf{w} - \mathbf{w}^*)^{\top} \left( \mathbf{H}^{(k+1)}(\mathbf{w}^*) - \mathbf{H}^{(k)}(\mathbf{w}^*) \right) (\mathbf{w} - \mathbf{w}^*).
-\end{equation}
-
-Таким образом, вопрос о стабилизации оптимизационной поверхности сводится к анализу выражения~\eqref{eq:losses-difference-hessian} и введению конкретных критериев на его основе. В следующем разделе мы предлагаем общий критерий сходимости, после чего рассматриваем его частные случаи и доказываем теоретические оценки на скорость сходимости для них.
-
 \section{Критерий сходимости поверхности функции потерь}
 
-В предыдущем разделе мы показали, что по ряду причин есть основание полагать сходимость поверхности эмпирической функции потерь при увеличении объема обучающей выборки. Кроме того, мы получили аппроксимацию~\eqref{eq:losses-difference-hessian} явного выражения изменения этой поверхности в одной точке при добавлении одного объекта. Сформулируем общий критерий, измеряющий это изменение в наборе точек.
+В предыдущем разделе мы показали, что по ряду причин есть основание полагать сходимость поверхности эмпирической функции потерь при увеличении объема обучающей выборки. Кроме того, мы получили аппроксимацию~\eqref{eq:losses-difference-second-order-minimum} явного выражения изменения этой поверхности в одной точке при добавлении одного объекта. Сформулируем общий критерий, измеряющий это изменение в наборе точек.
 
 \begin{definition}
     \emph{Критерием $p$-сходимости} ландшафта функции потерь при добавлении одного объекта в выборку $\mathfrak{D}_{k}$ называется величина
@@ -127,7 +141,7 @@
 
 \section{Абсолютный одноточечный критерий сходимости}
 
-Наиболее простым частным случаем критерия~\eqref{eq:general-p-criterion} является ситуация, когда изменение ландшафта измеряется в одной фиксированной точке пространства параметров. Такой подход позволяет получить наиболее прозрачную теоретическую оценку и служит отправной точкой для дальнейших обобщений. Поскольку нас интересует локальная геометрия поверхности функции потерь, естественно рассматривать точки из окрестности локального минимума $\mathbf w^*$, где справедлива квадратичная аппроксимация~\eqref{eq:losses-difference-hessian}.
+Наиболее простым частным случаем критерия~\eqref{eq:general-p-criterion} является ситуация, когда изменение ландшафта измеряется в одной фиксированной точке пространства параметров. Такой подход позволяет получить наиболее прозрачную теоретическую оценку и служит отправной точкой для дальнейших обобщений. Поскольку нас интересует локальная геометрия поверхности функции потерь, естественно рассматривать точки из окрестности локального минимума $\mathbf{w}_{k}^{*}$, где справедлива квадратичная аппроксимация~\eqref{eq:losses-difference-second-order-minimum}.
 
 \begin{definition}
     \emph{Абсолютным одноточечным критерием сходимости} ландшафта функции потерь при добавлении одного объекта в выборку $\mathfrak{D}_{k}$ называется величина
@@ -135,120 +149,314 @@
         \label{eq:abs-onepoint-criterion}
         \Delta_{1}(k+1) = |\mathcal{L}_{k+1}(\mathbf{w}) - \mathcal{L}_{k}(\mathbf{w})|,
     \end{equation}
-    где~$\mathbf{w} \in \mathcal{U}_{R}(\mathbf{w}^*)$ "--- точка из окрестности радиуса $R>0$ минимума~$\mathbf{w}^*$.
+    где~$\mathbf{w} \in \mathcal{U}_{R}(\mathbf{w}_k^*)$ "--- точка из окрестности радиуса $R>0$ минимума~$\mathbf{w}_k^*$.
 \end{definition}
 
 \begin{remark}
     Отметим, что определение выше есть частный случай общего критерия~\eqref{eq:general-p-criterion} при $p=1$ и $q(\tilde{\mathbf{w}}) = \delta(\tilde{\mathbf{w}} - \mathbf{w})$, где $\delta(\mathbf{w})$ суть дельта-функция Дирака.
 \end{remark}
 
-В силу формулы~\eqref{eq:losses-difference-hessian} абсолютный одноточечный критерий непосредственно связан с квадратичной формой, построенной по разности матриц Гессе на выборках размеров $k$ и $k+1$. Поэтому его оценка сводится к двум шагам: сначала к оценке соответствующей квадратичной формы через спектральную норму разности матриц Гессе, а затем к оценке этой нормы через ограниченность гессианов на отдельных объектах. Это позволяет установить явную скорость убывания критерия при росте объема выборки.
+В силу формулы~\eqref{eq:losses-difference-second-order-minimum} абсолютный одноточечный критерий сходимости в общем случае определяется тремя вкладами: разностью значений функций потерь в точке минимума~$\mathbf w_k^*$, линейным членом, задаваемым градиентом функции~$\mathcal L_{k+1}$ в этой точке, и квадратичным членом, задаваемым разностью матриц Гессе. Поэтому его оценка сводится к последовательному ограничению каждого из этих вкладов. Это позволяет получить явную верхнюю оценку критерия и, при дополнительных предположениях о зависимости соответствующих констант от~$k$, установить скорость его убывания при росте объема выборки.
 
 \begin{theorem}
-    Пусть существует окрестность $\mathcal{U}_{R}(\mathbf{w}^*)$ радиуса $R>0$ точки локального минимума $\mathbf{w}^* \in \mathbb{R}^{N}$ эмпирической функции потерь, такая что в этой окрестности спектральная норма матрицы Гессе функции потерь на каждом объекте ограничена: $\forall i$ выполнено $\| \mathbf{H}_{i}(\mathbf{w}) \|_2 \leqslant M_{\mathbf{H}}$. Тогда для абсолютного одноточечного критерия сходимости верно
+    \label{thm:abs-onepoint-general}
+    Пусть существует окрестность $\mathcal U_R(\mathbf w_k^*)$ радиуса $R>0$
+    точки локального минимума $\mathbf w_k^* \in \mathbb R^N$ эмпирической
+    функции потерь $\mathcal L_k(\mathbf w)$, такая что в этой окрестности
+    справедлива квадратичная аппроксимация~\eqref{eq:losses-difference-second-order-minimum}.
+    Предположим, что
     \begin{equation}
-        \label{eq:abs-onepoint-criterion-theorem}
-        \Delta_{1}(k) \lesssim \frac{M_{\mathbf{H}} R^2}{k} = \mathcal{O}(k^{-1}).
+        \label{eq:abs-onepoint-thm-ass-grad}
+        \|\mathbf g_{k+1}(\mathbf w_k^*)\|_2 \leqslant M_{\mathbf g}
+    \end{equation}
+    и для всех $i=1, \ldots, k+1$ выполнены оценки
+    \begin{equation}
+        \label{eq:abs-onepoint-thm-ass-loss}
+        |\ell_i(\mathbf w_k^*)| \leqslant M_\ell,
+    \end{equation}
+    \begin{equation}
+        \label{eq:abs-onepoint-thm-ass-hess}
+        \|\mathbf H_i(\mathbf w_k^*)\|_2 \leqslant M_{\mathbf H}.
+    \end{equation}
+    Тогда для абсолютного одноточечного критерия сходимости верна оценка
+    \begin{equation}
+        \label{eq:abs-onepoint-general-theorem}
+        \Delta_1(k+1)
+        \leqslant
+        \frac{2M_\ell + M_{\mathbf g}R + M_{\mathbf H}R^2}{k+1}
+        = \mathcal{O}(k^{-1}),.
     \end{equation}
 \end{theorem}
 
 \begin{proof}
-    В силу квадратичной аппроксимации~\eqref{eq:losses-difference-hessian} имеем
-    \begin{equation}
-        \Delta_1(k+1)
-        \approx
-        \frac{1}{2}\left|
-            (\mathbf{w} - \mathbf{w}^*)^\top
-            \Big(
-                \mathbf H^{(k+1)}(\mathbf w^*)
-                -
-                \mathbf H^{(k)}(\mathbf w^*)
-            \Big)
-            (\mathbf{w} - \mathbf{w}^*)
-        \right|.
-    \end{equation}
-    По неравенству Коши"--~Буняковского и свойству согласованности спектральной матричной нормы справедлива стандартная оценка квадратичной формы:
-    \begin{equation}
-        \label{eq:abs-onepoint-proof-step1}
-        \Delta_1(k+1)
-        \lesssim
-        \frac{1}{2}
-        \left\|
-            \mathbf H^{(k+1)}(\mathbf w^*)
+    Для точки $\mathbf w \in \mathcal U_R(\mathbf w_k^*)$ из квадратичной
+    аппроксимации~\eqref{eq:losses-difference-second-order-minimum} имеем
+    \begin{multline}
+        \mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)
+        =
+        \mathcal L_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*) 
+        +
+        \\
+        +
+        \mathbf g^{(k+1)}(\mathbf w_k^*)^\top(\mathbf w-\mathbf w_k^*)
+        +
+        \frac12
+        (\mathbf w-\mathbf w_k^*)^\top
+        \Big(
+            \mathbf H^{(k+1)}(\mathbf w_k^*)
             -
-            \mathbf H^{(k)}(\mathbf w^*)
-        \right\|_2
-        \|\mathbf w-\mathbf w^*\|_2^2.
-    \end{equation}
-    Аналогично~\eqref{eq:losses-difference} выводится формула для разности матриц Гессе
+            \mathbf H^{(k)}(\mathbf w_k^*)
+        \Big)
+        (\mathbf w-\mathbf w_k^*).
+    \end{multline}
+    Переходя к модулю и применяя неравенство треугольника, получаем
+    \begin{multline}
+        \Delta_1(k+1)
+        \leqslant
+        \left|
+            \mathcal L_{k+1}(\mathbf w_k^*)
+            -
+            \mathcal L_k(\mathbf w_k^*)
+        \right|
+        +
+        \left|
+            \mathbf g^{(k+1)}(\mathbf w_k^*)^\top
+            (\mathbf w-\mathbf w_k^*)
+        \right|
+        +
+        \\
+        +
+        \frac12
+        \left|
+            (\mathbf w-\mathbf w_k^*)^\top
+            \Big(
+                \mathbf H^{(k+1)}(\mathbf w_k^*)
+                -
+                \mathbf H^{(k)}(\mathbf w_k^*)
+            \Big)
+            (\mathbf w-\mathbf w_k^*)
+        \right|.
+    \end{multline}
+
+    Оценим по отдельности все три слагаемых.
+
+    \textbf{Нулевой член.}
+    Из формулы для разности эмпирических функций потерь в точке $\mathbf w_k^*$
+    имеем
     \begin{equation}
-        \label{eq:abs-onepoint-proof-step2}
-        \mathbf H^{(k+1)}(\mathbf w^*)
+        \label{eq:abs-onepoint-general-proof-step1}
+        \mathcal L_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*)
+        =
+        \frac{1}{k+1}
+        \Big(
+            \ell_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*)
+        \Big).
+    \end{equation}
+    Следовательно,
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step2}
+        \left|
+            \mathcal L_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*)
+        \right|
+        \leqslant
+        \frac{1}{k+1}
+        \left(
+            |\ell_{k+1}(\mathbf w_k^*)|
+            +
+            |\mathcal L_k(\mathbf w_k^*)|
+        \right).
+    \end{equation}
+    Но
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step3}
+        |\mathcal L_k(\mathbf w_k^*)|
+        =
+        \left|
+            \frac{1}{k}\sum_{i=1}^k \ell_i(\mathbf w_k^*)
+        \right|
+        \leqslant
+        \frac{1}{k}\sum_{i=1}^k |\ell_i(\mathbf w_k^*)|
+        \leqslant
+        M_\ell.
+    \end{equation}
+    Поэтому из~\eqref{eq:abs-onepoint-general-proof-step2} получаем
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step4}
+        \left|
+            \mathcal L_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*)
+        \right|
+        \leqslant
+        \frac{2M_\ell}{k+1}.
+    \end{equation}
+
+    \textbf{Линейный член.}
+    По неравенству Коши"--~Буняковского имеем
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step5}
+        \left|
+            \mathbf g^{(k+1)}(\mathbf w_k^*)^\top
+            (\mathbf w-\mathbf w_k^*)
+        \right|
+        \leqslant
+        \|\mathbf g^{(k+1)}(\mathbf w_k^*)\|_2
+        \|\mathbf w-\mathbf w_k^*\|_2.
+    \end{equation}
+    Так как $\mathbf g^{(k)}(\mathbf w_k^*)=\mathbf 0$, то
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step6}
+        \mathbf g^{(k+1)}(\mathbf w_k^*)
+        =
+        \frac{1}{k+1}
+        \mathbf g_{k+1}(\mathbf w_k^*),
+    \end{equation}
+    а значит
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step7}
+        \|\mathbf g^{(k+1)}(\mathbf w_k^*)\|_2
+        \leqslant
+        \frac{M_{\mathbf g}}{k+1}.
+    \end{equation}
+    Подставляя~\eqref{eq:abs-onepoint-general-proof-step7}
+    в~\eqref{eq:abs-onepoint-general-proof-step5}, получаем
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step8}
+        \left|
+            \mathbf g^{(k+1)}(\mathbf w_k^*)^\top
+            (\mathbf w-\mathbf w_k^*)
+        \right|
+        \leqslant
+        \frac{M_{\mathbf g}}{k+1}
+        \|\mathbf w-\mathbf w_k^*\|_2.
+    \end{equation}
+
+    \textbf{Квадратичный член.}
+    По согласованности спектральной нормы имеем
+    \begin{multline}
+        \label{eq:abs-onepoint-general-proof-step9}
+        \left|
+            (\mathbf w-\mathbf w_k^*)^\top
+            \Big(
+                \mathbf H^{(k+1)}(\mathbf w_k^*)
+                -
+                \mathbf H^{(k)}(\mathbf w_k^*)
+            \Big)
+            (\mathbf w-\mathbf w_k^*)
+        \right|
+        \leqslant
+        \\
+        \leqslant
+        \left\|
+            \mathbf H^{(k+1)}(\mathbf w_k^*)
+            -
+            \mathbf H^{(k)}(\mathbf w_k^*)
+        \right\|_2
+        \|\mathbf w-\mathbf w_k^*\|_2^2.
+    \end{multline}
+    Для разности матриц Гессе справедливо
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step10}
+        \mathbf H^{(k+1)}(\mathbf w_k^*)
         -
-        \mathbf H^{(k)}(\mathbf w^*)
+        \mathbf H^{(k)}(\mathbf w_k^*)
         =
         \frac{1}{k+1}
         \left(
-            \mathbf H_{k+1}(\mathbf w^*)
+            \mathbf H_{k+1}(\mathbf w_k^*)
             -
-            \mathbf H^{(k)}(\mathbf w^*)
-        \right).
+            \mathbf H^{(k)}(\mathbf w_k^*)
+        \right),
     \end{equation}
-    Переходя к нормам и используя неравенство треугольника, имеем
+    поэтому
     \begin{equation}
-        \label{eq:abs-onepoint-proof-step3}
+        \label{eq:abs-onepoint-general-proof-step11}
         \left\|
-            \mathbf H^{(k+1)}(\mathbf w^*)
+            \mathbf H^{(k+1)}(\mathbf w_k^*)
             -
-            \mathbf H^{(k)}(\mathbf w^*)
+            \mathbf H^{(k)}(\mathbf w_k^*)
         \right\|_2
         \leqslant
         \frac{1}{k+1}
-        \Big(
-            \|\mathbf H_{k+1}(\mathbf w^*)\|_2
+        \left(
+            \|\mathbf H_{k+1}(\mathbf w_k^*)\|_2
             +
-            \|\mathbf H^{(k)}(\mathbf w^*)\|_2
-        \Big).
+            \|\mathbf H^{(k)}(\mathbf w_k^*)\|_2
+        \right).
     \end{equation}
-    Используя предположения теоремы $\|\mathbf H_{i}(\mathbf w^*)\|_2 \leqslant M_{\mathbf H}$, $i = 1, \ldots, k+1$, по неравенству треугольника для спектральной нормы получаем $\|\mathbf H_{k+1}(\mathbf w^*)\|_2 \leqslant M_{\mathbf{H}}$~и
+    Из~\eqref{eq:abs-onepoint-thm-ass-hess} следует
     \begin{equation}
-        \label{eq:abs-onepoint-proof-step4}
-        \|\mathbf H^{(k)}(\mathbf w^*)\|_2
+        \label{eq:abs-onepoint-general-proof-step12}
+        \|\mathbf H_{k+1}(\mathbf w_k^*)\|_2
         \leqslant
-        \frac{1}{k}\sum_{i=1}^k \|\mathbf H_i(\mathbf w^*)\|_2
+        M_{\mathbf H}
+    \end{equation}
+    и
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step13}
+        \|\mathbf H^{(k)}(\mathbf w_k^*)\|_2
+        =
+        \left\|
+            \frac{1}{k}\sum_{i=1}^k \mathbf H_i(\mathbf w_k^*)
+        \right\|_2
+        \leqslant
+        \frac{1}{k}\sum_{i=1}^k \|\mathbf H_i(\mathbf w_k^*)\|_2
         \leqslant
         M_{\mathbf H}.
     \end{equation}
-    Подставляя эти оценки в~\eqref{eq:abs-onepoint-proof-step3}, имеем
+    Следовательно,
     \begin{equation}
-        \label{eq:abs-onepoint-proof-step5}
+        \label{eq:abs-onepoint-general-proof-step14}
         \left\|
-            \mathbf H^{(k+1)}(\mathbf w^*)
+            \mathbf H^{(k+1)}(\mathbf w_k^*)
             -
-            \mathbf H^{(k)}(\mathbf w^*)
+            \mathbf H^{(k)}(\mathbf w_k^*)
         \right\|_2
         \leqslant
-        \frac{2M_{\mathbf H}}{k+1},
+        \frac{2M_{\mathbf H}}{k+1}.
     \end{equation}
-    что при подстановке в~\eqref{eq:abs-onepoint-proof-step1} дает
+    Подставляя~\eqref{eq:abs-onepoint-general-proof-step14}
+    в~\eqref{eq:abs-onepoint-general-proof-step9}, получаем
     \begin{equation}
-        \label{eq:abs-onepoint-proof-step6}
+        \label{eq:abs-onepoint-general-proof-step15}
+        \frac12
+        \left|
+            (\mathbf w-\mathbf w_k^*)^\top
+            \Big(
+                \mathbf H^{(k+1)}(\mathbf w_k^*)
+                -
+                \mathbf H^{(k)}(\mathbf w_k^*)
+            \Big)
+            (\mathbf w-\mathbf w_k^*)
+        \right|
+        \leqslant
+        \frac{M_{\mathbf H}}{k+1}
+        \|\mathbf w-\mathbf w_k^*\|_2^2.
+    \end{equation}
+
+    Собирая оценки~\eqref{eq:abs-onepoint-general-proof-step4},
+    \eqref{eq:abs-onepoint-general-proof-step8} и
+    \eqref{eq:abs-onepoint-general-proof-step15}, имеем
+    \begin{equation}
+        \label{eq:abs-onepoint-general-proof-step16}
         \Delta_1(k+1)
-        \lesssim
-        \frac{1}{2}\cdot \frac{2M_{\mathbf H}}{k+1}
-        \|\mathbf w-\mathbf w^*\|_2^2
-        =
-        \frac{M_{\mathbf H}}{k+1}\|\mathbf w-\mathbf w^*\|_2^2.
+        \leqslant
+        \frac{2M_\ell}{k+1}
+        +
+        \frac{M_{\mathbf g}}{k+1}\|\mathbf w-\mathbf w_k^*\|_2
+        +
+        \frac{M_{\mathbf H}}{k+1}\|\mathbf w-\mathbf w_k^*\|_2^2.
     \end{equation}
-    Так как $\mathbf w \in \mathcal U_R(\mathbf w^*)$, то $\|\mathbf w-\mathbf w^*\|_2 \leqslant R$ и, следовательно,
+    Так как $\mathbf w \in \mathcal U_R(\mathbf w_k^*)$, то
+    $\|\mathbf w-\mathbf w_k^*\|_2 \leqslant R$, и потому
     \begin{equation}
-        \label{eq:abs-onepoint-proof-step7}
-        \Delta_{1}(k) \lesssim \frac{M_{\mathbf{H}} R^2}{k} = \mathcal{O}(k^{-1}),
+        \Delta_1(k+1)
+        \leqslant
+        \frac{2M_\ell + M_{\mathbf g}R + M_{\mathbf H}R^2}{k+1}
+        = \mathcal{O}(k^{-1}),
     \end{equation}
     что и требовалось доказать.
 \end{proof}
 
-Таким образом, абсолютное изменение функции потерь в фиксированной точке локальной окрестности минимума убывает как $\mathcal O(k^{-1})$ при добавлении одного нового объекта в выборку. Полученная оценка согласуется с интуицией: вклад каждого отдельного объекта в эмпирическую функцию потерь имеет порядок $k^{-1}$, а потому и локальное изменение ландшафта, измеряемое в одной точке, должно уменьшаться с той же скоростью. Однако такой критерий характеризует поведение поверхности лишь в одной выбранной точке и потому не отражает усредненную геометрию ландшафта в окрестности минимума. Для этого далее рассматривается среднеквадратичный критерий сходимости, агрегирующий изменение функции потерь по распределению точек в пространстве параметров.
+Таким образом, в общем случае абсолютное изменение функции потерь в фиксированной точке локальной окрестности минимума определяется тремя составляющими: смещением значения функции потерь в точке~$\mathbf w_k^*$, градиентным рассогласованием и квадратичным вкладом разности матриц Гессе. При пообъектной ограниченности функции потерь, градиента и матрицы Гессе все три слагаемых имеют порядок~$\mathcal O(k^{-1})$, а значит и абсолютный одноточечный критерий убывает как~$\mathcal O(k^{-1})$.
 
 \section{Среднеквадратичный критерий сходимости}
 
@@ -262,97 +470,189 @@
     \end{equation}
 \end{definition}
 
-В общем случае поведение критерия~\eqref{eq:squared-criterion} зависит от выбора функции предпочтения $q(\mathbf w)$. Для получения явной аналитической формулы естественно рассмотреть гауссовское распределение с центром в точке локального минимума $\mathbf w^*$: $q(\mathbf w)=\mathcal N(\mathbf w^*, \sigma^2 \mathbf I_N)$. Такой выбор согласуется с локальным характером квадратичной аппроксимации и позволяет использовать известные формулы для моментов квадратичных форм гауссовских векторов. В результате среднеквадратичный критерий выражается через след и квадрат следа разности матриц Гессе, что приводит к более быстрому порядку сходимости по сравнению с одноточечным случаем.
+В общем случае поведение критерия~\eqref{eq:squared-criterion} зависит от выбора функции предпочтения~$q(\mathbf w)$. Для получения явной аналитической формулы естественно рассмотреть гауссовское распределение с центром в точке локального минимума $q(\mathbf w)=\mathcal N(\mathbf w_k^*, \sigma^2 \mathbf I_N)$. Такой выбор согласуется с локальным характером квадратичной аппроксимации и позволяет использовать известные формулы для моментов квадратичных форм гауссовских векторов.
 
 \begin{theorem}
-    Пусть существует окрестность $\mathcal{U}_{R}(\mathbf{w}^*)$ радиуса $R>0$ точки локального минимума $\mathbf{w}^* \in \mathbb{R}^{N}$ эмпирической функции потерь, такая что в этой окрестности спектральная норма матрицы Гессе функции потерь на каждом объекте ограничена: $\forall i$ выполнено $\| \mathbf{H}_{i}(\mathbf{w}) \|_2 \leqslant M_{\mathbf{H}}$. Тогда для среднеквадратичного критерия сходимости с $q(\mathbf{w}) = \mathcal{N}(\mathbf{w}^*, \sigma^2 \mathbf{I}_N)$, $\sigma >0$ верно
+    \label{thm:squared-criterion-general}
+    Пусть существует окрестность~$\mathcal U_R(\mathbf w_k^*)$ радиуса $R>0$
+    точки локального минимума~$\mathbf w_k^* \in \mathbb R^N$ эмпирической
+    функции потерь~$\mathcal L_k(\mathbf w)$, такая что в этой окрестности
+    справедлива квадратичная аппроксимация~\eqref{eq:losses-difference-second-order-minimum}.
+    Предположим, что
     \begin{equation}
-        \label{eq:squared-criterion-theorem}
-        \Delta_2(k)
-        \lesssim
-        \frac{\sigma^4 (N^2+2N) M_{\mathbf H}^2}{k^2}
-        =
-        \mathcal{O}(k^{-2}).
+        \label{eq:squared-criterion-thm-ass-grad}
+        \|\mathbf g_{k+1}(\mathbf w_k^*)\|_2 \leqslant M_{\mathbf g}
+    \end{equation}
+    и для всех $i=1, \ldots, k+1$ выполнены оценки
+    \begin{equation}
+        \label{eq:squared-criterion-thm-ass-loss}
+        |\ell_i(\mathbf w_k^*)| \leqslant M_\ell,
+    \end{equation}
+    \begin{equation}
+        \label{eq:squared-criterion-thm-ass-hess}
+        \|\mathbf H_i(\mathbf w_k^*)\|_2 \leqslant M_{\mathbf H}.
+    \end{equation}
+    Тогда для среднеквадратичного критерия сходимости с
+    \begin{equation}
+        q(\mathbf w)=\mathcal N(\mathbf w_k^*, \sigma^2 \mathbf I_N),
+        \qquad
+        \sigma>0,
+    \end{equation}
+    верна оценка
+    \begin{equation}
+        \label{eq:squared-criterion-general-theorem}
+        \Delta_2(k+1)
+        \leqslant
+        \frac{
+            12M_\ell^2
+            +
+            3\sigma^2 M_{\mathbf g}^2
+            +
+            3\sigma^4 (N^2+2N) M_{\mathbf H}^2
+        }{(k+1)^2}
+        = \mathcal{O}(k^{-2}).
     \end{equation}
 \end{theorem}
 
 \begin{proof}
     Обозначим
     \begin{equation}
-        \mathbf v = \mathbf w - \mathbf w^*,
+        \mathbf v = \mathbf w-\mathbf w_k^*,
         \qquad
-        \mathbf A_k =
-        \mathbf H^{(k+1)}(\mathbf w^*)
-        -
-        \mathbf H^{(k)}(\mathbf w^*),
+        a_k = \mathcal L_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*),
+        \qquad
+        \mathbf b_k = \mathbf g^{(k+1)}(\mathbf w_k^*),
     \end{equation}
-    тогда при $\mathbf w \sim \mathcal N(\mathbf w^*, \sigma^2 \mathbf I_N)$ имеем $\mathbf v \sim \mathcal N(\mathbf 0, \sigma^2 \mathbf I_N)$ и в силу квадратичной аппроксимации~\eqref{eq:losses-difference-hessian} получаем
     \begin{equation}
-        \label{eq:squared-criterion-proof-step1}
-        \mathcal L_{k+1}(\mathbf w) - \mathcal L_k(\mathbf w)
-        \approx
-        \frac{1}{2}\mathbf v^\top \mathbf A_k \mathbf v,
+        \mathbf A_k
+        =
+        \mathbf H^{(k+1)}(\mathbf w_k^*)
+        -
+        \mathbf H^{(k)}(\mathbf w_k^*).
+    \end{equation}
+    Тогда при $\mathbf w \sim \mathcal N(\mathbf w_k^*, \sigma^2 \mathbf I_N)$ имеем
+    $\mathbf v \sim \mathcal N(\mathbf 0, \sigma^2 \mathbf I_N)$, и из
+    квадратичной аппроксимации~\eqref{eq:losses-difference-second-order-minimum}
+    следует
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step1}
+        \mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)
+        =
+        a_k+\mathbf b_k^\top \mathbf v+\frac12 \mathbf v^\top \mathbf A_k \mathbf v.
+    \end{equation}
+    Следовательно,
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step2}
+        \Delta_2(k+1)
+        =
+        \mathbb E
+        \left[
+            \left(
+                a_k+\mathbf b_k^\top \mathbf v+\frac12 \mathbf v^\top \mathbf A_k \mathbf v
+            \right)^2
+        \right].
+    \end{equation}
+
+    Используем неравенство
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step3}
+        (x+y+z)^2 \leqslant 3(x^2+y^2+z^2),
+        \qquad x, y, z \in \mathbb R.
+    \end{equation}
+    Тогда из~\eqref{eq:squared-criterion-general-proof-step2} получаем
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step4}
+        \Delta_2(k+1)
+        \leqslant
+        3a_k^2
+        +
+        3\mathbb E\big[(\mathbf b_k^\top \mathbf v)^2\big]
+        +
+        \frac{3}{4}\mathbb E\big[(\mathbf v^\top \mathbf A_k \mathbf v)^2\big].
+    \end{equation}
+
+    \textbf{Нулевой член.}
+    По формуле для разности эмпирических функций потерь в точке $\mathbf w_k^*$
+    имеем
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step5}
+        a_k
+        =
+        \frac{1}{k+1}
+        \Big(
+            \ell_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*)
+        \Big).
+    \end{equation}
+    Поэтому
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step6}
+        |a_k|
+        \leqslant
+        \frac{1}{k+1}
+        \left(
+            |\ell_{k+1}(\mathbf w_k^*)|
+            +
+            |\mathcal L_k(\mathbf w_k^*)|
+        \right).
+    \end{equation}
+    Но
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step7}
+        |\mathcal L_k(\mathbf w_k^*)|
+        =
+        \left|
+            \frac{1}{k}\sum_{i=1}^k \ell_i(\mathbf w_k^*)
+        \right|
+        \leqslant
+        \frac{1}{k}\sum_{i=1}^k |\ell_i(\mathbf w_k^*)|
+        \leqslant
+        M_\ell,
     \end{equation}
     откуда
     \begin{equation}
-        \label{eq:squared-criterion-proof-step2}
-        \Delta_2(k+1)
-        =
-        \mathbb E_{q(\mathbf w)}
-        \Big[
-        \big(\mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)\big)^2
-        \Big]
-        \approx
-        \frac{1}{4}
-        \mathbb E
-        \big[
-        (\mathbf v^\top \mathbf A_k \mathbf v)^2
-        \big].
+        \label{eq:squared-criterion-general-proof-step8}
+        |a_k|
+        \leqslant
+        \frac{2M_\ell}{k+1},
+        \qquad
+        a_k^2
+        \leqslant
+        \frac{4M_\ell^2}{(k+1)^2}.
     \end{equation}
-    По определению дисперсии
+
+    \textbf{Линейный член.}
+    Поскольку $\mathbf g^{(k)}(\mathbf w_k^*)=\mathbf 0$, имеем
     \begin{equation}
-        \label{eq:squared-criterion-proof-step3}
-        \mathbb E
-        \big[
-            (\mathbf v^\top \mathbf A_k \mathbf v)^2
-        \big]
+        \label{eq:squared-criterion-general-proof-step9}
+        \mathbf b_k
         =
-        \mathbb D
-        \big[
-            \mathbf v^\top \mathbf A_k \mathbf v
-        \big]
-        +
-        \Big(
-            \mathbb E
-            \big[
-                \mathbf v^\top \mathbf A_k \mathbf v
-            \big]
-        \Big)^2.
-    \end{equation}
-    
-    Так как матрица $\mathbf A_k$ симметрична, а $\mathbf v \sim \mathcal N(\mathbf 0, \sigma^2\mathbf I_N)$, то по формулам для матожидания и дисперсии квадратичной формы гауссовского вектора имеем
-    \begin{equation}
-        \label{eq:squared-criterion-proof-step4}
-        \mathbb E
-        \big[
-            \mathbf v^\top \mathbf A_k \mathbf v
-        \big]
+        \mathbf g^{(k+1)}(\mathbf w_k^*)
         =
-        \sigma^2 \operatorname{Tr}(\mathbf A_k),
+        \frac{1}{k+1}\mathbf g_{k+1}(\mathbf w_k^*).
     \end{equation}
+    Тогда
     \begin{equation}
-        \label{eq:squared-criterion-proof-step5}
-        \mathbb D
-        \big[
-            \mathbf v^\top \mathbf A_k \mathbf v
-        \big]
+        \label{eq:squared-criterion-general-proof-step10}
+        \|\mathbf b_k\|_2
+        \leqslant
+        \frac{M_{\mathbf g}}{k+1}.
+    \end{equation}
+    Для второго момента линейной формы гауссовского вектора получаем
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step11}
+        \mathbb E\big[(\mathbf b_k^\top \mathbf v)^2\big]
         =
-        2\sigma^4 \operatorname{Tr}(\mathbf A_k^2).
+        \mathbf b_k^\top \mathbb E[\mathbf v\mathbf v^\top]\mathbf b_k
+        =
+        \sigma^2 \|\mathbf b_k\|_2^2
+        \leqslant
+        \frac{\sigma^2 M_{\mathbf g}^2}{(k+1)^2}.
     \end{equation}
-    Подставляя~\eqref{eq:squared-criterion-proof-step4} и \eqref{eq:squared-criterion-proof-step5}
-    в~\eqref{eq:squared-criterion-proof-step3}, получаем
+
+    \textbf{Квадратичный член.}
+    Так как матрица $\mathbf A_k$ симметрична, а $\mathbf v \sim \mathcal N(\mathbf 0, \sigma^2\mathbf I_N)$, то
     \begin{equation}
-        \label{eq:squared-criterion-proof-step6}
+        \label{eq:squared-criterion-general-proof-step12}
         \mathbb E
         \big[
             (\mathbf v^\top \mathbf A_k \mathbf v)^2
@@ -362,133 +662,139 @@
         +
         \sigma^4 \operatorname{Tr}(\mathbf A_k)^2.
     \end{equation}
-    Следовательно,
-    \begin{equation}
-        \label{eq:squared-criterion-proof-step7}
-        \Delta_2(k+1)
-        \approx
-        \frac{\sigma^4}{4}
-        \Big(
-            2\operatorname{Tr}(\mathbf A_k^2)
-            +
-            \operatorname{Tr}(\mathbf A_k)^2
-        \Big).
-    \end{equation}
-    
-    Оценим теперь следы через спектральную норму. Для симметричной матрицы $\mathbf A_k$ с собственными значениями $\lambda_1,\ldots,\lambda_N$ имеем
+    Для симметричной матрицы $\mathbf A_k$ с собственными значениями
+    $\lambda_1,\ldots,\lambda_N$ имеем
     \begin{equation}
         \operatorname{Tr}(\mathbf A_k^2)
         =
         \sum_{i=1}^N \lambda_i^2
-        \le
-        N \|\mathbf A_k\|_2^2
+        \leqslant
+        N\|\mathbf A_k\|_2^2
     \end{equation}
     и
     \begin{equation}
         |\operatorname{Tr}(\mathbf A_k)|
-        =
-        \left|
-            \sum_{i=1}^N \lambda_i
-        \right|
-        \le
-        N \|\mathbf A_k\|_2,
+        \leqslant
+        N\|\mathbf A_k\|_2,
     \end{equation}
     откуда
     \begin{equation}
-        \label{eq:squared-criterion-proof-step8}
-        2\operatorname{Tr}(\mathbf A_k^2)
-        +
-        \operatorname{Tr}(\mathbf A_k)^2
-        \le
-        (2N+N^2)\|\mathbf A_k\|_2^2.
+        \label{eq:squared-criterion-general-proof-step13}
+        \mathbb E
+        \big[
+            (\mathbf v^\top \mathbf A_k \mathbf v)^2
+        \big]
+        \leqslant
+        \sigma^4 (N^2+2N)\|\mathbf A_k\|_2^2.
     \end{equation}
-    Поэтому из~\eqref{eq:squared-criterion-proof-step7} следует
+
+    Далее,
     \begin{equation}
-        \label{eq:squared-criterion-proof-step9}
-        \Delta_2(k+1)
-        \lesssim
-        \frac{\sigma^4(N^2+2N)}{4}
-        \|\mathbf A_k\|_2^2.
-    \end{equation}
-    
-    Далее, как и в доказательстве теоремы для абсолютного одноточечного критерия,
-    справедливо
-    \begin{equation}
-        \label{eq:squared-criterion-proof-step10}
+        \label{eq:squared-criterion-general-proof-step14}
         \mathbf A_k
         =
-        \mathbf H^{(k+1)}(\mathbf w^*)
+        \mathbf H^{(k+1)}(\mathbf w_k^*)
         -
-        \mathbf H^{(k)}(\mathbf w^*)
+        \mathbf H^{(k)}(\mathbf w_k^*)
         =
         \frac{1}{k+1}
         \left(
-            \mathbf H_{k+1}(\mathbf w^*)
+            \mathbf H_{k+1}(\mathbf w_k^*)
             -
-            \mathbf H^{(k)}(\mathbf w^*)
+            \mathbf H^{(k)}(\mathbf w_k^*)
         \right),
     \end{equation}
-    а значит
+    поэтому
     \begin{equation}
-        \label{eq:squared-criterion-proof-step11}
+        \label{eq:squared-criterion-general-proof-step15}
         \|\mathbf A_k\|_2
-        \le
+        \leqslant
         \frac{1}{k+1}
-        \Big(
-            \|\mathbf H_{k+1}(\mathbf w^*)\|_2
-            +
-            \|\mathbf H^{(k)}(\mathbf w^*)\|_2
-        \Big)
-        \le
-        \frac{2M_{\mathbf H}}{k+1}.
-    \end{equation}
-    Подставляя~\eqref{eq:squared-criterion-proof-step11}
-    в~\eqref{eq:squared-criterion-proof-step9}, окончательно имеем
-    \begin{equation}
-        \label{eq:squared-criterion-proof-step12}
-        \Delta_2(k+1)
-        \lesssim
-        \frac{\sigma^4(N^2+2N)}{4}
         \left(
-            \frac{2M_{\mathbf H}}{k+1}
-        \right)^2
+            \|\mathbf H_{k+1}(\mathbf w_k^*)\|_2
+            +
+            \|\mathbf H^{(k)}(\mathbf w_k^*)\|_2
+        \right).
+    \end{equation}
+    Из ограниченности гессианов на отдельных объектах следует
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step16}
+        \|\mathbf H_{k+1}(\mathbf w_k^*)\|_2
+        \leqslant
+        M_{\mathbf H}
+    \end{equation}
+    и
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step17}
+        \|\mathbf H^{(k)}(\mathbf w_k^*)\|_2
         =
-        \frac{\sigma^4(N^2+2N) M_{\mathbf H}^2}{(k+1)^2}.
+        \left\|
+            \frac{1}{k}\sum_{i=1}^k \mathbf H_i(\mathbf w_k^*)
+        \right\|_2
+        \leqslant
+        \frac{1}{k}\sum_{i=1}^k \|\mathbf H_i(\mathbf w_k^*)\|_2
+        \leqslant
+        M_{\mathbf H}.
     \end{equation}
     Следовательно,
     \begin{equation}
-        \label{eq:squared-criterion-proof-step13}
-        \Delta_2(k)
-        \lesssim
-        \frac{\sigma^4(N^2+2N) M_{\mathbf H}^2}{k^2}
-        =
-        \mathcal{O}(k^{-2}).
+        \label{eq:squared-criterion-general-proof-step18}
+        \|\mathbf A_k\|_2
+        \leqslant
+        \frac{2M_{\mathbf H}}{k+1}.
+    \end{equation}
+    Подставляя~\eqref{eq:squared-criterion-general-proof-step18}
+    в~\eqref{eq:squared-criterion-general-proof-step13}, получаем
+    \begin{equation}
+        \label{eq:squared-criterion-general-proof-step19}
+        \mathbb E
+        \big[
+            (\mathbf v^\top \mathbf A_k \mathbf v)^2
+        \big]
+        \leqslant
+        \frac{4\sigma^4 (N^2+2N)M_{\mathbf H}^2}{(k+1)^2}.
+    \end{equation}
+
+    Подставляя оценки~\eqref{eq:squared-criterion-general-proof-step8},
+    \eqref{eq:squared-criterion-general-proof-step11} и
+    \eqref{eq:squared-criterion-general-proof-step19}
+    в~\eqref{eq:squared-criterion-general-proof-step4}, получаем
+    \begin{equation}
+        \Delta_2(k+1)
+        \leqslant
+        \frac{
+            12M_\ell^2
+            +
+            3\sigma^2 M_{\mathbf g}^2
+            +
+            3\sigma^4 (N^2+2N)M_{\mathbf H}^2
+        }{(k+1)^2},
     \end{equation}
     что и требовалось доказать.
 \end{proof}
 
-Итак, усреднение квадрата изменения функции потерь по гауссовскому распределению в полной параметрической области приводит к оценке порядка $\mathcal O(k^{-2})$. По сравнению с одноточечным критерием это означает дополнительное сглаживание локальных флуктуаций ландшафта за счет усреднения по распределению точек. Вместе с тем в задачах большой размерности такой критерий может учитывать множество направлений, не оказывающих существенного влияния на локальную форму поверхности. Это мотивирует переход к более экономному варианту анализа, в котором усреднение выполняется не во всем пространстве параметров, а только в подпространстве, натянутом на направления наибольшей локальной кривизны. Именно к такому варианту мы переходим в следующем разделе.
+Итак, в общем случае среднеквадратичный критерий определяется тремя источниками рассогласования: разностью значений функций потерь в точке~$\mathbf w_k^*$, градиентным рассогласованием и квадратичным вкладом, связанным с разностью матриц Гессе. При пообъектной ограниченности функции потерь, градиента и матрицы Гессе все три слагаемых имеют порядок~$\mathcal O(k^{-2})$ после усреднения квадрата по гауссовскому распределению, а значит и сам среднеквадратичный критерий убывает как~$\mathcal O(k^{-2})$.
 
 \section{Среднеквадратичный критерий сходимости в подпространстве наибольшей кривизны}
 
-Во многих задачах существенное изменение ландшафта функции потерь происходит не по всем направлениям в пространстве параметров, а преимущественно вдоль направлений наибольшей локальной кривизны. Такие направления задаются собственными векторами матрицы Гессе, соответствующими ее наибольшим собственным значениям. Поэтому наряду с критерием~\eqref{eq:squared-criterion} естественно рассмотреть его аналог в подпространстве меньшей размерности, натянутом на главные собственные векторы матрицы Гессе в точке локального минимума.
+Во многих задачах существенное изменение ландшафта функции потерь происходит не по всем направлениям в пространстве параметров, а преимущественно вдоль направлений наибольшей локальной кривизны. Такие направления задаются собственными векторами матрицы Гессе, соответствующими ее наибольшим собственным значениям. Поэтому наряду с критерием~\eqref{eq:squared-criterion} естественно рассмотреть его аналог в подпространстве меньшей размерности, натянутом на главные собственные векторы матрицы Гессе в точке локального минимума~$\mathbf w_k^*$.
 
 \begin{definition}
     \label{def:principal-curvature-subspace}
     Пусть
     \begin{equation}
-        \mathbf H^{(k)}(\mathbf w^*) \mathbf u_i = \lambda_i^{(k)} \mathbf u_i,
+        \mathbf H^{(k)}(\mathbf w_k^*) \mathbf u_i = \lambda_i^{(k)} \mathbf u_i,
         \qquad i=1, \ldots, N,
     \end{equation}
     где собственные значения упорядочены по невозрастанию:
     \begin{equation}
         \lambda_1^{(k)} \geqslant\lambda_2^{(k)} \geqslant \cdots \geqslant\lambda_N^{(k)},
     \end{equation}
-    а собственные векторы $\mathbf u_1, \ldots, \mathbf u_N$ образуют ортонормированный базис в $\mathbb R^N$.  Обозначим через
+    а собственные векторы $\mathbf u_1, \ldots, \mathbf u_N$ образуют ортонормированный базис в $\mathbb R^N$. Обозначим через
     \begin{equation}
         \mathbf U_D = [\mathbf u_1, \ldots, \mathbf u_D] \in \mathbb R^{N\times D}
     \end{equation}
-    матрицу, столбцы которой составлены из $D$ собственных векторов, отвечающих $D$ наибольшим собственным значениям матрицы $\mathbf H^{(k)}(\mathbf w^*)$. Подпространство
+    матрицу, столбцы которой составлены из $D$ собственных векторов, отвечающих $D$ наибольшим собственным значениям матрицы $\mathbf H^{(k)}(\mathbf w_k^*)$. Подпространство
     \begin{equation}
         \mathcal S_D = \operatorname{Im}(\mathbf U_D)
     \end{equation}
@@ -508,14 +814,14 @@
         \big)^2
         q(\mathbf w)\, d\mathbf w,
     \end{equation}
-    где функция $q(\mathbf w)$ задает плотность вероятностного распределения на аффинном подпространстве $\mathbf w^* + \mathcal S_D$.
+    где функция $q(\mathbf w)$ задает плотность вероятностного распределения на аффинном подпространстве $\mathbf w_k^* + \mathcal S_D$.
 \end{definition}
 
 \begin{remark}
     \label{rem:squared-subspace-coordinates}
-    Любая точка $\mathbf w \in \mathbf w^* + \mathcal S_D$ единственным образом представима в виде
+    Любая точка $\mathbf w \in \mathbf w_k^* + \mathcal S_D$ единственным образом представима в виде
     \begin{equation}
-        \mathbf w = \mathbf w^* + \mathbf U_D \mathbf z,
+        \mathbf w = \mathbf w_k^* + \mathbf U_D \mathbf z,
         \qquad
         \mathbf z \in \mathbb R^D.
     \end{equation}
@@ -526,9 +832,9 @@
         =
         \int
         \big(
-            \mathcal L_{k+1}(\mathbf w^* + \mathbf U_D \mathbf z)
+            \mathcal L_{k+1}(\mathbf w_k^* + \mathbf U_D \mathbf z)
             -
-            \mathcal L_k(\mathbf w^* + \mathbf U_D \mathbf z)
+            \mathcal L_k(\mathbf w_k^* + \mathbf U_D \mathbf z)
         \big)^2
         \tilde q(\mathbf z)\, d\mathbf z,
     \end{equation}
@@ -537,62 +843,93 @@
 
 \begin{lemma}
     \label{lemma:squared-subspace-general-reduction}
-    Пусть выполнено предположение~\ref{assumption:minima}, и пусть $\operatorname{supp} q \subset (\mathbf w^* + \mathcal S_D)\cap \mathcal U_R(\mathbf w^*)$. Обозначим
+    Пусть $\operatorname{supp} q \subset (\mathbf w_k^* + \mathcal S_D)\cap \mathcal U_R(\mathbf w_k^*)$. Обозначим
     \begin{equation}
-        \label{eq:squared-subspace-AkBk}
+        a_k
+        =
+        \mathcal L_{k+1}(\mathbf w_k^*)
+        -
+        \mathcal L_k(\mathbf w_k^*),
+        \qquad
+        \mathbf b_k
+        =
+        \mathbf g^{(k+1)}(\mathbf w_k^*),
+    \end{equation}
+    \begin{equation}
         \mathbf A_k
         =
-        \mathbf H^{(k+1)}(\mathbf w^*)
+        \mathbf H^{(k+1)}(\mathbf w_k^*)
         -
-        \mathbf H^{(k)}(\mathbf w^*),
+        \mathbf H^{(k)}(\mathbf w_k^*),
         \qquad
         \mathbf B_k
         =
-        \mathbf U_D^\top \mathbf A_k \mathbf U_D \in \mathbb R^{D\times D}.
+        \mathbf U_D^\top \mathbf A_k \mathbf U_D \in \mathbb R^{D\times D},
     \end{equation}
-    Тогда в рамках квадратичной аппроксимации~\eqref{eq:losses-difference-hessian} критерий~\eqref{eq:squared-subspace-criterion-z} представим в виде
+    \begin{equation}
+        \mathbf c_k
+        =
+        \mathbf U_D^\top \mathbf b_k \in \mathbb R^D.
+    \end{equation}
+    Тогда в рамках квадратичной аппроксимации~\eqref{eq:losses-difference-second-order-minimum} критерий~\eqref{eq:squared-subspace-criterion-z} представим в виде
     \begin{equation}
         \label{eq:squared-subspace-general-reduction}
         \Delta_{2}^{(D)}(k+1)
-        \approx
-        \frac{1}{4}
+        =
         \int
-        \big(
-            \mathbf z^\top \mathbf B_k \mathbf z
-        \big)^2
+        \left(
+            a_k
+            +
+            \mathbf c_k^\top \mathbf z
+            +
+            \frac12 \mathbf z^\top \mathbf B_k \mathbf z
+        \right)^2
         \tilde q(\mathbf z)\, d\mathbf z.
     \end{equation}
 \end{lemma}
 
 \begin{proof}
-    Для любой точки $\mathbf w \in \mathbf w^*+\mathcal S_D$ имеем представление
+    Для любой точки $\mathbf w \in \mathbf w_k^*+\mathcal S_D$ имеем представление
     \begin{equation}
-        \mathbf w = \mathbf w^* + \mathbf U_D \mathbf z,
+        \mathbf w = \mathbf w_k^* + \mathbf U_D \mathbf z,
         \qquad
         \mathbf z \in \mathbb R^D.
     \end{equation}
-    Тогда из квадратичной аппроксимации~\eqref{eq:losses-difference-hessian} следует
+    Тогда из квадратичной аппроксимации~\eqref{eq:losses-difference-second-order-minimum} следует
     \begin{align}
         \mathcal L_{k+1}(\mathbf w) - \mathcal L_k(\mathbf w)
-        &\approx
-        \frac{1}{2}
-        (\mathbf w-\mathbf w^*)^\top
+        &=
+        a_k
+        +
+        \mathbf b_k^\top (\mathbf w-\mathbf w_k^*)
+        +
+        \frac12
+        (\mathbf w-\mathbf w_k^*)^\top
         \mathbf A_k
-        (\mathbf w-\mathbf w^*)
+        (\mathbf w-\mathbf w_k^*)
         \notag\\
         &=
-        \frac{1}{2}
+        a_k
+        +
+        \mathbf b_k^\top \mathbf U_D \mathbf z
+        +
+        \frac12
         (\mathbf U_D\mathbf z)^\top
         \mathbf A_k
         (\mathbf U_D\mathbf z)
         \notag\\
         &=
-        \frac{1}{2}
+        a_k
+        +
+        (\mathbf U_D^\top \mathbf b_k)^\top \mathbf z
+        +
+        \frac12
         \mathbf z^\top
         \mathbf U_D^\top \mathbf A_k \mathbf U_D
         \mathbf z
-        =
-        \frac{1}{2}\mathbf z^\top \mathbf B_k \mathbf z.
+        \notag\\
+        &=
+        a_k + \mathbf c_k^\top \mathbf z + \frac12 \mathbf z^\top \mathbf B_k \mathbf z.
     \end{align}
     Возводя в квадрат и усредняя по распределению $\tilde q(\mathbf z)$, получаем~\eqref{eq:squared-subspace-general-reduction}.
 \end{proof}
@@ -603,21 +940,21 @@
     \begin{equation}
         \mathbf B_k
         =
-        \mathbf U_D^\top \mathbf H^{(k+1)}(\mathbf w^*) \mathbf U_D
+        \mathbf U_D^\top \mathbf H^{(k+1)}(\mathbf w_k^*) \mathbf U_D
         -
-        \mathbf U_D^\top \mathbf H^{(k)}(\mathbf w^*) \mathbf U_D.
+        \mathbf U_D^\top \mathbf H^{(k)}(\mathbf w_k^*) \mathbf U_D.
     \end{equation}
-    Поскольку столбцы матрицы $\mathbf U_D$ являются собственными векторами матрицы $\mathbf H^{(k)}(\mathbf w^*)$, имеем
+    Поскольку столбцы матрицы $\mathbf U_D$ являются собственными векторами матрицы $\mathbf H^{(k)}(\mathbf w_k^*)$, имеем
     \begin{equation}
-        \mathbf U_D^\top \mathbf H^{(k)}(\mathbf w^*) \mathbf U_D
+        \mathbf U_D^\top \mathbf H^{(k)}(\mathbf w_k^*) \mathbf U_D
         =
         \operatorname{diag}\left(
             \lambda_1^{(k)}, \ldots, \lambda_D^{(k)}
         \right).
     \end{equation}
-    Если, кроме того, подпространство $\mathcal S_D$ инвариантно относительно матрицы $\mathbf H^{(k+1)}(\mathbf w^*)$ и векторы $\mathbf u_1, \ldots, \mathbf u_D$ остаются собственными векторами этой матрицы, то
+    Если, кроме того, векторы $\mathbf u_1, \ldots, \mathbf u_D$ являются также собственными векторами матрицы $\mathbf H^{(k+1)}(\mathbf w_k^*)$, то
     \begin{equation}
-        \mathbf U_D^\top \mathbf H^{(k+1)}(\mathbf w^*) \mathbf U_D
+        \mathbf U_D^\top \mathbf H^{(k+1)}(\mathbf w_k^*) \mathbf U_D
         =
         \operatorname{diag}\left(
             \lambda_1^{(k+1)}, \ldots, \lambda_D^{(k+1)}
@@ -630,7 +967,7 @@
         =
         \operatorname{diag}\left(
             \lambda_1^{(k+1)}-\lambda_1^{(k)},
-             \ldots, 
+            \ldots,
             \lambda_D^{(k+1)}-\lambda_D^{(k)}
         \right).
     \end{equation}
@@ -639,12 +976,9 @@
 
 \begin{assumption}
     \label{assumption:stable-principal-directions}
-    Пусть векторы $\mathbf u_1, \ldots, \mathbf u_D$, отвечающие $D$ наибольшим
-    собственным значениям матрицы $\mathbf H^{(k)}(\mathbf w^*)$,
-    являются также собственными векторами матрицы
-    $\mathbf H^{(k+1)}(\mathbf w^*)$:
+    Пусть векторы $\mathbf u_1, \ldots, \mathbf u_D$, отвечающие $D$ наибольшим собственным значениям матрицы $\mathbf H^{(k)}(\mathbf w_k^*)$, являются также собственными векторами матрицы $\mathbf H^{(k+1)}(\mathbf w_k^*)$:
     \begin{equation}
-        \mathbf H^{(k+1)}(\mathbf w^*) \mathbf u_i
+        \mathbf H^{(k+1)}(\mathbf w_k^*) \mathbf u_i
         =
         \lambda_i^{(k+1)} \mathbf u_i,
         \qquad i=1, \ldots, D.
@@ -660,7 +994,7 @@
     \begin{equation}
         \tilde{q}(\mathbf z) = \mathcal N(\mathbf 0, \sigma^2 \mathbf I_D),
         \qquad
-        \mathbf w = \mathbf w^* + \mathbf U_D \mathbf z.
+        \mathbf w = \mathbf w_k^* + \mathbf U_D \mathbf z.
     \end{equation}
     Тогда критерий~\eqref{eq:squared-subspace-criterion-z} принимает вид
     математического ожидания по гауссовскому распределению в пространстве
@@ -669,23 +1003,225 @@
 \end{remark}
 
 \begin{theorem}
-    \label{thm:squared-subspace-hessian-eigs}
-    Пусть выполнены предположения~\ref{assumption:minima}
-    и~\ref{assumption:stable-principal-directions}, и пусть функция предпочтения
-    $q(\mathbf w)$ индуцирует в координатах подпространства наибольшей кривизны
-    распределение
+    \label{thm:squared-subspace-general}
+    Пусть выполнены условия леммы~\ref{lemma:squared-subspace-general-reduction}. Предположим, что
     \begin{equation}
-        \tilde{q}(\mathbf z) = \mathcal N(\mathbf 0, \sigma^2 \mathbf I_D),
-        \qquad
-        \mathbf w = \mathbf w^* + \mathbf U_D \mathbf z.
+        \|\mathbf g_{k+1}(\mathbf w_k^*)\|_2 \leqslant M_{\mathbf g}
     \end{equation}
-    Тогда в рамках квадратичной аппроксимации~\eqref{eq:losses-difference-hessian}
-    для среднеквадратичного критерия сходимости в подпространстве наибольшей
-    кривизны верно
+    и для всех $i=1, \ldots, k+1$ выполнены оценки
+    \begin{equation}
+        |\ell_i(\mathbf w_k^*)| \leqslant M_\ell,
+    \end{equation}
+    \begin{equation}
+        \|\mathbf H_i(\mathbf w_k^*)\|_2 \leqslant M_{\mathbf H}.
+    \end{equation}
+    Пусть, кроме того, функция предпочтения $q(\mathbf w)$ индуцирует в координатах подпространства наибольшей кривизны распределение
+    \begin{equation}
+        \tilde q(\mathbf z)=\mathcal N(\mathbf 0,\sigma^2 \mathbf I_D).
+    \end{equation}
+    Тогда для среднеквадратичного критерия сходимости в подпространстве наибольшей кривизны верно
+    \begin{equation}
+        \label{eq:squared-subspace-general-theorem}
+        \Delta_2^{(D)}(k+1)
+        \leqslant
+        \frac{
+            12M_\ell^2
+            +
+            3\sigma^2 M_{\mathbf g}^2
+            +
+            3\sigma^4(D^2+2D)M_{\mathbf H}^2
+        }{(k+1)^2}
+        = \mathcal{O}(k^{-2}).
+    \end{equation}
+\end{theorem}
+
+\begin{proof}
+    По лемме~\ref{lemma:squared-subspace-general-reduction} имеем
+    \begin{equation}
+        \Delta_2^{(D)}(k+1)
+        =
+        \mathbb E_{\tilde q(\mathbf z)}
+        \left[
+            \left(
+                a_k+\mathbf c_k^\top \mathbf z+\frac12 \mathbf z^\top \mathbf B_k \mathbf z
+            \right)^2
+        \right],
+        \qquad
+        \mathbf z \sim \mathcal N(\mathbf 0,\sigma^2\mathbf I_D).
+    \end{equation}
+    Используя неравенство
+    \begin{equation}
+        (x+y+z)^2 \leqslant 3(x^2+y^2+z^2),
+        \qquad x,y,z \in \mathbb R,
+    \end{equation}
+    получаем
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step1}
+        \Delta_2^{(D)}(k+1)
+        \leqslant
+        3a_k^2
+        +
+        3\mathbb E\big[(\mathbf c_k^\top \mathbf z)^2\big]
+        +
+        \frac34 \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big].
+    \end{equation}
+
+    \textbf{Нулевой член.}
+    Как и в доказательстве теоремы для полного среднеквадратичного критерия,
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step2}
+        |a_k|
+        =
+        \left|
+            \mathcal L_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*)
+        \right|
+        \leqslant
+        \frac{2M_\ell}{k+1},
+    \end{equation}
+    а значит
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step3}
+        a_k^2 \leqslant \frac{4M_\ell^2}{(k+1)^2}.
+    \end{equation}
+
+    \textbf{Линейный член.}
+    Так как
+    \begin{equation}
+        \mathbf c_k = \mathbf U_D^\top \mathbf b_k,
+        \qquad
+        \mathbf b_k = \mathbf g^{(k+1)}(\mathbf w_k^*) = \frac{1}{k+1}\mathbf g_{k+1}(\mathbf w_k^*),
+    \end{equation}
+    то
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step4}
+        \|\mathbf c_k\|_2
+        \leqslant
+        \|\mathbf U_D^\top\|_2 \|\mathbf b_k\|_2
+        \leqslant
+        \frac{M_{\mathbf g}}{k+1},
+    \end{equation}
+    поскольку $\mathbf U_D$ имеет ортонормированные столбцы и $\|\mathbf U_D^\top\|_2=1$.
+    Следовательно,
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step5}
+        \mathbb E\big[(\mathbf c_k^\top \mathbf z)^2\big]
+        =
+        \sigma^2\|\mathbf c_k\|_2^2
+        \leqslant
+        \frac{\sigma^2 M_{\mathbf g}^2}{(k+1)^2}.
+    \end{equation}
+
+    \textbf{Квадратичный член.}
+    Так как матрица $\mathbf B_k \in \mathbb R^{D\times D}$ симметрична, а
+    $\mathbf z \sim \mathcal N(\mathbf 0,\sigma^2\mathbf I_D)$, то
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step6}
+        \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
+        =
+        2\sigma^4 \operatorname{Tr}(\mathbf B_k^2)
+        +
+        \sigma^4 \operatorname{Tr}(\mathbf B_k)^2.
+    \end{equation}
+    Для симметричной матрицы $\mathbf B_k$ имеем
+    \begin{equation}
+        \operatorname{Tr}(\mathbf B_k^2)\leqslant D\|\mathbf B_k\|_2^2,
+        \qquad
+        |\operatorname{Tr}(\mathbf B_k)|\leqslant D\|\mathbf B_k\|_2,
+    \end{equation}
+    откуда
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step7}
+        \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
+        \leqslant
+        \sigma^4(D^2+2D)\|\mathbf B_k\|_2^2.
+    \end{equation}
+
+    Далее,
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step8}
+        \|\mathbf B_k\|_2
+        =
+        \|\mathbf U_D^\top \mathbf A_k \mathbf U_D\|_2
+        \leqslant
+        \|\mathbf U_D^\top\|_2 \|\mathbf A_k\|_2 \|\mathbf U_D\|_2
+        \leqslant
+        \|\mathbf A_k\|_2.
+    \end{equation}
+    Как и ранее,
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step9}
+        \mathbf A_k
+        =
+        \mathbf H^{(k+1)}(\mathbf w_k^*)
+        -
+        \mathbf H^{(k)}(\mathbf w_k^*)
+        =
+        \frac{1}{k+1}
+        \left(
+            \mathbf H_{k+1}(\mathbf w_k^*)
+            -
+            \mathbf H^{(k)}(\mathbf w_k^*)
+        \right),
+    \end{equation}
+    поэтому
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step10}
+        \|\mathbf A_k\|_2
+        \leqslant
+        \frac{2M_{\mathbf H}}{k+1},
+    \end{equation}
+    а значит
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step11}
+        \|\mathbf B_k\|_2
+        \leqslant
+        \frac{2M_{\mathbf H}}{k+1}.
+    \end{equation}
+    Подставляя~\eqref{eq:squared-subspace-general-proof-step11}
+    в~\eqref{eq:squared-subspace-general-proof-step7}, получаем
+    \begin{equation}
+        \label{eq:squared-subspace-general-proof-step12}
+        \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
+        \leqslant
+        \frac{4\sigma^4(D^2+2D)M_{\mathbf H}^2}{(k+1)^2}.
+    \end{equation}
+
+    Подставляя~\eqref{eq:squared-subspace-general-proof-step3},
+    \eqref{eq:squared-subspace-general-proof-step5} и
+    \eqref{eq:squared-subspace-general-proof-step12}
+    в~\eqref{eq:squared-subspace-general-proof-step1}, получаем
+    \begin{equation}
+        \Delta_2^{(D)}(k+1)
+        \leqslant
+        \frac{
+            12M_\ell^2
+            +
+            3\sigma^2 M_{\mathbf g}^2
+            +
+            3\sigma^4(D^2+2D)M_{\mathbf H}^2
+        }{(k+1)^2}
+        = \mathcal{O}(k^{-2}),
+    \end{equation}
+    что и требовалось доказать.
+\end{proof}
+
+\begin{theorem}
+    \label{thm:squared-subspace-hessian-eigs}
+    Пусть выполнено предположение~\ref{assumption:stable-principal-directions}, и пусть
+    \begin{equation}
+        a_k = 0,
+        \qquad
+        \mathbf c_k = \mathbf 0.
+    \end{equation}
+    Пусть, кроме того,
+    \begin{equation}
+        \tilde q(\mathbf z)=\mathcal N(\mathbf 0,\sigma^2\mathbf I_D).
+    \end{equation}
+    Тогда для среднеквадратичного критерия сходимости в подпространстве наибольшей кривизны верно
     \begin{equation}
         \label{eq:squared-subspace-hessian-eigs-theorem}
         \Delta_{2}^{(D)}(k+1)
-        \approx
+        =
         \frac{\sigma^4}{4}
         \left(
             2\sum_{i=1}^{D}
@@ -704,83 +1240,41 @@
 \end{theorem}
 
 \begin{proof}
-    По лемме~\ref{lemma:squared-subspace-general-reduction} имеем
+    По лемме~\ref{lemma:squared-subspace-general-reduction} при $a_k=0$ и $\mathbf c_k=\mathbf 0$ имеем
     \begin{equation}
-        \label{eq:squared-subspace-hessian-eigs-proof-step1}
         \Delta_{2}^{(D)}(k+1)
-        \approx
-        \frac{1}{4}
-        \mathbb E_{\tilde{q}(\mathbf{z})}
+        =
+        \frac14
+        \mathbb E_{\tilde q(\mathbf z)}
         \big[
             (\mathbf z^\top \mathbf B_k \mathbf z)^2
         \big],
         \qquad
-        \tilde{q}(\mathbf{z}) = \mathcal N(\mathbf 0, \sigma^2 \mathbf I_D).
+        \tilde q(\mathbf z)=\mathcal N(\mathbf 0,\sigma^2\mathbf I_D).
     \end{equation}
-    По определению дисперсии
+    Далее
     \begin{equation}
-        \label{eq:squared-subspace-hessian-eigs-proof-step2}
-        \mathbb E_{\tilde{q}(\mathbf{z})}
+        \mathbb E
         \big[
             (\mathbf z^\top \mathbf B_k \mathbf z)^2
         \big]
         =
-        \mathbb D_{\tilde{q}(\mathbf{z})}
-        \big[
-            \mathbf z^\top \mathbf B_k \mathbf z
-        \big]
+        2\sigma^4 \operatorname{Tr}(\mathbf B_k^2)
         +
-        \Big(
-            \mathbb E_{\tilde{q}(\mathbf{z})}
-            \big[
-                \mathbf z^\top \mathbf B_k \mathbf z
-            \big]
-        \Big)^2.
+        \sigma^4 \operatorname{Tr}(\mathbf B_k)^2.
     \end{equation}
-    Так как матрица $\mathbf B_k$ симметрична, а $\mathbf z \sim \mathcal N(\mathbf 0, \sigma^2\mathbf I_D)$, то по формулам для матожидания и дисперсии квадратичной формы гауссовского вектора имеем
-    \begin{equation}
-        \label{eq:squared-subspace-hessian-eigs-proof-step3}
-        \mathbb E_{\tilde{q}(\mathbf{z})}
-        \big[
-            \mathbf z^\top \mathbf B_k \mathbf z
-        \big]
-        =
-        \sigma^2 \operatorname{Tr}(\mathbf B_k),
-    \end{equation}
-    \begin{equation}
-        \label{eq:squared-subspace-hessian-eigs-proof-step4}
-        \mathbb D_{\tilde{q}(\mathbf{z})}
-        \big[
-            \mathbf z^\top \mathbf B_k \mathbf z
-        \big]
-        =
-        2\sigma^4 \operatorname{Tr}(\mathbf B_k^2).
-    \end{equation}
-    Следовательно,
-    \begin{equation}
-        \label{eq:squared-subspace-hessian-eigs-proof-step5}
-        \Delta_{2}^{(D)}(k+1)
-        \approx
-        \frac{\sigma^4}{4}
-        \Big(
-            2\operatorname{Tr}(\mathbf B_k^2)
-            +
-            \operatorname{Tr}(\mathbf B_k)^2
-        \Big).
-    \end{equation}
-    В силу предположения~\ref{assumption:stable-principal-directions} и замечания~\ref{rem:Bk-hessian-spectrum} матрица $\mathbf B_k$ диагональна:
+    В силу предположения~\ref{assumption:stable-principal-directions} и замечания~\ref{rem:Bk-hessian-spectrum}
     \begin{equation}
         \mathbf B_k
         =
         \operatorname{diag}\left(
             \lambda_1^{(k+1)}-\lambda_1^{(k)},
-             \ldots, 
+            \ldots,
             \lambda_D^{(k+1)}-\lambda_D^{(k)}
         \right).
     \end{equation}
     Поэтому
     \begin{equation}
-        \label{eq:squared-subspace-hessian-eigs-proof-step6}
         \operatorname{Tr}(\mathbf B_k)
         =
         \sum_{i=1}^{D}
@@ -789,7 +1283,6 @@
         \right),
     \end{equation}
     \begin{equation}
-        \label{eq:squared-subspace-hessian-eigs-proof-step7}
         \operatorname{Tr}(\mathbf B_k^2)
         =
         \sum_{i=1}^{D}
@@ -797,149 +1290,10 @@
             \lambda_i^{(k+1)}-\lambda_i^{(k)}
         \right)^2.
     \end{equation}
-    Подставляя~\eqref{eq:squared-subspace-hessian-eigs-proof-step6} и~\eqref{eq:squared-subspace-hessian-eigs-proof-step7} в~\eqref{eq:squared-subspace-hessian-eigs-proof-step5}, получаем \eqref{eq:squared-subspace-hessian-eigs-theorem}.
+    Подстановка дает~\eqref{eq:squared-subspace-hessian-eigs-theorem}.
 \end{proof}
 
-\begin{corollary}
-    \label{cor:squared-subspace-rough}
-    Пусть выполнены условия теоремы~\ref{thm:squared-subspace-hessian-eigs}, и пусть,
-    кроме того, существует окрестность $\mathcal U_R(\mathbf w^*)$ радиуса $R>0$
-    точки локального минимума $\mathbf w^*$ такая, что в этой окрестности
-    спектральная норма матрицы Гессе функции потерь на каждом объекте ограничена:
-    \begin{equation}
-        \forall i \quad \|\mathbf H_i(\mathbf w)\|_2 \leqslant M_{\mathbf H}.
-    \end{equation}
-    Тогда для среднеквадратичного критерия сходимости в подпространстве
-    наибольшей кривизны верно
-    \begin{equation}
-        \label{eq:squared-subspace-rough-cor}
-        \Delta_{2}^{(D)}(k)
-        \lesssim
-        \frac{(D^2+2D)\sigma^4 M_{\mathbf H}^2}{k^2}
-        =
-        \mathcal O(k^{-2}).
-    \end{equation}
-\end{corollary}
-
-\begin{proof}
-    По теореме~\ref{thm:squared-subspace-hessian-eigs}
-    \begin{equation}
-        \label{eq:squared-subspace-rough-proof-step1}
-        \Delta_{2}^{(D)}(k+1)
-        \approx
-        \frac{\sigma^4}{4}
-        \left(
-            2\sum_{i=1}^{D}
-            \big(
-                \lambda_i^{(k+1)}-\lambda_i^{(k)}
-            \big)^2
-            +
-            \left(
-                \sum_{i=1}^{D}
-                \big(
-                    \lambda_i^{(k+1)}-\lambda_i^{(k)}
-                \big)
-            \right)^2
-        \right).
-    \end{equation}
-    Для любого $i=1, \ldots, D$ по неравенству Вейля для собственных значений
-    симметричных матриц имеем
-    \begin{equation}
-        \label{eq:squared-subspace-rough-proof-step2}
-        \left|
-            \lambda_i^{(k+1)}-\lambda_i^{(k)}
-        \right|
-        \le
-        \left\|
-            \mathbf H^{(k+1)}(\mathbf w^*)
-            -
-            \mathbf H^{(k)}(\mathbf w^*)
-        \right\|_2
-        =
-        \|\mathbf A_k\|_2.
-    \end{equation}
-    Поэтому
-    \begin{equation}
-        \label{eq:squared-subspace-rough-proof-step3}
-        \sum_{i=1}^{D}
-        \big(
-            \lambda_i^{(k+1)}-\lambda_i^{(k)}
-        \big)^2
-        \le
-        D \|\mathbf A_k\|_2^2
-    \end{equation}
-    и
-    \begin{equation}
-        \label{eq:squared-subspace-rough-proof-step4}
-        \left|
-            \sum_{i=1}^{D}
-            \big(
-                \lambda_i^{(k+1)}-\lambda_i^{(k)}
-            \big)
-        \right|
-        \le
-        D \|\mathbf A_k\|_2.
-    \end{equation}
-    Подставляя~\eqref{eq:squared-subspace-rough-proof-step3}
-    и~\eqref{eq:squared-subspace-rough-proof-step4}
-    в~\eqref{eq:squared-subspace-rough-proof-step1}, получаем
-    \begin{equation}
-        \label{eq:squared-subspace-rough-proof-step5}
-        \Delta_{2}^{(D)}(k+1)
-        \lesssim
-        \frac{\sigma^4}{4}(2D + D^2)\|\mathbf A_k\|_2^2.
-    \end{equation}
-
-    Далее, как и в предыдущих теоремах,
-    \begin{equation}
-        \label{eq:squared-subspace-rough-proof-step6}
-        \mathbf A_k
-        =
-        \mathbf H^{(k+1)}(\mathbf w^*)
-        -
-        \mathbf H^{(k)}(\mathbf w^*)
-        =
-        \frac{1}{k+1}
-        \left(
-            \mathbf H_{k+1}(\mathbf w^*)
-            -
-            \mathbf H^{(k)}(\mathbf w^*)
-        \right),
-    \end{equation}
-    а потому
-    \begin{equation}
-        \label{eq:squared-subspace-rough-proof-step7}
-        \|\mathbf A_k\|_2
-        \le
-        \frac{1}{k+1}
-        \Big(
-            \|\mathbf H_{k+1}(\mathbf w^*)\|_2
-            +
-            \|\mathbf H^{(k)}(\mathbf w^*)\|_2
-        \Big)
-        \le
-        \frac{2M_{\mathbf H}}{k+1}.
-    \end{equation}
-    Подставляя~\eqref{eq:squared-subspace-rough-proof-step7}
-    в~\eqref{eq:squared-subspace-rough-proof-step5}, окончательно имеем
-    \begin{equation}
-        \Delta_{2}^{(D)}(k+1)
-        \lesssim
-        \frac{\sigma^4}{4}(D^2+2D)
-        \left(
-            \frac{2M_{\mathbf H}}{k+1}
-        \right)^2
-        =
-        \frac{\sigma^4 (D^2+2D) M_{\mathbf H}^2}{(k+1)^2}.
-    \end{equation}
-    Следовательно,
-    \begin{equation}
-        \Delta_{2}^{(D)}(k) \lesssim \frac{\sigma^4(D^2+2D) M_{\mathbf H}^2}{k^2} = \mathcal O(k^{-2}),
-    \end{equation}
-    что и требовалось доказать.
-\end{proof}
-
-Полученный результат показывает, что ограничение рассмотрения подпространством наибольшей кривизны сохраняет порядок сходимости среднеквадратичного критерия, равный $\mathcal O(k^{-2})$. При этом точная формула~\eqref{eq:squared-subspace-hessian-eigs-theorem} показывает, что критерий определяется приращениями ведущих собственных значений матрицы Гессе, а в грубой оценке~\eqref{eq:squared-subspace-rough-cor} размерностный множитель зависит уже не от полной размерности пространства параметров $N$, а только от размерности выбранного подпространства $D$. Это делает данный критерий более подходящим для практического анализа ландшафта в задачах, где основная часть кривизны сосредоточена в сравнительно малом числе главных направлений.
+Полученный результат показывает, что ограничение рассмотрения подпространством наибольшей кривизны сохраняет порядок сходимости среднеквадратичного критерия, равный~$\mathcal O(k^{-2})$. В общей постановке критерий в подпространстве, как и в полном пространстве параметров, определяется тремя источниками рассогласования: разностью значений функций потерь в точке~$\mathbf w_k^*$, градиентным рассогласованием и квадратичным вкладом, связанным с разностью матриц Гессе. При этом размерностный множитель в квадратичном члене зависит уже не от полной размерности пространства параметров $N$, а только от размерности выбранного подпространства $D$. В частном случае, когда нулевой и линейный члены отсутствуют, критерий выражается непосредственно через приращения ведущих собственных значений матрицы Гессе.
 
 \section{Вычислительные эксперименты}
 
@@ -947,7 +1301,7 @@
 
 Цель вычислительных экспериментов состоит в эмпирической проверке полученных в главе теоретических оценок на скорость стабилизации ландшафта функции потерь при увеличении объема обучающей выборки. Основное внимание уделяется трем критериям: абсолютному одноточечному критерию, среднеквадратичному критерию в полном пространстве параметров и среднеквадратичному критерию в подпространстве наибольшей кривизны. Для каждого из них исследуется зависимость значения критерия от размера выборки $k$ и оценивается показатель степени в степенном законе убывания.
 
-Для проверки универсальности предложенного подхода эксперименты проводятся на архитектурах трех различных типов: полносвязной нейронной сети, сверточной нейронной сети и трансформере. Такое сравнение позволяет проследить, насколько полученные теоретические оценки согласуются с поведением моделей, существенно различающихся по архитектурным свойствам и геометрии поверхности функции потерь. Полносвязная сеть выступает в качестве наиболее простого базового случая, сверточная сеть позволяет перейти к более реалистичным моделям компьютерного зрения, а трансформер --- проверить применимость подхода к современным архитектурам с выраженной анизотропией ландшафта.
+Для проверки универсальности предложенного подхода эксперименты проводятся на архитектурах трех различных типов: полносвязной нейронной сети, сверточной нейронной сети и трансформере. Такое сравнение позволяет проследить, насколько полученные теоретические оценки согласуются с поведением моделей, существенно различающихся по архитектурным свойствам и геометрии поверхности функции потерь. Полносвязная сеть выступает в качестве наиболее простого базового случая, сверточная сеть позволяет перейти к более реалистичным моделям компьютерного зрения, а трансформер "--- проверить применимость подхода к современным архитектурам с выраженной анизотропией ландшафта.
 
 \subsection{Архитектуры, датасеты и общая схема эксперимента}
 
@@ -1010,8 +1364,8 @@
 \[
     \mathbf w = \mathbf w_k^* + \varepsilon \mathbf d,
 \]
-где $\mathbf d \in \mathbb R^N$ --- случайное единичное направление,
-$\|\mathbf d\|_2 = 1$, а $\varepsilon > 0$ --- малый радиус, определяющий размер
+где $\mathbf d \in \mathbb R^N$ "--- случайное единичное направление,
+$\|\mathbf d\|_2 = 1$, а $\varepsilon > 0$ "--- малый радиус, определяющий размер
 локальной окрестности минимума. Для каждого значения $k$ выбирается набор
 случайных направлений $\mathbf d_1,\dots,\mathbf d_M$, после чего критерий
 усредняется по этим направлениям:
@@ -1265,7 +1619,7 @@ $\Delta_2^{(D)}(k)$ при различных значениях $D$. На те 
 согласие между теоретическими оценками и реальным поведением обучаемых моделей.
 В частности, для абсолютного одноточечного критерия ожидается порядок убывания
 $\mathcal O(k^{-1})$, а для среднеквадратичного критерия в полном пространстве
-и в подпространстве наибольшей кривизны --- порядок $\mathcal O(k^{-2})$.
+и в подпространстве наибольшей кривизны "--- порядок $\mathcal O(k^{-2})$.
 При этом ограничение рассмотрения подпространством наибольшей кривизны должно
 оказаться особенно полезным для моделей большой размерности, таких как
 сверточные сети и трансформеры, где локальная геометрия ландшафта определяется

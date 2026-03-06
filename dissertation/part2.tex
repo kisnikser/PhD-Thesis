@@ -15,16 +15,10 @@ TODO
 \label{eq:empirical-loss}
 \mathcal{L}_m(\mathbf{w}) = \frac{1}{m} \sum_{i=1}^m \ell(f_{\mathbf{w}}(\mathbf{x}_i), \mathbf{y}_i),
 \end{equation}
-где $\ell: \mathbb{R}^{K} \times \mathbb{R}^{K} \to \mathbb{R}^+$~--- функция потерь на одном объекте (например, квадратичная или кросс-энтропийная). Обучение модели таким образом есть решение оптимизационной задачи
-\begin{equation}
-    \label{eq:min-problem}
-    \mathbf{w}^* \in \argmin_{\mathbf{w} \in \mathbb{R}^{N}} \mathcal{L}_m(\mathbf{w}).
-\end{equation}
-
-Локальные свойства оптимизационной поверхности функции $\mathcal{L}_m(\mathbf{w})$ в точке~$\mathbf{w}$ задаются ее производными первого и второго порядка. Вектор градиента
+где $\ell: \mathbb{R}^{K} \times \mathbb{R}^{K} \to \mathbb{R}^+$ "--- функция потерь на одном объекте (например, квадратичная или кросс-энтропийная). Локальные свойства оптимизационной поверхности функции $\mathcal{L}_m(\mathbf{w})$ в точке~$\mathbf{w}$ задаются ее производными первого и второго порядка. Вектор градиента
 \begin{equation}
     \label{eq:gradient}
-    \nabla_{\mathbf{w}} \mathcal{L}_m(\mathbf{w}) \in \mathbb{R}^{N}
+    \mathbf{g}^{(m)}(\mathbf{w}) = \nabla_{\mathbf{w}} \mathcal{L}_m(\mathbf{w}) \in \mathbb{R}^{N}
 \end{equation}
 определяет направление наискорейшего возрастания функции потерь, тогда как матрица Гессе
 \begin{equation}
