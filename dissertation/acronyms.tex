@@ -1,1 +1,33 @@
+% TODO
+
+\nomenclature[00]{$\mathbb{R}$}{множество вещественных чисел}
+\nomenclature[01]{$\mathbb{X} \subset \mathbb{R}^{n}$}{пространство исходной переменной}
+\nomenclature[02]{$\mathbf{x} \in \mathbb{X}$}{вектор признакового описания}
+\nomenclature[03]{$\mathbb{Y} \subset \mathbb{R}^{K}$}{пространство целевой переменной}
+\nomenclature[04]{$\mathbf{y} \in \mathbb{Y}$}{целевая переменная (вектор)}
+\nomenclature[05]{$y \in \mathbb{Y}$}{целевая переменная (скаляр)}
+\nomenclature[06]{$p(\mathbf{x}, \mathbf{y})$}{неизвестное распределение данных}
+\nomenclature[07]{$\mathfrak{D}_{m} = \left\{ \left( \mathbf{x}_{i}, \mathbf{y}_{i} \right) \right\}_{i=1}^{m}$}{выборка из~$m$ независимых реализаций пар~$\left( \mathbf{x}, \mathbf{y} \right)$ согласно неизвестному распределению~$p(\mathbf{x}, \mathbf{y})$}
+\nomenclature[08]{$\mathbb{W} \subset \mathbb{R}^{N}$}{пространство параметров модели}
+\nomenclature[09]{$\mathbf{w} \in \mathbb{W}$}{вектор параметров модели}
+\nomenclature[10]{$f_{\mathbf{w}}: \mathbb{X} \to \mathbb{Y}$}{параметрическая модель}
+\nomenclature[11]{$\ell: \mathbb{Y} \times \mathbb{Y} \to \mathbb{R}$}{функция ошибки}
+\nomenclature[12]{$\mathcal{L}_m: \mathbb{W} \to \mathbb{R}$}{эмирическая функция потерь на выборке~$\mathfrak{D}_{m}$}
+\nomenclature[13]{$\mathcal{L}: \mathbb{W} \to \mathbb{R}$}{популяционная функция потерь}
+\nomenclature[14]{$p(\mathbf{y} | \mathbf{x}, \mathbf{w})$}{правдоподобие объекта}
+\nomenclature[15]{$p(\mathbf{w})$}{априорное распределение параметров модели}
+\nomenclature[16]{$p(\mathbf{y}, \mathbf{w} | \mathbf{x})$}{вероятностная параметрическая модель}
+\nomenclature[17]{$p(\mathbf{w} | \mathfrak{D}_{m})$}{апостериорное распределение параметров модели}
+\nomenclature[18]{$\mathbf{g}_{i}(\mathbf{w}) \in \mathbb{R}^{N}$}{вектор градиента эмпирической функции потерь на~$i$-м объекте}
+\nomenclature[19]{$\mathbf{g}^{(m)}(\mathbf{w}) \in \mathbb{R}^{N}$}{вектор градиента эмпирической функции потерь на выборке~$\mathfrak{D}_{m}$}
+\nomenclature[20]{$\mathbf{H}_{i}(\mathbf{w}) \in \mathbb{R}^{N \times N}$}{матрица Гессе эмпирической функции потерь на~$i$-м объекте}
+\nomenclature[21]{$\mathbf{H}^{(m)}(\mathbf{w}) \in \mathbb{R}^{N \times N}$}{матрица Гессе эмпирической функции потерь на выборке~$\mathfrak{D}_{m}$}
+\nomenclature[22]{$\mathbf{z} = f_{\mathbf{w}}(\mathbf{x}) \in \mathbb{R}^{K}$}{выход модели}
+\nomenclature[23]{$\mathbf{J}(\mathbf{w}) \in \mathbb{R}^{K \times N}$}{якобиан выхода модели по параметрам}
+\nomenclature[24]{$\mathbf{A}(\mathbf{w}) \in \mathbb{R}^{K \times K}$}{матрица кривизны функции потерь по выходу модели}
+\nomenclature[25]{$\mathbf{G}(\mathbf{w}) \in \mathbb{R}^{N \times N}$}{гаусс-ньютоновская компонента матрицы Гессе}
+\nomenclature[26]{$\mathbf{R}(\mathbf{w}) \in \mathbb{R}^{N \times N}$}{остаточная компонента матрицы Гессе}
+
+
+
 \printnomenclature[3.5cm] % Значение ширины столбца с обозначениями стоит подбирать вручную
