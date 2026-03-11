@@ -1,0 +1,41 @@
+common:
+  seed: 42
+  output_dir: code/output/scaling
+
+model:
+  input_dim: 784
+  num_classes: 10
+
+data:
+  name: MNIST
+  root: null
+  batch_size: 128
+
+experiment:
+  device: cuda
+  lr: 1.0e-3
+  train_epochs: 100
+  
+  # Sample sizes - denser grid
+  sample_sizes: [100, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000, 15000, 20000]
+  
+  # Architectures: MLP vs CNN comparison
+  architectures:
+    - name: "MLP-64"
+      type: "MLP"
+      hidden_dim: 64
+      num_layers: 2
+    - name: "MLP-128"
+      type: "MLP"
+      hidden_dim: 128
+      num_layers: 2
+    - name: "CNN-32"
+      type: "CNN"
+      hidden_dim: 32
+      num_layers: 2
+    - name: "CNN-64"
+      type: "CNN"
+      hidden_dim: 64
+      num_layers: 2
+  
+  num_seeds: 3

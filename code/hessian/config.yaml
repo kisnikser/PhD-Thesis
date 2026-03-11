@@ -1,0 +1,19 @@
+common:
+  seed: 37
+  
+
+model:
+  input_dim: 784
+  hidden_dim: 64
+  num_layers: 3
+  num_classes: 10
+
+data:
+  name: MNIST
+  root: null
+  batch_size: 128
+
+experiment:
+  device: cuda
+  power_iter_iters: 30
+  power_iter_tol: 1.0e-4
