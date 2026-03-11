@@ -1,0 +1,85 @@
+\begin{tikzpicture}[
+    >=Latex,
+    font=\small,
+    every node/.style={align=center},
+    blockmat/.style={draw, line width=0.5pt},
+    flow/.style={-Latex, thick},
+    factor/.style={
+        draw,
+        rounded corners=2pt,
+        minimum height=8mm,
+        minimum width=14mm,
+        inner sep=2pt
+    }
+]
+
+% -------------------------------------------------
+% Left: big block matrix G
+% -------------------------------------------------
+\def\W{4.8}
+\def\H{4.8}
+
+\coordinate (Gsw) at (0,0);
+\coordinate (Gne) at (\W,\H);
+
+\draw[blockmat] (Gsw) rectangle (Gne);
+
+% grid 4x4
+\foreach \x in {1.2,2.4,3.6}
+    \draw[blockmat] (\x,0) -- (\x,\H);
+\foreach \y in {1.2,2.4,3.6}
+    \draw[blockmat] (0,\y) -- (\W,\y);
+
+% labels inside matrix
+\node at (2.4,5.25) {$\mathbf{G}(\mathbf{w})=\big[\mathbf{G}^{(p, q)}(\mathbf{w})\big]_{p, q=1}^{L}$};
+
+\node at (0.6,4.2) {$\mathbf{G}^{(1, 1)}$};
+\node at (1.8,4.2) {$\mathbf{G}^{(1, 2)}$};
+\node at (3.0,4.2) {$\cdots$};
+\node at (4.2,4.2) {$\mathbf{G}^{(1, L)}$};
+
+\node at (0.6,3.0) {$\mathbf{G}^{(2, 1)}$};
+\node at (1.8,3.0) {$\mathbf{G}^{(2, 2)}$};
+\node at (3.0,3.0) {$\cdots$};
+\node at (4.2,3.0) {$\mathbf{G}^{(2, L)}$};
+
+\node at (0.6,1.8) {$\vdots$};
+\node at (1.8,1.8) {$\vdots$};
+\node at (3.0,1.8) {$\ddots$};
+\node at (4.2,1.8) {$\vdots$};
+
+\node at (0.6,0.6) {$\mathbf{G}^{(L, 1)}$};
+\node at (1.8,0.6) {$\mathbf{G}^{(L, 2)}$};
+\node at (3.0,0.6) {$\cdots$};
+\node at (4.2,0.6) {$\mathbf{G}^{(L, L)}$};
+
+% row/col annotations
+\node[left=4mm] at (0,2.4) {\rotatebox{90}{\small параметры $p$-го слоя}};
+\node[below=4mm] at (2.4,0) {\small параметры $q$-го слоя};
+
+% single arrow from selected block
+\coordinate (selected) at (3.0,1.8);
+
+% -------------------------------------------------
+% Right: factorization of one block
+% -------------------------------------------------
+\node[factor] at (8.0,1.8) (Pt) {$\mathbf{P}^{(p)\top}$};
+\node[factor, right=0.18cm of Pt] (St) {$\mathbf{S}^{(p)\top}$};
+\node[factor, right=0.18cm of St] (A) {$\mathbf{A}(\mathbf{w})$};
+\node[factor, right=0.18cm of A] (S) {$\mathbf{S}^{(q)}$};
+\node[factor, right=0.18cm of S] (P) {$\mathbf{P}^{(q)}$};
+
+\draw[flow] (selected) -- (Pt.west);
+
+\node[above=6mm of A] {\small факторизация отдельного блока};
+\node[below=6mm of A] {$\displaystyle
+\mathbf{G}^{(p,q)}(\mathbf{w})
+=
+\mathbf{P}^{(p)\top}
+\mathbf{S}^{(p)\top}
+\mathbf{A}(\mathbf{w})
+\mathbf{S}^{(q)}
+\mathbf{P}^{(q)}
+$};
+
+\end{tikzpicture}
