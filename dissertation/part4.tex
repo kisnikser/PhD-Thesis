@@ -937,13 +937,13 @@
 
 На рисунке~\ref{fig:mlp-vs-cnn-loss} представлены кривые обучения для MLP и CNN при различных размерах выборки.
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.9\linewidth]{mlp_vs_cnn_loss.pdf}%
-    \todo{Запустить run\_scaling\_law.py для генерации}
-    \caption{Функция потерь на обучающей (слева) и тестовой (справа) выборках в зависимости от размера обучающей выборки $m$ для архитектур MLP и CNN}
-    \label{fig:mlp-vs-cnn-loss}
-\end{figure}
+% \begin{figure}[ht]
+%     \centering
+%     \includegraphics[width=0.9\linewidth]{mlp_vs_cnn_loss.pdf}%
+%     \todo{Запустить run\_scaling\_law.py для генерации}
+%     \caption{Функция потерь на обучающей (слева) и тестовой (справа) выборках в зависимости от размера обучающей выборки $m$ для архитектур MLP и CNN}
+%     \label{fig:mlp-vs-cnn-loss}
+% \end{figure}
 
 \subsection{Подгонка закона масштабирования}
 
@@ -955,13 +955,13 @@
 
 На рисунке~\ref{fig:scaling-law-fit} представлены результаты подгонки для различных архитектур.
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.7\linewidth]{scaling_law_fit.pdf}%
-    \todo{Запустить visualize\_scaling\_law.py для генерации}
-    \caption{Подгонка закона масштабирования $\mathcal{L}(m) = E + C/m$ к данным тестовой ошибки}
-    \label{fig:scaling-law-fit}
-\end{figure}
+% \begin{figure}[ht]
+%     \centering
+%     \includegraphics[width=0.7\linewidth]{scaling_law_fit.pdf}%
+%     \todo{Запустить visualize\_scaling\_law.py для генерации}
+%     \caption{Подгонка закона масштабирования $\mathcal{L}(m) = E + C/m$ к данным тестовой ошибки}
+%     \label{fig:scaling-law-fit}
+% \end{figure}
 
 \begin{table}[ht]
     \centering
@@ -993,6 +993,7 @@
     \item Достаточный размер выборки $m^*(\varepsilon)$ действительно растёт при уменьшении порога и зависит от архитектуры модели.
     \item Свёрточные сети более эффективны в использовании данных по сравнению с полносвязными при одинаковом числе параметров.
     \item Закон масштабирования $\mathcal{L}(m) = E + C/m$ согласуется с эмпирическими наблюдениями.
+\end{enumerate}
 
 \section{Обсуждение}
 
