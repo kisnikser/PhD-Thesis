@@ -1,0 +1,25 @@
+common:
+  seed: 37
+  output_dir: code/output/hessian
+
+model:
+  input_dim: 784
+  hidden_dim: 64
+  num_layers: 4
+  num_classes: 10
+
+data:
+  name: MNIST
+  root: null
+  batch_size: 256
+
+experiment:
+  device: cuda
+  lr: 1.0e-3
+  num_epochs: 10
+  eval_batch_size: 128
+  checkpoint_epochs: [1, 5]
+  depths: [2, 4, 8]
+  hidden_dims: [64, 128, 256]
+  power_iter_iters: 25
+  power_iter_tol: 1.0e-4

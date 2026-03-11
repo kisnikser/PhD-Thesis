@@ -1,0 +1,46 @@
+common:
+  seed: 42
+  output_dir: code/output/scaling
+
+model:
+  input_dim: 784
+  num_classes: 10
+
+data:
+  name: MNIST
+  root: null
+  batch_size: 128
+
+experiment:
+  device: cuda
+  lr: 1.0e-3
+  train_epochs: 100
+  
+  # Sample sizes to test
+  sample_sizes: [100, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000]
+  
+  # Architectures to compare
+  architectures:
+    - name: "MLP-small"
+      hidden_dim: 32
+      num_layers: 2
+    - name: "MLP-medium"
+      hidden_dim: 64
+      num_layers: 2
+    - name: "MLP-large"
+      hidden_dim: 128
+      num_layers: 2
+    - name: "MLP-deep"
+      hidden_dim: 64
+      num_layers: 4
+  
+  # Criteria parameters
+  delta1_eps: 0.5
+  delta1_num_directions: 100
+  delta2_sigma: 0.5
+  delta2_num_samples: 200
+  
+  # Thresholds for sufficient sample size (10^2 to 10^-5)
+  epsilon_thresholds: [100, 10, 1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
+  
+  num_seeds: 3
