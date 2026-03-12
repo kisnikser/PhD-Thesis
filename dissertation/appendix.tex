@@ -1,1340 +1,1340 @@
 \chapter{Доказательства теоретических результатов}\label{app:transformer-details}
 
-\section{Гаусс-ньютоновская компонента матрицы Гессе для трансформерной архитектуры нейронной сети}\label{app:transformer-details}
-
-В данном приложении приводятся детальные выкладки, на которые опирается основной текст раздела о трансформерных архитектурах. Мы сохраняем обозначения основного текста: рассматривается одно-головый трансформерный блок архитектуры Post-LN
-\begin{equation}
-    \mathbf{U} = \mathbf{X} + \mathrm{SA}(\mathbf{X}),
-    \qquad
-    \mathbf{Y} = \mathrm{LN}(\mathbf{U}),
-\end{equation}
-\begin{equation}
-    \mathrm{FFN}(\mathbf{Y}) = \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2,
-    \qquad
-    \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}),
-    \qquad
-    \mathbf{Z} = \mathrm{LN}(\mathbf{S}),
-\end{equation}
-где
-\begin{equation}
-    \mathrm{SA}(\mathbf{X})
-    =
-    \mathbf{\Pi}(\mathbf{X})\mathbf{X}\mathbf{W}_V,
-    \qquad
-    \mathbf{\Pi}(\mathbf{X})
-    =
-    \softmax\left(
-        \frac{\mathbf{X}\mathbf{W}_Q\mathbf{W}_K^\top \mathbf{X}^\top}{\sqrt{d_k}}
-    \right).
-\end{equation}
-Выход блока обозначается через
-\begin{equation}
-    \mathbf{z} = \vecrop(\mathbf{Z}) \in \mathbb{R}^{Td}.
-\end{equation}
-
-\subsection{Якобиан и оценка нормы оператора LayerNorm}
-
-Рассмотрим произвольную матрицу
-\begin{equation}
-    \mathbf{U} \in \mathbb{R}^{T\times d}.
-\end{equation}
-Введем матрицу центрирования
-\begin{equation}
-    \mathbf{C}_d
-    =
-    \mathbf{I}_d - \frac{1}{d}\mathbf{1}_d\mathbf{1}_d^\top
-    \in \mathbb{R}^{d\times d}.
-\end{equation}
-Тогда центрированное представление строки задается оператором
-\begin{equation}
-    \mathbf{M}(\mathbf{U})
-    =
-    \mathbf{U}\mathbf{C}_d
-    =
-    \mathbf{U} - \frac{1}{d}\mathbf{U}\mathbf{1}_d\mathbf{1}_d^\top.
-\end{equation}
-Вектор построчных стандартных отклонений определим формулой
-\begin{equation}
-    \boldsymbol{\sigma}(\mathbf{U})
-    =
-    \frac{1}{\sqrt d}
-    \left(
-        \mathbf{M}(\mathbf{U})^{\circ 2}\mathbf{1}_d
-    \right)^{\circ \frac12}
-    \in \mathbb{R}^{T},
-\end{equation}
-а диагональную матрицу обратных стандартных отклонений --- как
-\begin{equation}
-    \mathbf{P}(\mathbf{U})
-    =
-    \diag^{-1}\left(\boldsymbol{\sigma}(\mathbf{U})\right)
-    \in \mathbb{R}^{T\times T}.
-\end{equation}
-Тогда LayerNorm без аффинных параметров $\gamma,\beta$ записывается в матричном виде:
-\begin{equation}
-    \label{eq:app-tr-LN-form}
-    \mathrm{LN}(\mathbf{U})
-    =
-    \mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}).
-\end{equation}
-
-Для дальнейшего дифференцирования будем предполагать, что все построчные дисперсии положительны:
-\begin{equation}
-    \label{eq:app-tr-ln-positive-var}
-    \sigma_{\min}(\mathbf{U})
-    :=
-    \min_{t=1,\ldots,T}\sigma_t(\mathbf{U}) > 0.
-\end{equation}
-Это стандартное техническое предположение, используемое и в статье-источнике при выводе якобиана LayerNorm. 
-
-\begin{lemma}
-    \label{lemma:app-tr-LN-jacobian}
-    Якобиан LayerNorm по входу имеет вид
-    \begin{align}
-        \label{eq:app-tr-LN-jacobian}
-        \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
-        &=
-        \frac{\partial \vecrop(\mathrm{LN}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-        \notag\\
-        &=
-        \left(
-            \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
-        \right)\mathbf{G}_d
-        +
-        \left(
-            \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
-        \right)
-        \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top},
-    \end{align}
-    где
-    \begin{equation}
-        \mathbf{G}_d
-        =
-        \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-        =
-        \mathbf{I}_{Td}
-        -
-        \frac{1}{d}
-        \left(
-            \mathbf{I}_T \otimes \mathbf{1}_{d\times d}
-        \right).
-    \end{equation}
-\end{lemma}
-
-\begin{proof}
-Из \eqref{eq:app-tr-LN-form} имеем
-\begin{equation}
-    \mathrm{LN}(\mathbf{U})
-    =
-    \mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}).
-\end{equation}
-Применим правило дифференцирования матричного произведения к построчной векторизации:
-\begin{equation}
-    \frac{\partial \vecrop(\mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-    =
-    \left(
-        \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
-    \right)
-    \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-    +
-    \left(
-        \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
-    \right)
-    \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}.
-\end{equation}
-Остается вычислить производную центрирующего оператора. Так как
-\begin{equation}
-    \mathbf{M}(\mathbf{U}) = \mathbf{U}\mathbf{C}_d,
-\end{equation}
-то для построчной векторизации выполняется
-\begin{equation}
-    \vecrop(\mathbf{M}(\mathbf{U}))
-    =
-    (\mathbf{I}_T \otimes \mathbf{C}_d)\vecrop(\mathbf{U}).
-\end{equation}
-Следовательно,
-\begin{equation}
-    \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-    =
-    \mathbf{I}_T \otimes \mathbf{C}_d
-    =
-    \mathbf{I}_{Td}
-    -
-    \frac{1}{d}
-    \left(
-        \mathbf{I}_T \otimes \mathbf{1}_{d\times d}
-    \right)
-    =
-    \mathbf{G}_d.
-\end{equation}
-Подставляя это равенство в предыдущую формулу, получаем \eqref{eq:app-tr-LN-jacobian}. Данная форма совпадает с матричным представлением якобиана LayerNorm в статье-источнике. 
-\end{proof}
-
-\begin{lemma}
-    \label{lemma:app-tr-LN-jacobian-bound}
-    Пусть выполнено условие \eqref{eq:app-tr-ln-positive-var}. Тогда
-    \begin{equation}
-        \label{eq:app-tr-LN-bound}
-        \left\|
-            \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
-        \right\|_2
-        \le
-        \frac{1}{\sigma_{\min}(\mathbf{U})}
-        +
-        \frac{\|\mathbf{U}\|_2^2}{\sqrt{d}\,\sigma_{\min}(\mathbf{U})^3}.
-    \end{equation}
-\end{lemma}
-
-\begin{proof}
-По лемме \ref{lemma:app-tr-LN-jacobian}
-\begin{equation}
-    \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
-    =
-    \left(
-        \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
-    \right)\mathbf{G}_d
-    +
-    \left(
-        \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
-    \right)
-    \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}.
-\end{equation}
-Следовательно, по неравенству треугольника и субмультипликативности спектральной нормы
-\begin{align}
-    \left\|
-        \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
-    \right\|_2
-    &\le
-    \left\|
-        \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
-    \right\|_2
-    \|\mathbf{G}_d\|_2
-    +
-    \left\|
-        \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
-    \right\|_2
-    \left\|
-        \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-    \right\|_2.
-\end{align}
-Используя свойство нормы произведения Кронекера, получаем
-\begin{equation}
-    \left\|
-        \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
-    \right\|_2
-    =
-    \|\mathbf{P}(\mathbf{U})\|_2,
-    \qquad
-    \left\|
-        \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
-    \right\|_2
-    =
-    \|\mathbf{M}(\mathbf{U})\|_2.
-\end{equation}
-Поэтому
-\begin{equation}
-    \label{eq:app-tr-ln-bound-step-1}
-    \left\|
-        \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
-    \right\|_2
-    \le
-    \|\mathbf{P}(\mathbf{U})\|_2 \|\mathbf{G}_d\|_2
-    +
-    \|\mathbf{M}(\mathbf{U})\|_2
-    \left\|
-        \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-    \right\|_2.
-\end{equation}
-
-
-
-
-\textbf{Шаг 1. Оценка нормы $\mathbf{G}_d$.}
-Так как
-\begin{equation}
-    \mathbf{G}_d = \mathbf{I}_T \otimes \mathbf{C}_d,
-\end{equation}
-а матрица $\mathbf{C}_d$ есть ортогональный проектор на подпространство векторов с нулевой суммой координат, то
-\begin{equation}
-    \|\mathbf{C}_d\|_2 = 1,
-    \qquad
-    \|\mathbf{G}_d\|_2
-    =
-    \|\mathbf{I}_T \otimes \mathbf{C}_d\|_2
-    =
-    1.
-\end{equation}
-
-
-
-
-\textbf{Шаг 2. Оценка нормы $\mathbf{P}(\mathbf{U})$.}
-Матрица $\mathbf{P}(\mathbf{U})$ диагональна, и на ее диагонали стоят числа
-\begin{equation}
-    \frac{1}{\sigma_1(\mathbf{U})}, \ldots, \frac{1}{\sigma_T(\mathbf{U})}.
-\end{equation}
-Следовательно,
-\begin{equation}
-    \|\mathbf{P}(\mathbf{U})\|_2
-    =
-    \max_{t=1,\ldots,T}\frac{1}{\sigma_t(\mathbf{U})}
-    =
-    \frac{1}{\sigma_{\min}(\mathbf{U})}.
-\end{equation}
-
-
-
-
-\textbf{Шаг 3. Оценка нормы $\mathbf{M}(\mathbf{U})$.}
-Поскольку
-\begin{equation}
-    \mathbf{M}(\mathbf{U}) = \mathbf{U}\mathbf{C}_d,
-\end{equation}
-имеем
-\begin{equation}
-    \|\mathbf{M}(\mathbf{U})\|_2
-    \le
-    \|\mathbf{U}\|_2 \|\mathbf{C}_d\|_2
-    \le
-    \|\mathbf{U}\|_2.
-\end{equation}
-
-
-
-
-\textbf{Шаг 4. Оценка нормы производной $\partial \vecrop(\mathbf{P}(\mathbf{U}))/\partial \vecrop(\mathbf{U})^\top$.}
-Рассмотрим фиксированную строку $\mathbf{m}_t^\top \in \mathbb{R}^{1\times d}$ матрицы $\mathbf{M}(\mathbf{U})$. Тогда
-\begin{equation}
-    \sigma_t(\mathbf{U})
-    =
-    \frac{1}{\sqrt d}\|\mathbf{m}_t\|_2.
-\end{equation}
-Следовательно,
-\begin{equation}
-    \frac{1}{\sigma_t(\mathbf{U})}
-    =
-    \frac{\sqrt d}{\|\mathbf{m}_t\|_2},
-\end{equation}
-и потому
-\begin{equation}
-    \frac{\partial}{\partial \mathbf{m}_t}
-    \left(
-        \frac{1}{\sigma_t(\mathbf{U})}
-    \right)
-    =
-    -\sqrt d\,
-    \frac{\mathbf{m}_t^\top}{\|\mathbf{m}_t\|_2^3}.
-\end{equation}
-Отсюда
-\begin{equation}
-    \left\|
-        \frac{\partial}{\partial \mathbf{m}_t}
-        \left(
-            \frac{1}{\sigma_t(\mathbf{U})}
-        \right)
-    \right\|_2
-    =
-    \sqrt d \frac{1}{\|\mathbf{m}_t\|_2^2}
-    =
-    \frac{1}{\sqrt d\,\sigma_t(\mathbf{U})^2}.
-\end{equation}
-Так как отображение $\mathbf{U} \mapsto \mathbf{M}(\mathbf{U})=\mathbf{U}\mathbf{C}_d$ линейно и имеет операторную норму не больше единицы, то, переходя от производной по $\mathbf{m}_t$ к производной по $\mathbf{U}$, получаем
-\begin{equation}
-    \left\|
-        \frac{\partial}{\partial \vecrop(\mathbf{U})}
-        \left(
-            \frac{1}{\sigma_t(\mathbf{U})}
-        \right)
-    \right\|_2
-    \le
-    \frac{1}{\sqrt d\,\sigma_t(\mathbf{U})^2}.
-\end{equation}
-Поскольку $\mathbf{P}(\mathbf{U})$ есть диагональная матрица, составленная из величин $1/\sigma_t(\mathbf{U})$, то оператор дифференцирования диагонального отображения не увеличивает порядок оценки, и потому
-\begin{equation}
-    \left\|
-        \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-    \right\|_2
-    \le
-    \frac{1}{\sqrt d\,\sigma_{\min}(\mathbf{U})^2}.
-\end{equation}
-Для согласования с грубой глобальной оценкой, используемой в основном тексте, умножим правую часть на $\|\mathbf{U}\|_2/\sigma_{\min}(\mathbf{U})$, что дает более слабую, но удобную в дальнейшем форму:
-\begin{equation}
-    \left\|
-        \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
-    \right\|_2
-    \le
-    \frac{\|\mathbf{U}\|_2}{\sqrt d\,\sigma_{\min}(\mathbf{U})^3}.
-\end{equation}
-
-
-
-Подставляя все полученные оценки в \eqref{eq:app-tr-ln-bound-step-1}, получаем
-\begin{equation}
-    \left\|
-        \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
-    \right\|_2
-    \le
-    \frac{1}{\sigma_{\min}(\mathbf{U})}
-    +
-    \|\mathbf{U}\|_2
-    \cdot
-    \frac{\|\mathbf{U}\|_2}{\sqrt d\,\sigma_{\min}(\mathbf{U})^3},
-\end{equation}
-то есть
-\begin{equation}
-    \left\|
-        \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
-    \right\|_2
-    \le
-    \frac{1}{\sigma_{\min}(\mathbf{U})}
-    +
-    \frac{\|\mathbf{U}\|_2^2}{\sqrt d\,\sigma_{\min}(\mathbf{U})^3}.
-\end{equation}
-Что и требовалось доказать. Такая же структура оценки используется в статье для контроля нормы якобиана LayerNorm. 
-\end{proof}
-
-\subsection{Выкладки для feed-forward части}
-
-Далее полагаем $\sigma = \mathrm{ReLU}$, действующую покомпонентно. Введем обозначение
-\begin{equation}
-    \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-    =
-    \diag\left(
-        \vecrop\left(
-            \mathbf{1}_{\{\mathbf{Y}\mathbf{W}_1 > 0\}}
-        \right)
-    \right)
-    \in \mathbb{R}^{Td_{\mathrm{ff}}\times Td_{\mathrm{ff}}}.
-\end{equation}
-
-\begin{lemma}
-    \label{lemma:app-tr-ReLU}
-    Почти всюду по $\mathbf{Y}\mathbf{W}_1$ справедливо
-    \begin{equation}
-        \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))}{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)^\top}
-        =
-        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1),
-    \end{equation}
-    причем вторая производная ReLU почти всюду равна нулю.
-\end{lemma}
-
-\begin{proof}
-ReLU действует покомпонентно, поэтому по каждой координате ее производная равна $1$ на положительной полуоси и $0$ на отрицательной. Отсюда якобиан покомпонентного отображения есть диагональная матрица, на диагонали которой стоят соответствующие индикаторы положительности. В точках, где аргумент равен нулю, производная не определена, но это множество имеет меру нуль. Вне этого множества якобиан кусочно постоянен, следовательно его производная почти всюду равна нулю. Тот же результат используется в статье как Lemma 4. 
-\end{proof}
-
-\begin{proposition}
-    \label{prop:app-tr-FFN-jacobians}
-    Для отображения
-    \begin{equation}
-        \mathbf{F}(\mathbf{Y})
-        =
-        \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2
-        \in \mathbb{R}^{T\times d}
-    \end{equation}
-    параметрические якобианы по матрицам $\mathbf{W}_1$ и $\mathbf{W}_2$ задаются формулами
-    \begin{equation}
-        \label{eq:app-tr-FFN-jac-W2}
-        \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
-        =
-        \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d,
-    \end{equation}
-    \begin{equation}
-        \label{eq:app-tr-FFN-jac-W1}
-        \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
-        =
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_2^\top
-        \right)
-        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-        \left(
-            \mathbf{Y} \otimes \mathbf{I}_{d_{\mathrm{ff}}}
-        \right).
-    \end{equation}
-\end{proposition}
-
-\begin{proof}
-Положим
-\begin{equation}
-    \mathbf{H} = \sigma(\mathbf{Y}\mathbf{W}_1)\in\mathbb{R}^{T\times d_{\mathrm{ff}}}.
-\end{equation}
-Тогда
-\begin{equation}
-    \mathbf{F}(\mathbf{Y}) = \mathbf{H}\mathbf{W}_2.
-\end{equation}
-
-
-
-
-\textbf{Производная по $\mathbf{W}_2$.}
-Для построчной векторизации выполняется тождество
-\begin{equation}
-    \vecrop(\mathbf{H}\mathbf{W}_2)
-    =
-    (\mathbf{H}\otimes \mathbf{I}_d)\vecrop(\mathbf{W}_2).
-\end{equation}
-Следовательно,
-\begin{equation}
-    \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
-    =
-    \mathbf{H}\otimes \mathbf{I}_d
-    =
-    \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d.
-\end{equation}
-Это и есть формула \eqref{eq:app-tr-FFN-jac-W2}.
-
-
-
-
-\textbf{Производная по $\mathbf{W}_1$.}
-Рассмотрим композицию
-\begin{equation}
-    \mathbf{W}_1
-    \longmapsto
-    \mathbf{Y}\mathbf{W}_1
-    \longmapsto
-    \sigma(\mathbf{Y}\mathbf{W}_1)
-    \longmapsto
-    \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2.
-\end{equation}
-По правилу дифференцирования сложной функции
-\begin{equation}
-    \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
-    =
-    \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2)}{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))^\top}
-    \cdot
-    \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))}{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)^\top}
-    \cdot
-    \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \mathbf{w}_1^\top}.
-\end{equation}
-Первый множитель равен
-\begin{equation}
-    \mathbf{I}_T \otimes \mathbf{W}_2^\top.
-\end{equation}
-Второй по лемме \ref{lemma:app-tr-ReLU} имеет вид
-\begin{equation}
-    \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1).
-\end{equation}
-Для третьего множителя используем тождество
-\begin{equation}
-    \vecrop(\mathbf{Y}\mathbf{W}_1)
-    =
-    (\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}})\vecrop(\mathbf{W}_1),
-\end{equation}
-откуда
-\begin{equation}
-    \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \mathbf{w}_1^\top}
-    =
-    \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}.
-\end{equation}
-Перемножая эти три матрицы, получаем \eqref{eq:app-tr-FFN-jac-W1}. Именно эти формулы используются и в статье как FFN Jacobians. 
-\end{proof}
-
-\begin{lemma}
-    \label{lemma:app-tr-FFN-input-jacobian}
-    Якобиан $\vecrop(\mathrm{FFN}(\mathbf{Y}))$ по входу $\vecrop(\mathbf{Y})$ имеет вид
-    \begin{equation}
-        \label{eq:app-tr-FFN-input-jacobian}
-        \mathbf{J}_{\mathrm{FFN},Y}
-        =
-        \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}
-        =
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_2^\top
-        \right)
-        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_1^\top
-        \right).
-    \end{equation}
-\end{lemma}
-
-\begin{proof}
-Композиция
-\[
-\mathbf{Y}
-\longmapsto
-\mathbf{Y}\mathbf{W}_1
-\longmapsto
-\sigma(\mathbf{Y}\mathbf{W}_1)
-\longmapsto
-\sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2
-\]
-дифференцируется так же, как и в доказательстве предложения \ref{prop:app-tr-FFN-jacobians}. Отличие состоит лишь в последнем множителе:
-\begin{equation}
-    \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \vecrop(\mathbf{Y})^\top}
-    =
-    \mathbf{I}_T \otimes \mathbf{W}_1^\top.
-\end{equation}
-Подставляя этот множитель вместо $\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}$, получаем формулу \eqref{eq:app-tr-FFN-input-jacobian}.
-\end{proof}
-
-\subsection{Оценки для self-attention части}
-
-Здесь мы используем обозначения
-\begin{equation}
-    \mathbf{G}_Q
-    =
-    \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_Q^\top},
-    \qquad
-    \mathbf{G}_K
-    =
-    \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_K^\top},
-    \qquad
-    \mathbf{G}_V
-    =
-    \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_V^\top}.
-\end{equation}
-
-Для матрицы $\mathbf{G}_V$ вывод можно сделать непосредственно. Для матриц $\mathbf{G}_Q$ и $\mathbf{G}_K$ в данной главе мы опираемся на известный анализ изолированного single-head self-attention блока~\todo{(уточнить откуда, ссылка)}: именно эти оценки затем подставляются в якобиан полного трансформерного блока.
-
-\begin{lemma}
-    \label{lemma:app-tr-SA-jacobian-bounds}
-    Для матриц $\mathbf{G}_Q,\mathbf{G}_K,\mathbf{G}_V$ справедливы оценки
-    \begin{equation}
-        \label{eq:app-tr-GV-bound}
-        \|\mathbf{G}_V\|_2
-        \le
-        T\|\mathbf{X}\|_2,
-    \end{equation}
-    а также
-    \begin{equation}
-        \label{eq:app-tr-GQ-bound}
-        \|\mathbf{G}_Q\|_2
-        \le
-        \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
-        \|\mathbf{W}_V\|_2
-        \|\mathbf{W}_K\|_2
-        \|\mathbf{X}\|_2^3,
-    \end{equation}
-    \begin{equation}
-        \label{eq:app-tr-GK-bound}
-        \|\mathbf{G}_K\|_2
-        \le
-        \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
-        \|\mathbf{W}_V\|_2
-        \|\mathbf{W}_Q\|_2
-        \|\mathbf{X}\|_2^3,
-    \end{equation}
-    где $C_{\mathrm{sm}}$ --- константа Липшица построчного softmax в спектральной норме.
-\end{lemma}
-
-\begin{proof}
-\textbf{1. Оценка для $\mathbf{G}_V$.}
-При фиксированных $\mathbf{X},\mathbf{W}_Q,\mathbf{W}_K$ оператор self-attention линеен по $\mathbf{W}_V$:
-\begin{equation}
-    \mathrm{SA}(\mathbf{X})
-    =
-    \mathbf{\Pi}(\mathbf{X})\mathbf{X}\mathbf{W}_V.
-\end{equation}
-Следовательно,
-\begin{equation}
-    \vecrop(\mathrm{SA}(\mathbf{X}))
-    =
-    \left(
-        \mathbf{\Pi}(\mathbf{X})\mathbf{X}\otimes \mathbf{I}_d
-    \right)\vecrop(\mathbf{W}_V),
-\end{equation}
-и потому
-\begin{equation}
-    \mathbf{G}_V
-    =
-    \mathbf{\Pi}(\mathbf{X})\mathbf{X}\otimes \mathbf{I}_d.
-\end{equation}
-По свойству спектральной нормы произведения Кронекера
-\begin{equation}
-    \|\mathbf{G}_V\|_2
-    =
-    \|\mathbf{\Pi}(\mathbf{X})\mathbf{X}\|_2
-    \le
-    \|\mathbf{\Pi}(\mathbf{X})\|_2 \|\mathbf{X}\|_2.
-\end{equation}
-Матрица $\mathbf{\Pi}(\mathbf{X})$ построчно стохастична, а потому грубо
-\begin{equation}
-    \|\mathbf{\Pi}(\mathbf{X})\|_2 \le T.
-\end{equation}
-Следовательно,
-\begin{equation}
-    \|\mathbf{G}_V\|_2 \le T\|\mathbf{X}\|_2.
-\end{equation}
-
-
-
-\textbf{2. Оценки для $\mathbf{G}_Q$ и $\mathbf{G}_K$.}
-Рассмотрим матрицу логитов
-\begin{equation}
-    \mathbf{L}(\mathbf{X})
-    =
-    \frac{\mathbf{X}\mathbf{W}_Q\mathbf{W}_K^\top\mathbf{X}^\top}{\sqrt{d_k}}.
-\end{equation}
-При вариации $d\mathbf{W}_Q$ имеем
-\begin{equation}
-    d\mathbf{L}
-    =
-    \frac{\mathbf{X}\,d\mathbf{W}_Q\,\mathbf{W}_K^\top \mathbf{X}^\top}{\sqrt{d_k}},
-\end{equation}
-и потому
-\begin{equation}
-    \|d\mathbf{L}\|_2
-    \le
-    \frac{1}{\sqrt{d_k}}
-    \|\mathbf{X}\|_2^2
-    \|\mathbf{W}_K\|_2
-    \|d\mathbf{W}_Q\|_2.
-\end{equation}
-Поскольку построчный softmax липшицев в спектральной норме с константой $C_{\mathrm{sm}}$, получаем
-\begin{equation}
-    \|d\mathbf{\Pi}\|_2
-    \le
-    C_{\mathrm{sm}}\|d\mathbf{L}\|_2
-    \le
-    \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
-    \|\mathbf{X}\|_2^2
-    \|\mathbf{W}_K\|_2
-    \|d\mathbf{W}_Q\|_2.
-\end{equation}
-Далее
-\begin{equation}
-    d\,\mathrm{SA}(\mathbf{X})
-    =
-    (d\mathbf{\Pi})\mathbf{X}\mathbf{W}_V,
-\end{equation}
-поэтому
-\begin{align}
-    \|d\,\mathrm{SA}(\mathbf{X})\|_2
-    &\le
-    \|d\mathbf{\Pi}\|_2
-    \|\mathbf{X}\mathbf{W}_V\|_2 \\
-    &\le
-    \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
-    \|\mathbf{W}_K\|_2
-    \|\mathbf{X}\|_2^2
-    \|d\mathbf{W}_Q\|_2
-    \|\mathbf{X}\|_2
-    \|\mathbf{W}_V\|_2 \\
-    &=
-    \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
-    \|\mathbf{W}_V\|_2
-    \|\mathbf{W}_K\|_2
-    \|\mathbf{X}\|_2^3
-    \|d\mathbf{W}_Q\|_2.
-\end{align}
-Из определения операторной нормы якобиана следует \eqref{eq:app-tr-GQ-bound}. Формула \eqref{eq:app-tr-GK-bound} выводится симметрично при вариации по $\mathbf{W}_K$.
-\end{proof}
-
-\subsection{Сборка якобианов полного трансформерного блока}
-
-Введем обозначения
-\begin{equation}
-    \mathbf{J}_Y
-    =
-    \frac{\partial \vecrop(\mathbf{Y})}{\partial \vecrop(\mathbf{U})^\top}
-    =
-    \mathbf{J}_{\mathrm{LN}}(\mathbf{U}),
-    \qquad
-    \mathbf{J}_Z
-    =
-    \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
-    =
-    \mathbf{J}_{\mathrm{LN}}(\mathbf{S}).
-\end{equation}
-
-\begin{theorem}
-    \label{thm:app-tr-block-jacobians}
-    Якобианы выхода трансформерного блока по всем пяти группам параметров задаются формулами
-    \begin{equation}
-        \mathbf{J}^{(1)}
-        =
-        \mathbf{J}_Z \mathbf{B}_1,
-        \qquad
-        \mathbf{B}_1
-        =
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_2^\top
-        \right)
-        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-        \left(
-            \mathbf{Y} \otimes \mathbf{I}_{d_{\mathrm{ff}}}
-        \right),
-    \end{equation}
-    \begin{equation}
-        \mathbf{J}^{(2)}
-        =
-        \mathbf{J}_Z \mathbf{B}_2,
-        \qquad
-        \mathbf{B}_2
-        =
-        \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d,
-    \end{equation}
-    \begin{equation}
-        \mathbf{J}^{(Q)}
-        =
-        \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_Q,
-        \qquad
-        \mathbf{J}^{(K)}
-        =
-        \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_K,
-        \qquad
-        \mathbf{J}^{(V)}
-        =
-        \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_V,
-    \end{equation}
-    где
-    \begin{equation}
-        \mathbf{J}_{SY}
-        =
-        \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
-        =
-        \mathbf{I}_{Td}
-        +
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_2^\top
-        \right)
-        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_1^\top
-        \right).
-    \end{equation}
-\end{theorem}
-
-\begin{proof}
-\textbf{1. Якобианы по $\mathbf{W}_1$ и $\mathbf{W}_2$.}
-Из определения блока имеем
-\begin{equation}
-    \mathbf{Z} = \mathrm{LN}(\mathbf{S}),
-    \qquad
-    \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}).
-\end{equation}
-Параметры $\mathbf{W}_1,\mathbf{W}_2$ входят только через FFN, а матрица $\mathbf{Y}$ от них не зависит. Поэтому
-\begin{equation}
-    \mathbf{J}^{(1)}
-    =
-    \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_1^\top}
-    =
-    \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
-    \cdot
-    \frac{\partial \vecrop(\mathbf{S})}{\partial \mathbf{w}_1^\top}
-    =
-    \mathbf{J}_Z
-    \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}.
-\end{equation}
-По предложению \ref{prop:app-tr-FFN-jacobians}
-\begin{equation}
-    \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
-    =
-    \left(
-        \mathbf{I}_T \otimes \mathbf{W}_2^\top
-    \right)
-    \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-    \left(
-        \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}
-    \right).
-\end{equation}
-Тем самым получаем формулу для $\mathbf{J}^{(1)}$. Аналогично
-\begin{equation}
-    \mathbf{J}^{(2)}
-    =
-    \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_2^\top}
-    =
-    \mathbf{J}_Z
-    \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
-    =
-    \mathbf{J}_Z
-    \left(
-        \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d
-    \right).
-\end{equation}
-
-
-
-\textbf{2. Якобианы по attention-параметрам.}
-Пусть $k\in\{Q,K,V\}$. Тогда влияние параметра $\mathbf{w}_k$ на выход проходит по цепочке
-\begin{equation}
-    \mathbf{w}_k
-    \longmapsto
-    \mathrm{SA}(\mathbf{X})
-    \longmapsto
-    \mathbf{U}
-    \longmapsto
-    \mathbf{Y}
-    \longmapsto
-    \mathbf{S}
-    \longmapsto
-    \mathbf{Z}.
-\end{equation}
-Следовательно, по правилу дифференцирования сложной функции
-\begin{equation}
-    \mathbf{J}^{(k)}
-    =
-    \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_k^\top}
-    =
-    \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
-    \cdot
-    \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
-    \cdot
-    \frac{\partial \vecrop(\mathbf{Y})}{\partial \vecrop(\mathbf{U})^\top}
-    \cdot
-    \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_k^\top}.
-\end{equation}
-Первый множитель равен $\mathbf{J}_Z$, третий --- $\mathbf{J}_Y$, четвертый --- $\mathbf{G}_k$. Остается вычислить
-\begin{equation}
-    \mathbf{J}_{SY}
-    =
-    \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}.
-\end{equation}
-Так как
-\begin{equation}
-    \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}),
-\end{equation}
-то
-\begin{equation}
-    \mathbf{J}_{SY}
-    =
-    \mathbf{I}_{Td}
-    +
-    \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}.
-\end{equation}
-По лемме \ref{lemma:app-tr-FFN-input-jacobian}
-\begin{equation}
-    \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}
-    =
-    \left(
-        \mathbf{I}_T \otimes \mathbf{W}_2^\top
-    \right)
-    \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-    \left(
-        \mathbf{I}_T \otimes \mathbf{W}_1^\top
-    \right).
-\end{equation}
-Подстановка завершает доказательство.
-\end{proof}
-
-\subsection{Гаусс--ньютоновская компонента и ее спектральная оценка}
-
-Пусть
-\begin{equation}
-    \mathbf{A}(\mathbf{w})
-    =
-    \nabla_{\mathbf{z}}^2 \ell(\mathbf{z},\mathbf{y})
-    \in \mathbb{R}^{Td\times Td}
-\end{equation}
---- матрица кривизны функции потерь по выходу блока, а
-\begin{equation}
-    \mathbf{J}(\mathbf{w})
-    =
-    \left[
-        \mathbf{J}^{(Q)},
-        \mathbf{J}^{(K)},
-        \mathbf{J}^{(V)},
-        \mathbf{J}^{(1)},
-        \mathbf{J}^{(2)}
-    \right]
-\end{equation}
---- полный якобиан выхода блока по всем параметрам.
-
-\begin{theorem}
-    \label{thm:app-tr-GN-general-bound}
-    Пусть
-    \begin{equation}
-        \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}}.
-    \end{equation}
-    Тогда
-    \begin{equation}
-        \label{eq:app-tr-GN-general-bound}
-        \|\mathbf{G}(\mathbf{w})\|_2
-        \le
-        M_{\mathbf{A}}
-        \left(
-            \|\mathbf{J}^{(Q)}\|_2^2
-            +
-            \|\mathbf{J}^{(K)}\|_2^2
-            +
-            \|\mathbf{J}^{(V)}\|_2^2
-            +
-            \|\mathbf{J}^{(1)}\|_2^2
-            +
-            \|\mathbf{J}^{(2)}\|_2^2
-        \right),
-    \end{equation}
-    где
-    \begin{equation}
-        \mathbf{G}(\mathbf{w})
-        =
-        \mathbf{J}(\mathbf{w})^\top
-        \mathbf{A}(\mathbf{w})
-        \mathbf{J}(\mathbf{w}).
-    \end{equation}
-    Кроме того,
-    \begin{equation}
-        \|\mathbf{J}^{(1)}\|_2
-        \le
-        \|\mathbf{J}_Z\|_2
-        \|\mathbf{W}_2\|_2
-        \|\mathbf{Y}\|_2,
-    \end{equation}
-    \begin{equation}
-        \|\mathbf{J}^{(2)}\|_2
-        \le
-        \|\mathbf{J}_Z\|_2
-        \|\mathbf{Y}\|_2
-        \|\mathbf{W}_1\|_2,
-    \end{equation}
-    \begin{equation}
-        \|\mathbf{J}^{(k)}\|_2
-        \le
-        \|\mathbf{J}_Z\|_2
-        \left(
-            \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
-        \right)
-        \|\mathbf{J}_Y\|_2
-        \|\mathbf{G}_k\|_2,
-        \qquad
-        k\in\{Q,K,V\}.
-    \end{equation}
-\end{theorem}
-
-\begin{proof}
-По определению гаусс--ньютоновской компоненты
-\begin{equation}
-    \mathbf{G}(\mathbf{w})
-    =
-    \mathbf{J}(\mathbf{w})^\top
-    \mathbf{A}(\mathbf{w})
-    \mathbf{J}(\mathbf{w}),
-\end{equation}
-поэтому
-\begin{equation}
-    \|\mathbf{G}(\mathbf{w})\|_2
-    \le
-    \|\mathbf{A}(\mathbf{w})\|_2
-    \|\mathbf{J}(\mathbf{w})\|_2^2
-    \le
-    M_{\mathbf{A}}\|\mathbf{J}(\mathbf{w})\|_2^2.
-\end{equation}
-Так как
-\begin{equation}
-    \mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top
-    =
-    \sum_{i\in\{Q,K,V,1,2\}}
-    \mathbf{J}^{(i)}\mathbf{J}^{(i)\top},
-\end{equation}
-то
-\begin{equation}
-    \|\mathbf{J}(\mathbf{w})\|_2^2
-    =
-    \|\mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top\|_2
-    \le
-    \sum_{i\in\{Q,K,V,1,2\}}
-    \|\mathbf{J}^{(i)}\|_2^2.
-\end{equation}
-Получаем \eqref{eq:app-tr-GN-general-bound}.
-
-Оценим теперь отдельные блоки.
-
-\textbf{1. Оценка $\mathbf{J}^{(1)}$.}
-По теореме \ref{thm:app-tr-block-jacobians}
-\begin{equation}
-    \mathbf{J}^{(1)}
-    =
-    \mathbf{J}_Z
-    \left(
-        \mathbf{I}_T \otimes \mathbf{W}_2^\top
-    \right)
-    \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-    \left(
-        \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}
-    \right).
-\end{equation}
-Следовательно,
-\begin{align}
-    \|\mathbf{J}^{(1)}\|_2
-    &\le
-    \|\mathbf{J}_Z\|_2
-    \|\mathbf{I}_T \otimes \mathbf{W}_2^\top\|_2
-    \|\mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)\|_2
-    \|\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}\|_2 \\
-    &=
-    \|\mathbf{J}_Z\|_2
-    \|\mathbf{W}_2\|_2
-    \cdot 1 \cdot
-    \|\mathbf{Y}\|_2.
-\end{align}
-
-
-
-
-\textbf{2. Оценка $\mathbf{J}^{(2)}$.}
-Аналогично
-\begin{equation}
-    \mathbf{J}^{(2)}
-    =
-    \mathbf{J}_Z
-    \left(
-        \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d
-    \right),
-\end{equation}
-поэтому
-\begin{equation}
-    \|\mathbf{J}^{(2)}\|_2
-    \le
-    \|\mathbf{J}_Z\|_2
-    \|\sigma(\mathbf{Y}\mathbf{W}_1)\|_2.
-\end{equation}
-Так как ReLU является $1$-липшицевой и $\sigma(\mathbf{0})=\mathbf{0}$,
-\begin{equation}
-    \|\sigma(\mathbf{Y}\mathbf{W}_1)\|_2
-    \le
-    \|\mathbf{Y}\mathbf{W}_1\|_2
-    \le
-    \|\mathbf{Y}\|_2\|\mathbf{W}_1\|_2.
-\end{equation}
-
-
-
-
-\textbf{3. Оценка $\mathbf{J}^{(k)}$, $k\in\{Q,K,V\}$.}
-Из теоремы \ref{thm:app-tr-block-jacobians}
-\begin{equation}
-    \mathbf{J}^{(k)}
-    =
-    \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_k.
-\end{equation}
-Следовательно,
-\begin{equation}
-    \|\mathbf{J}^{(k)}\|_2
-    \le
-    \|\mathbf{J}_Z\|_2
-    \|\mathbf{J}_{SY}\|_2
-    \|\mathbf{J}_Y\|_2
-    \|\mathbf{G}_k\|_2.
-\end{equation}
-Оценим $\|\mathbf{J}_{SY}\|_2$:
-\begin{align}
-    \|\mathbf{J}_{SY}\|_2
-    &=
-    \left\|
-        \mathbf{I}_{Td}
-        +
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_2^\top
-        \right)
-        \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
-        \left(
-            \mathbf{I}_T \otimes \mathbf{W}_1^\top
-        \right)
-    \right\|_2 \\
-    &\le
-    1
-    +
-    \|\mathbf{W}_2\|_2
-    \|\mathbf{W}_1\|_2.
-\end{align}
-Подстановка завершает доказательство.
-\end{proof}
-
-\begin{theorem}
-    \label{thm:app-tr-GN-explicit}
-    Пусть выполнено
-    \begin{equation}
-        \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}}.
-    \end{equation}
-    Тогда
-    \begin{multline}
-        \label{eq:app-tr-GN-explicit}
-        \|\mathbf{G}(\mathbf{w})\|_2
-        \le
-        M_{\mathbf{A}}
-        \|\mathbf{J}_Z\|_2^2
-        \Bigg[
-            \|\mathbf{W}_2\|_2^2\|\mathbf{Y}\|_2^2
-            +
-            \|\mathbf{W}_1\|_2^2\|\mathbf{Y}\|_2^2
-            +
-            \\
-            +
-            \left(
-                \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
-            \right)^2
-            \|\mathbf{J}_Y\|_2^2
-            \left(
-                T^2\|\mathbf{X}\|_2^2
-                +
-                \frac{C_{\mathrm{sm}}^2}{d_k}
-                \|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2\|\mathbf{X}\|_2^6
-                +
-                \frac{C_{\mathrm{sm}}^2}{d_k}
-                \|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2\|\mathbf{X}\|_2^6
-            \right)
-        \Bigg].
-    \end{multline}
-\end{theorem}
-
-\begin{proof}
-По теореме \ref{thm:app-tr-GN-general-bound}
-\begin{equation}
-    \|\mathbf{G}(\mathbf{w})\|_2
-    \le
-    M_{\mathbf{A}}
-    \left(
-        \|\mathbf{J}^{(Q)}\|_2^2
-        +
-        \|\mathbf{J}^{(K)}\|_2^2
-        +
-        \|\mathbf{J}^{(V)}\|_2^2
-        +
-        \|\mathbf{J}^{(1)}\|_2^2
-        +
-        \|\mathbf{J}^{(2)}\|_2^2
-    \right).
-\end{equation}
-Для FFN-параметров имеем
-\begin{equation}
-    \|\mathbf{J}^{(1)}\|_2^2
-    \le
-    \|\mathbf{J}_Z\|_2^2
-    \|\mathbf{W}_2\|_2^2
-    \|\mathbf{Y}\|_2^2,
-\end{equation}
-\begin{equation}
-    \|\mathbf{J}^{(2)}\|_2^2
-    \le
-    \|\mathbf{J}_Z\|_2^2
-    \|\mathbf{W}_1\|_2^2
-    \|\mathbf{Y}\|_2^2.
-\end{equation}
-Для attention-параметров, используя лемму \ref{lemma:app-tr-SA-jacobian-bounds}, получаем
-\begin{equation}
-    \|\mathbf{J}^{(V)}\|_2^2
-    \le
-    \|\mathbf{J}_Z\|_2^2
-    \left(
-        \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
-    \right)^2
-    \|\mathbf{J}_Y\|_2^2
-    T^2\|\mathbf{X}\|_2^2,
-\end{equation}
-\begin{equation}
-    \|\mathbf{J}^{(Q)}\|_2^2
-    \le
-    \|\mathbf{J}_Z\|_2^2
-    \left(
-        \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
-    \right)^2
-    \|\mathbf{J}_Y\|_2^2
-    \frac{C_{\mathrm{sm}}^2}{d_k}
-    \|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2\|\mathbf{X}\|_2^6,
-\end{equation}
-\begin{equation}
-    \|\mathbf{J}^{(K)}\|_2^2
-    \le
-    \|\mathbf{J}_Z\|_2^2
-    \left(
-        \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
-    \right)^2
-    \|\mathbf{J}_Y\|_2^2
-    \frac{C_{\mathrm{sm}}^2}{d_k}
-    \|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2\|\mathbf{X}\|_2^6.
-\end{equation}
-Суммируя все пять слагаемых, приходим к \eqref{eq:app-tr-GN-explicit}.
-\end{proof}
-
-\begin{corollary}
-    \label{cor:app-tr-GN-uniform}
-    Пусть
-    \begin{equation}
-        \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}},
-        \qquad
-        \|\mathbf{X}\|_2 \le M_{\mathbf{X}},
-        \qquad
-        \|\mathbf{Y}\|_2 \le M_{\mathbf{Y}},
-    \end{equation}
-    \begin{equation}
-        \|\mathbf{W}_Q\|_2,\|\mathbf{W}_K\|_2,\|\mathbf{W}_V\|_2,\|\mathbf{W}_1\|_2,\|\mathbf{W}_2\|_2
-        \le
-        M_{\mathbf{W}},
-    \end{equation}
-    \begin{equation}
-        \sigma_{\min}(\mathbf{U}) \ge \sigma_0,
-        \qquad
-        \sigma_{\min}(\mathbf{S}) \ge \sigma_0 > 0.
-    \end{equation}
-    Обозначим
-    \begin{equation}
-        C_{\mathrm{LN}}(M)
-        :=
-        \frac{1}{\sigma_0}
-        +
-        \frac{M^2}{\sqrt d\,\sigma_0^3}.
-    \end{equation}
-    Тогда
-    \begin{multline}
-        \label{eq:app-tr-GN-uniform}
-        \|\mathbf{G}(\mathbf{w})\|_2
-        \le
-        M_{\mathbf{A}}
-        C_{\mathrm{LN}}(\|\mathbf{S}\|_2)^2
-        \Bigg[
-            2M_{\mathbf{Y}}^2M_{\mathbf{W}}^2
-            +
-            \\
-            +
-            \left(
-                M_{\mathbf{W}}^2 + 1
-            \right)^2
-            C_{\mathrm{LN}}(\|\mathbf{U}\|_2)^2
-            \left(
-                T^2 M_{\mathbf{X}}^2
-                +
-                \frac{2C_{\mathrm{sm}}^2}{d_k}
-                M_{\mathbf{W}}^4 M_{\mathbf{X}}^6
-            \right)
-        \Bigg].
-    \end{multline}
-\end{corollary}
-
-\begin{proof}
-По лемме \ref{lemma:app-tr-LN-jacobian-bound}
-\begin{equation}
-    \|\mathbf{J}_Y\|_2
-    \le
-    C_{\mathrm{LN}}(\|\mathbf{U}\|_2),
-    \qquad
-    \|\mathbf{J}_Z\|_2
-    \le
-    C_{\mathrm{LN}}(\|\mathbf{S}\|_2).
-\end{equation}
-Далее в теореме \ref{thm:app-tr-GN-explicit} подставляем равномерные оценки
-\begin{equation}
-    \|\mathbf{W}_Q\|_2,\|\mathbf{W}_K\|_2,\|\mathbf{W}_V\|_2,\|\mathbf{W}_1\|_2,\|\mathbf{W}_2\|_2
-    \le M_{\mathbf{W}},
-\end{equation}
-\begin{equation}
-    \|\mathbf{X}\|_2 \le M_{\mathbf{X}},
-    \qquad
-    \|\mathbf{Y}\|_2 \le M_{\mathbf{Y}}.
-\end{equation}
-Первые два члена дают
-\begin{equation}
-    \|\mathbf{W}_2\|_2^2\|\mathbf{Y}\|_2^2
-    +
-    \|\mathbf{W}_1\|_2^2\|\mathbf{Y}\|_2^2
-    \le
-    2M_{\mathbf{Y}}^2M_{\mathbf{W}}^2.
-\end{equation}
-Для attention-части получаем
-\begin{equation}
-    \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
-    \le
-    M_{\mathbf{W}}^2 + 1,
-\end{equation}
-а сумма двух старших членов порядка $\|\mathbf{X}\|_2^6$ оценивается как
-\begin{equation}
-    \frac{C_{\mathrm{sm}}^2}{d_k}
-    \|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2\|\mathbf{X}\|_2^6
-    +
-    \frac{C_{\mathrm{sm}}^2}{d_k}
-    \|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2\|\mathbf{X}\|_2^6
-    \le
-    \frac{2C_{\mathrm{sm}}^2}{d_k}M_{\mathbf{W}}^4M_{\mathbf{X}}^6.
-\end{equation}
-Подстановка этих оценок в \eqref{eq:app-tr-GN-explicit} завершает доказательство.
-\end{proof}
+% \section{Гаусс-ньютоновская компонента матрицы Гессе для трансформерной архитектуры нейронной сети}\label{app:transformer-details}
+
+% В данном приложении приводятся детальные выкладки, на которые опирается основной текст раздела о трансформерных архитектурах. Мы сохраняем обозначения основного текста: рассматривается одно-головый трансформерный блок архитектуры Post-LN
+% \begin{equation}
+%     \mathbf{U} = \mathbf{X} + \mathrm{SA}(\mathbf{X}),
+%     \qquad
+%     \mathbf{Y} = \mathrm{LN}(\mathbf{U}),
+% \end{equation}
+% \begin{equation}
+%     \mathrm{FFN}(\mathbf{Y}) = \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2,
+%     \qquad
+%     \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}),
+%     \qquad
+%     \mathbf{Z} = \mathrm{LN}(\mathbf{S}),
+% \end{equation}
+% где
+% \begin{equation}
+%     \mathrm{SA}(\mathbf{X})
+%     =
+%     \mathbf{\Pi}(\mathbf{X})\mathbf{X}\mathbf{W}_V,
+%     \qquad
+%     \mathbf{\Pi}(\mathbf{X})
+%     =
+%     \softmax\left(
+%         \frac{\mathbf{X}\mathbf{W}_Q\mathbf{W}_K^\top \mathbf{X}^\top}{\sqrt{d_k}}
+%     \right).
+% \end{equation}
+% Выход блока обозначается через
+% \begin{equation}
+%     \mathbf{z} = \vecrop(\mathbf{Z}) \in \mathbb{R}^{Td}.
+% \end{equation}
+
+% \subsection{Якобиан и оценка нормы оператора LayerNorm}
+
+% Рассмотрим произвольную матрицу
+% \begin{equation}
+%     \mathbf{U} \in \mathbb{R}^{T\times d}.
+% \end{equation}
+% Введем матрицу центрирования
+% \begin{equation}
+%     \mathbf{C}_d
+%     =
+%     \mathbf{I}_d - \frac{1}{d}\mathbf{1}_d\mathbf{1}_d^\top
+%     \in \mathbb{R}^{d\times d}.
+% \end{equation}
+% Тогда центрированное представление строки задается оператором
+% \begin{equation}
+%     \mathbf{M}(\mathbf{U})
+%     =
+%     \mathbf{U}\mathbf{C}_d
+%     =
+%     \mathbf{U} - \frac{1}{d}\mathbf{U}\mathbf{1}_d\mathbf{1}_d^\top.
+% \end{equation}
+% Вектор построчных стандартных отклонений определим формулой
+% \begin{equation}
+%     \boldsymbol{\sigma}(\mathbf{U})
+%     =
+%     \frac{1}{\sqrt d}
+%     \left(
+%         \mathbf{M}(\mathbf{U})^{\circ 2}\mathbf{1}_d
+%     \right)^{\circ \frac12}
+%     \in \mathbb{R}^{T},
+% \end{equation}
+% а диагональную матрицу обратных стандартных отклонений --- как
+% \begin{equation}
+%     \mathbf{P}(\mathbf{U})
+%     =
+%     \diag^{-1}\left(\boldsymbol{\sigma}(\mathbf{U})\right)
+%     \in \mathbb{R}^{T\times T}.
+% \end{equation}
+% Тогда LayerNorm без аффинных параметров $\gamma,\beta$ записывается в матричном виде:
+% \begin{equation}
+%     \label{eq:app-tr-LN-form}
+%     \mathrm{LN}(\mathbf{U})
+%     =
+%     \mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}).
+% \end{equation}
+
+% Для дальнейшего дифференцирования будем предполагать, что все построчные дисперсии положительны:
+% \begin{equation}
+%     \label{eq:app-tr-ln-positive-var}
+%     \sigma_{\min}(\mathbf{U})
+%     :=
+%     \min_{t=1,\ldots,T}\sigma_t(\mathbf{U}) > 0.
+% \end{equation}
+% Это стандартное техническое предположение, используемое и в статье-источнике при выводе якобиана LayerNorm. 
+
+% \begin{lemma}
+%     \label{lemma:app-tr-LN-jacobian}
+%     Якобиан LayerNorm по входу имеет вид
+%     \begin{align}
+%         \label{eq:app-tr-LN-jacobian}
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%         &=
+%         \frac{\partial \vecrop(\mathrm{LN}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%         \notag\\
+%         &=
+%         \left(
+%             \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%         \right)\mathbf{G}_d
+%         +
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%         \right)
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top},
+%     \end{align}
+%     где
+%     \begin{equation}
+%         \mathbf{G}_d
+%         =
+%         \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%         =
+%         \mathbf{I}_{Td}
+%         -
+%         \frac{1}{d}
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{1}_{d\times d}
+%         \right).
+%     \end{equation}
+% \end{lemma}
+
+% \begin{proof}
+% Из \eqref{eq:app-tr-LN-form} имеем
+% \begin{equation}
+%     \mathrm{LN}(\mathbf{U})
+%     =
+%     \mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}).
+% \end{equation}
+% Применим правило дифференцирования матричного произведения к построчной векторизации:
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{P}(\mathbf{U})\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     =
+%     \left(
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right)
+%     \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     +
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right)
+%     \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}.
+% \end{equation}
+% Остается вычислить производную центрирующего оператора. Так как
+% \begin{equation}
+%     \mathbf{M}(\mathbf{U}) = \mathbf{U}\mathbf{C}_d,
+% \end{equation}
+% то для построчной векторизации выполняется
+% \begin{equation}
+%     \vecrop(\mathbf{M}(\mathbf{U}))
+%     =
+%     (\mathbf{I}_T \otimes \mathbf{C}_d)\vecrop(\mathbf{U}).
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{M}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     =
+%     \mathbf{I}_T \otimes \mathbf{C}_d
+%     =
+%     \mathbf{I}_{Td}
+%     -
+%     \frac{1}{d}
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{1}_{d\times d}
+%     \right)
+%     =
+%     \mathbf{G}_d.
+% \end{equation}
+% Подставляя это равенство в предыдущую формулу, получаем \eqref{eq:app-tr-LN-jacobian}. Данная форма совпадает с матричным представлением якобиана LayerNorm в статье-источнике. 
+% \end{proof}
+
+% \begin{lemma}
+%     \label{lemma:app-tr-LN-jacobian-bound}
+%     Пусть выполнено условие \eqref{eq:app-tr-ln-positive-var}. Тогда
+%     \begin{equation}
+%         \label{eq:app-tr-LN-bound}
+%         \left\|
+%             \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%         \right\|_2
+%         \le
+%         \frac{1}{\sigma_{\min}(\mathbf{U})}
+%         +
+%         \frac{\|\mathbf{U}\|_2^2}{\sqrt{d}\,\sigma_{\min}(\mathbf{U})^3}.
+%     \end{equation}
+% \end{lemma}
+
+% \begin{proof}
+% По лемме \ref{lemma:app-tr-LN-jacobian}
+% \begin{equation}
+%     \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     =
+%     \left(
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right)\mathbf{G}_d
+%     +
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right)
+%     \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}.
+% \end{equation}
+% Следовательно, по неравенству треугольника и субмультипликативности спектральной нормы
+% \begin{align}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     &\le
+%     \left\|
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right\|_2
+%     \|\mathbf{G}_d\|_2
+%     +
+%     \left\|
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right\|_2
+%     \left\|
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2.
+% \end{align}
+% Используя свойство нормы произведения Кронекера, получаем
+% \begin{equation}
+%     \left\|
+%         \mathbf{P}(\mathbf{U}) \otimes \mathbf{I}_d
+%     \right\|_2
+%     =
+%     \|\mathbf{P}(\mathbf{U})\|_2,
+%     \qquad
+%     \left\|
+%         \mathbf{I}_T \otimes \mathbf{M}(\mathbf{U})^\top
+%     \right\|_2
+%     =
+%     \|\mathbf{M}(\mathbf{U})\|_2.
+% \end{equation}
+% Поэтому
+% \begin{equation}
+%     \label{eq:app-tr-ln-bound-step-1}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     \le
+%     \|\mathbf{P}(\mathbf{U})\|_2 \|\mathbf{G}_d\|_2
+%     +
+%     \|\mathbf{M}(\mathbf{U})\|_2
+%     \left\|
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2.
+% \end{equation}
+
+
+
+
+% \textbf{Шаг 1. Оценка нормы $\mathbf{G}_d$.}
+% Так как
+% \begin{equation}
+%     \mathbf{G}_d = \mathbf{I}_T \otimes \mathbf{C}_d,
+% \end{equation}
+% а матрица $\mathbf{C}_d$ есть ортогональный проектор на подпространство векторов с нулевой суммой координат, то
+% \begin{equation}
+%     \|\mathbf{C}_d\|_2 = 1,
+%     \qquad
+%     \|\mathbf{G}_d\|_2
+%     =
+%     \|\mathbf{I}_T \otimes \mathbf{C}_d\|_2
+%     =
+%     1.
+% \end{equation}
+
+
+
+
+% \textbf{Шаг 2. Оценка нормы $\mathbf{P}(\mathbf{U})$.}
+% Матрица $\mathbf{P}(\mathbf{U})$ диагональна, и на ее диагонали стоят числа
+% \begin{equation}
+%     \frac{1}{\sigma_1(\mathbf{U})}, \ldots, \frac{1}{\sigma_T(\mathbf{U})}.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \|\mathbf{P}(\mathbf{U})\|_2
+%     =
+%     \max_{t=1,\ldots,T}\frac{1}{\sigma_t(\mathbf{U})}
+%     =
+%     \frac{1}{\sigma_{\min}(\mathbf{U})}.
+% \end{equation}
+
+
+
+
+% \textbf{Шаг 3. Оценка нормы $\mathbf{M}(\mathbf{U})$.}
+% Поскольку
+% \begin{equation}
+%     \mathbf{M}(\mathbf{U}) = \mathbf{U}\mathbf{C}_d,
+% \end{equation}
+% имеем
+% \begin{equation}
+%     \|\mathbf{M}(\mathbf{U})\|_2
+%     \le
+%     \|\mathbf{U}\|_2 \|\mathbf{C}_d\|_2
+%     \le
+%     \|\mathbf{U}\|_2.
+% \end{equation}
+
+
+
+
+% \textbf{Шаг 4. Оценка нормы производной $\partial \vecrop(\mathbf{P}(\mathbf{U}))/\partial \vecrop(\mathbf{U})^\top$.}
+% Рассмотрим фиксированную строку $\mathbf{m}_t^\top \in \mathbb{R}^{1\times d}$ матрицы $\mathbf{M}(\mathbf{U})$. Тогда
+% \begin{equation}
+%     \sigma_t(\mathbf{U})
+%     =
+%     \frac{1}{\sqrt d}\|\mathbf{m}_t\|_2.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \frac{1}{\sigma_t(\mathbf{U})}
+%     =
+%     \frac{\sqrt d}{\|\mathbf{m}_t\|_2},
+% \end{equation}
+% и потому
+% \begin{equation}
+%     \frac{\partial}{\partial \mathbf{m}_t}
+%     \left(
+%         \frac{1}{\sigma_t(\mathbf{U})}
+%     \right)
+%     =
+%     -\sqrt d\,
+%     \frac{\mathbf{m}_t^\top}{\|\mathbf{m}_t\|_2^3}.
+% \end{equation}
+% Отсюда
+% \begin{equation}
+%     \left\|
+%         \frac{\partial}{\partial \mathbf{m}_t}
+%         \left(
+%             \frac{1}{\sigma_t(\mathbf{U})}
+%         \right)
+%     \right\|_2
+%     =
+%     \sqrt d \frac{1}{\|\mathbf{m}_t\|_2^2}
+%     =
+%     \frac{1}{\sqrt d\,\sigma_t(\mathbf{U})^2}.
+% \end{equation}
+% Так как отображение $\mathbf{U} \mapsto \mathbf{M}(\mathbf{U})=\mathbf{U}\mathbf{C}_d$ линейно и имеет операторную норму не больше единицы, то, переходя от производной по $\mathbf{m}_t$ к производной по $\mathbf{U}$, получаем
+% \begin{equation}
+%     \left\|
+%         \frac{\partial}{\partial \vecrop(\mathbf{U})}
+%         \left(
+%             \frac{1}{\sigma_t(\mathbf{U})}
+%         \right)
+%     \right\|_2
+%     \le
+%     \frac{1}{\sqrt d\,\sigma_t(\mathbf{U})^2}.
+% \end{equation}
+% Поскольку $\mathbf{P}(\mathbf{U})$ есть диагональная матрица, составленная из величин $1/\sigma_t(\mathbf{U})$, то оператор дифференцирования диагонального отображения не увеличивает порядок оценки, и потому
+% \begin{equation}
+%     \left\|
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2
+%     \le
+%     \frac{1}{\sqrt d\,\sigma_{\min}(\mathbf{U})^2}.
+% \end{equation}
+% Для согласования с грубой глобальной оценкой, используемой в основном тексте, умножим правую часть на $\|\mathbf{U}\|_2/\sigma_{\min}(\mathbf{U})$, что дает более слабую, но удобную в дальнейшем форму:
+% \begin{equation}
+%     \left\|
+%         \frac{\partial \vecrop(\mathbf{P}(\mathbf{U}))}{\partial \vecrop(\mathbf{U})^\top}
+%     \right\|_2
+%     \le
+%     \frac{\|\mathbf{U}\|_2}{\sqrt d\,\sigma_{\min}(\mathbf{U})^3}.
+% \end{equation}
+
+
+
+% Подставляя все полученные оценки в \eqref{eq:app-tr-ln-bound-step-1}, получаем
+% \begin{equation}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     \le
+%     \frac{1}{\sigma_{\min}(\mathbf{U})}
+%     +
+%     \|\mathbf{U}\|_2
+%     \cdot
+%     \frac{\|\mathbf{U}\|_2}{\sqrt d\,\sigma_{\min}(\mathbf{U})^3},
+% \end{equation}
+% то есть
+% \begin{equation}
+%     \left\|
+%         \mathbf{J}_{\mathrm{LN}}(\mathbf{U})
+%     \right\|_2
+%     \le
+%     \frac{1}{\sigma_{\min}(\mathbf{U})}
+%     +
+%     \frac{\|\mathbf{U}\|_2^2}{\sqrt d\,\sigma_{\min}(\mathbf{U})^3}.
+% \end{equation}
+% Что и требовалось доказать. Такая же структура оценки используется в статье для контроля нормы якобиана LayerNorm. 
+% \end{proof}
+
+% \subsection{Выкладки для feed-forward части}
+
+% Далее полагаем $\sigma = \mathrm{ReLU}$, действующую покомпонентно. Введем обозначение
+% \begin{equation}
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     =
+%     \diag\left(
+%         \vecrop\left(
+%             \mathbf{1}_{\{\mathbf{Y}\mathbf{W}_1 > 0\}}
+%         \right)
+%     \right)
+%     \in \mathbb{R}^{Td_{\mathrm{ff}}\times Td_{\mathrm{ff}}}.
+% \end{equation}
+
+% \begin{lemma}
+%     \label{lemma:app-tr-ReLU}
+%     Почти всюду по $\mathbf{Y}\mathbf{W}_1$ справедливо
+%     \begin{equation}
+%         \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))}{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)^\top}
+%         =
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1),
+%     \end{equation}
+%     причем вторая производная ReLU почти всюду равна нулю.
+% \end{lemma}
+
+% \begin{proof}
+% ReLU действует покомпонентно, поэтому по каждой координате ее производная равна $1$ на положительной полуоси и $0$ на отрицательной. Отсюда якобиан покомпонентного отображения есть диагональная матрица, на диагонали которой стоят соответствующие индикаторы положительности. В точках, где аргумент равен нулю, производная не определена, но это множество имеет меру нуль. Вне этого множества якобиан кусочно постоянен, следовательно его производная почти всюду равна нулю. Тот же результат используется в статье как Lemma 4. 
+% \end{proof}
+
+% \begin{proposition}
+%     \label{prop:app-tr-FFN-jacobians}
+%     Для отображения
+%     \begin{equation}
+%         \mathbf{F}(\mathbf{Y})
+%         =
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2
+%         \in \mathbb{R}^{T\times d}
+%     \end{equation}
+%     параметрические якобианы по матрицам $\mathbf{W}_1$ и $\mathbf{W}_2$ задаются формулами
+%     \begin{equation}
+%         \label{eq:app-tr-FFN-jac-W2}
+%         \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
+%         =
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:app-tr-FFN-jac-W1}
+%         \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
+%         =
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{Y} \otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%         \right).
+%     \end{equation}
+% \end{proposition}
+
+% \begin{proof}
+% Положим
+% \begin{equation}
+%     \mathbf{H} = \sigma(\mathbf{Y}\mathbf{W}_1)\in\mathbb{R}^{T\times d_{\mathrm{ff}}}.
+% \end{equation}
+% Тогда
+% \begin{equation}
+%     \mathbf{F}(\mathbf{Y}) = \mathbf{H}\mathbf{W}_2.
+% \end{equation}
+
+
+
+
+% \textbf{Производная по $\mathbf{W}_2$.}
+% Для построчной векторизации выполняется тождество
+% \begin{equation}
+%     \vecrop(\mathbf{H}\mathbf{W}_2)
+%     =
+%     (\mathbf{H}\otimes \mathbf{I}_d)\vecrop(\mathbf{W}_2).
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
+%     =
+%     \mathbf{H}\otimes \mathbf{I}_d
+%     =
+%     \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d.
+% \end{equation}
+% Это и есть формула \eqref{eq:app-tr-FFN-jac-W2}.
+
+
+
+
+% \textbf{Производная по $\mathbf{W}_1$.}
+% Рассмотрим композицию
+% \begin{equation}
+%     \mathbf{W}_1
+%     \longmapsto
+%     \mathbf{Y}\mathbf{W}_1
+%     \longmapsto
+%     \sigma(\mathbf{Y}\mathbf{W}_1)
+%     \longmapsto
+%     \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2.
+% \end{equation}
+% По правилу дифференцирования сложной функции
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{F}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
+%     =
+%     \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2)}{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\sigma(\mathbf{Y}\mathbf{W}_1))}{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \mathbf{w}_1^\top}.
+% \end{equation}
+% Первый множитель равен
+% \begin{equation}
+%     \mathbf{I}_T \otimes \mathbf{W}_2^\top.
+% \end{equation}
+% Второй по лемме \ref{lemma:app-tr-ReLU} имеет вид
+% \begin{equation}
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1).
+% \end{equation}
+% Для третьего множителя используем тождество
+% \begin{equation}
+%     \vecrop(\mathbf{Y}\mathbf{W}_1)
+%     =
+%     (\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}})\vecrop(\mathbf{W}_1),
+% \end{equation}
+% откуда
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \mathbf{w}_1^\top}
+%     =
+%     \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}.
+% \end{equation}
+% Перемножая эти три матрицы, получаем \eqref{eq:app-tr-FFN-jac-W1}. Именно эти формулы используются и в статье как FFN Jacobians. 
+% \end{proof}
+
+% \begin{lemma}
+%     \label{lemma:app-tr-FFN-input-jacobian}
+%     Якобиан $\vecrop(\mathrm{FFN}(\mathbf{Y}))$ по входу $\vecrop(\mathbf{Y})$ имеет вид
+%     \begin{equation}
+%         \label{eq:app-tr-FFN-input-jacobian}
+%         \mathbf{J}_{\mathrm{FFN},Y}
+%         =
+%         \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}
+%         =
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%         \right).
+%     \end{equation}
+% \end{lemma}
+
+% \begin{proof}
+% Композиция
+% \[
+% \mathbf{Y}
+% \longmapsto
+% \mathbf{Y}\mathbf{W}_1
+% \longmapsto
+% \sigma(\mathbf{Y}\mathbf{W}_1)
+% \longmapsto
+% \sigma(\mathbf{Y}\mathbf{W}_1)\mathbf{W}_2
+% \]
+% дифференцируется так же, как и в доказательстве предложения \ref{prop:app-tr-FFN-jacobians}. Отличие состоит лишь в последнем множителе:
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathbf{Y}\mathbf{W}_1)}{\partial \vecrop(\mathbf{Y})^\top}
+%     =
+%     \mathbf{I}_T \otimes \mathbf{W}_1^\top.
+% \end{equation}
+% Подставляя этот множитель вместо $\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}$, получаем формулу \eqref{eq:app-tr-FFN-input-jacobian}.
+% \end{proof}
+
+% \subsection{Оценки для self-attention части}
+
+% Здесь мы используем обозначения
+% \begin{equation}
+%     \mathbf{G}_Q
+%     =
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_Q^\top},
+%     \qquad
+%     \mathbf{G}_K
+%     =
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_K^\top},
+%     \qquad
+%     \mathbf{G}_V
+%     =
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_V^\top}.
+% \end{equation}
+
+% Для матрицы $\mathbf{G}_V$ вывод можно сделать непосредственно. Для матриц $\mathbf{G}_Q$ и $\mathbf{G}_K$ в данной главе мы опираемся на известный анализ изолированного single-head self-attention блока~\todo{(уточнить откуда, ссылка)}: именно эти оценки затем подставляются в якобиан полного трансформерного блока.
+
+% \begin{lemma}
+%     \label{lemma:app-tr-SA-jacobian-bounds}
+%     Для матриц $\mathbf{G}_Q,\mathbf{G}_K,\mathbf{G}_V$ справедливы оценки
+%     \begin{equation}
+%         \label{eq:app-tr-GV-bound}
+%         \|\mathbf{G}_V\|_2
+%         \le
+%         T\|\mathbf{X}\|_2,
+%     \end{equation}
+%     а также
+%     \begin{equation}
+%         \label{eq:app-tr-GQ-bound}
+%         \|\mathbf{G}_Q\|_2
+%         \le
+%         \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%         \|\mathbf{W}_V\|_2
+%         \|\mathbf{W}_K\|_2
+%         \|\mathbf{X}\|_2^3,
+%     \end{equation}
+%     \begin{equation}
+%         \label{eq:app-tr-GK-bound}
+%         \|\mathbf{G}_K\|_2
+%         \le
+%         \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%         \|\mathbf{W}_V\|_2
+%         \|\mathbf{W}_Q\|_2
+%         \|\mathbf{X}\|_2^3,
+%     \end{equation}
+%     где $C_{\mathrm{sm}}$ --- константа Липшица построчного softmax в спектральной норме.
+% \end{lemma}
+
+% \begin{proof}
+% \textbf{1. Оценка для $\mathbf{G}_V$.}
+% При фиксированных $\mathbf{X},\mathbf{W}_Q,\mathbf{W}_K$ оператор self-attention линеен по $\mathbf{W}_V$:
+% \begin{equation}
+%     \mathrm{SA}(\mathbf{X})
+%     =
+%     \mathbf{\Pi}(\mathbf{X})\mathbf{X}\mathbf{W}_V.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \vecrop(\mathrm{SA}(\mathbf{X}))
+%     =
+%     \left(
+%         \mathbf{\Pi}(\mathbf{X})\mathbf{X}\otimes \mathbf{I}_d
+%     \right)\vecrop(\mathbf{W}_V),
+% \end{equation}
+% и потому
+% \begin{equation}
+%     \mathbf{G}_V
+%     =
+%     \mathbf{\Pi}(\mathbf{X})\mathbf{X}\otimes \mathbf{I}_d.
+% \end{equation}
+% По свойству спектральной нормы произведения Кронекера
+% \begin{equation}
+%     \|\mathbf{G}_V\|_2
+%     =
+%     \|\mathbf{\Pi}(\mathbf{X})\mathbf{X}\|_2
+%     \le
+%     \|\mathbf{\Pi}(\mathbf{X})\|_2 \|\mathbf{X}\|_2.
+% \end{equation}
+% Матрица $\mathbf{\Pi}(\mathbf{X})$ построчно стохастична, а потому грубо
+% \begin{equation}
+%     \|\mathbf{\Pi}(\mathbf{X})\|_2 \le T.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \|\mathbf{G}_V\|_2 \le T\|\mathbf{X}\|_2.
+% \end{equation}
+
+
+
+% \textbf{2. Оценки для $\mathbf{G}_Q$ и $\mathbf{G}_K$.}
+% Рассмотрим матрицу логитов
+% \begin{equation}
+%     \mathbf{L}(\mathbf{X})
+%     =
+%     \frac{\mathbf{X}\mathbf{W}_Q\mathbf{W}_K^\top\mathbf{X}^\top}{\sqrt{d_k}}.
+% \end{equation}
+% При вариации $d\mathbf{W}_Q$ имеем
+% \begin{equation}
+%     d\mathbf{L}
+%     =
+%     \frac{\mathbf{X}\,d\mathbf{W}_Q\,\mathbf{W}_K^\top \mathbf{X}^\top}{\sqrt{d_k}},
+% \end{equation}
+% и потому
+% \begin{equation}
+%     \|d\mathbf{L}\|_2
+%     \le
+%     \frac{1}{\sqrt{d_k}}
+%     \|\mathbf{X}\|_2^2
+%     \|\mathbf{W}_K\|_2
+%     \|d\mathbf{W}_Q\|_2.
+% \end{equation}
+% Поскольку построчный softmax липшицев в спектральной норме с константой $C_{\mathrm{sm}}$, получаем
+% \begin{equation}
+%     \|d\mathbf{\Pi}\|_2
+%     \le
+%     C_{\mathrm{sm}}\|d\mathbf{L}\|_2
+%     \le
+%     \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%     \|\mathbf{X}\|_2^2
+%     \|\mathbf{W}_K\|_2
+%     \|d\mathbf{W}_Q\|_2.
+% \end{equation}
+% Далее
+% \begin{equation}
+%     d\,\mathrm{SA}(\mathbf{X})
+%     =
+%     (d\mathbf{\Pi})\mathbf{X}\mathbf{W}_V,
+% \end{equation}
+% поэтому
+% \begin{align}
+%     \|d\,\mathrm{SA}(\mathbf{X})\|_2
+%     &\le
+%     \|d\mathbf{\Pi}\|_2
+%     \|\mathbf{X}\mathbf{W}_V\|_2 \\
+%     &\le
+%     \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%     \|\mathbf{W}_K\|_2
+%     \|\mathbf{X}\|_2^2
+%     \|d\mathbf{W}_Q\|_2
+%     \|\mathbf{X}\|_2
+%     \|\mathbf{W}_V\|_2 \\
+%     &=
+%     \frac{C_{\mathrm{sm}}}{\sqrt{d_k}}
+%     \|\mathbf{W}_V\|_2
+%     \|\mathbf{W}_K\|_2
+%     \|\mathbf{X}\|_2^3
+%     \|d\mathbf{W}_Q\|_2.
+% \end{align}
+% Из определения операторной нормы якобиана следует \eqref{eq:app-tr-GQ-bound}. Формула \eqref{eq:app-tr-GK-bound} выводится симметрично при вариации по $\mathbf{W}_K$.
+% \end{proof}
+
+% \subsection{Сборка якобианов полного трансформерного блока}
+
+% Введем обозначения
+% \begin{equation}
+%     \mathbf{J}_Y
+%     =
+%     \frac{\partial \vecrop(\mathbf{Y})}{\partial \vecrop(\mathbf{U})^\top}
+%     =
+%     \mathbf{J}_{\mathrm{LN}}(\mathbf{U}),
+%     \qquad
+%     \mathbf{J}_Z
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
+%     =
+%     \mathbf{J}_{\mathrm{LN}}(\mathbf{S}).
+% \end{equation}
+
+% \begin{theorem}
+%     \label{thm:app-tr-block-jacobians}
+%     Якобианы выхода трансформерного блока по всем пяти группам параметров задаются формулами
+%     \begin{equation}
+%         \mathbf{J}^{(1)}
+%         =
+%         \mathbf{J}_Z \mathbf{B}_1,
+%         \qquad
+%         \mathbf{B}_1
+%         =
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{Y} \otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%         \right),
+%     \end{equation}
+%     \begin{equation}
+%         \mathbf{J}^{(2)}
+%         =
+%         \mathbf{J}_Z \mathbf{B}_2,
+%         \qquad
+%         \mathbf{B}_2
+%         =
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d,
+%     \end{equation}
+%     \begin{equation}
+%         \mathbf{J}^{(Q)}
+%         =
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_Q,
+%         \qquad
+%         \mathbf{J}^{(K)}
+%         =
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_K,
+%         \qquad
+%         \mathbf{J}^{(V)}
+%         =
+%         \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_V,
+%     \end{equation}
+%     где
+%     \begin{equation}
+%         \mathbf{J}_{SY}
+%         =
+%         \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
+%         =
+%         \mathbf{I}_{Td}
+%         +
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%         \right).
+%     \end{equation}
+% \end{theorem}
+
+% \begin{proof}
+% \textbf{1. Якобианы по $\mathbf{W}_1$ и $\mathbf{W}_2$.}
+% Из определения блока имеем
+% \begin{equation}
+%     \mathbf{Z} = \mathrm{LN}(\mathbf{S}),
+%     \qquad
+%     \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}).
+% \end{equation}
+% Параметры $\mathbf{W}_1,\mathbf{W}_2$ входят только через FFN, а матрица $\mathbf{Y}$ от них не зависит. Поэтому
+% \begin{equation}
+%     \mathbf{J}^{(1)}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_1^\top}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{S})}{\partial \mathbf{w}_1^\top}
+%     =
+%     \mathbf{J}_Z
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}.
+% \end{equation}
+% По предложению \ref{prop:app-tr-FFN-jacobians}
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_1^\top}
+%     =
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%     \right)
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     \left(
+%         \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%     \right).
+% \end{equation}
+% Тем самым получаем формулу для $\mathbf{J}^{(1)}$. Аналогично
+% \begin{equation}
+%     \mathbf{J}^{(2)}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_2^\top}
+%     =
+%     \mathbf{J}_Z
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \mathbf{w}_2^\top}
+%     =
+%     \mathbf{J}_Z
+%     \left(
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d
+%     \right).
+% \end{equation}
+
+
+
+% \textbf{2. Якобианы по attention-параметрам.}
+% Пусть $k\in\{Q,K,V\}$. Тогда влияние параметра $\mathbf{w}_k$ на выход проходит по цепочке
+% \begin{equation}
+%     \mathbf{w}_k
+%     \longmapsto
+%     \mathrm{SA}(\mathbf{X})
+%     \longmapsto
+%     \mathbf{U}
+%     \longmapsto
+%     \mathbf{Y}
+%     \longmapsto
+%     \mathbf{S}
+%     \longmapsto
+%     \mathbf{Z}.
+% \end{equation}
+% Следовательно, по правилу дифференцирования сложной функции
+% \begin{equation}
+%     \mathbf{J}^{(k)}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \mathbf{w}_k^\top}
+%     =
+%     \frac{\partial \vecrop(\mathbf{Z})}{\partial \vecrop(\mathbf{S})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathbf{Y})}{\partial \vecrop(\mathbf{U})^\top}
+%     \cdot
+%     \frac{\partial \vecrop(\mathrm{SA}(\mathbf{X}))}{\partial \mathbf{w}_k^\top}.
+% \end{equation}
+% Первый множитель равен $\mathbf{J}_Z$, третий --- $\mathbf{J}_Y$, четвертый --- $\mathbf{G}_k$. Остается вычислить
+% \begin{equation}
+%     \mathbf{J}_{SY}
+%     =
+%     \frac{\partial \vecrop(\mathbf{S})}{\partial \vecrop(\mathbf{Y})^\top}.
+% \end{equation}
+% Так как
+% \begin{equation}
+%     \mathbf{S} = \mathbf{Y} + \mathrm{FFN}(\mathbf{Y}),
+% \end{equation}
+% то
+% \begin{equation}
+%     \mathbf{J}_{SY}
+%     =
+%     \mathbf{I}_{Td}
+%     +
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}.
+% \end{equation}
+% По лемме \ref{lemma:app-tr-FFN-input-jacobian}
+% \begin{equation}
+%     \frac{\partial \vecrop(\mathrm{FFN}(\mathbf{Y}))}{\partial \vecrop(\mathbf{Y})^\top}
+%     =
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%     \right)
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%     \right).
+% \end{equation}
+% Подстановка завершает доказательство.
+% \end{proof}
+
+% \subsection{Гаусс--ньютоновская компонента и ее спектральная оценка}
+
+% Пусть
+% \begin{equation}
+%     \mathbf{A}(\mathbf{w})
+%     =
+%     \nabla_{\mathbf{z}}^2 \ell(\mathbf{z},\mathbf{y})
+%     \in \mathbb{R}^{Td\times Td}
+% \end{equation}
+% --- матрица кривизны функции потерь по выходу блока, а
+% \begin{equation}
+%     \mathbf{J}(\mathbf{w})
+%     =
+%     \left[
+%         \mathbf{J}^{(Q)},
+%         \mathbf{J}^{(K)},
+%         \mathbf{J}^{(V)},
+%         \mathbf{J}^{(1)},
+%         \mathbf{J}^{(2)}
+%     \right]
+% \end{equation}
+% --- полный якобиан выхода блока по всем параметрам.
+
+% \begin{theorem}
+%     \label{thm:app-tr-GN-general-bound}
+%     Пусть
+%     \begin{equation}
+%         \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}}.
+%     \end{equation}
+%     Тогда
+%     \begin{equation}
+%         \label{eq:app-tr-GN-general-bound}
+%         \|\mathbf{G}(\mathbf{w})\|_2
+%         \le
+%         M_{\mathbf{A}}
+%         \left(
+%             \|\mathbf{J}^{(Q)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(K)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(V)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(1)}\|_2^2
+%             +
+%             \|\mathbf{J}^{(2)}\|_2^2
+%         \right),
+%     \end{equation}
+%     где
+%     \begin{equation}
+%         \mathbf{G}(\mathbf{w})
+%         =
+%         \mathbf{J}(\mathbf{w})^\top
+%         \mathbf{A}(\mathbf{w})
+%         \mathbf{J}(\mathbf{w}).
+%     \end{equation}
+%     Кроме того,
+%     \begin{equation}
+%         \|\mathbf{J}^{(1)}\|_2
+%         \le
+%         \|\mathbf{J}_Z\|_2
+%         \|\mathbf{W}_2\|_2
+%         \|\mathbf{Y}\|_2,
+%     \end{equation}
+%     \begin{equation}
+%         \|\mathbf{J}^{(2)}\|_2
+%         \le
+%         \|\mathbf{J}_Z\|_2
+%         \|\mathbf{Y}\|_2
+%         \|\mathbf{W}_1\|_2,
+%     \end{equation}
+%     \begin{equation}
+%         \|\mathbf{J}^{(k)}\|_2
+%         \le
+%         \|\mathbf{J}_Z\|_2
+%         \left(
+%             \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%         \right)
+%         \|\mathbf{J}_Y\|_2
+%         \|\mathbf{G}_k\|_2,
+%         \qquad
+%         k\in\{Q,K,V\}.
+%     \end{equation}
+% \end{theorem}
+
+% \begin{proof}
+% По определению гаусс--ньютоновской компоненты
+% \begin{equation}
+%     \mathbf{G}(\mathbf{w})
+%     =
+%     \mathbf{J}(\mathbf{w})^\top
+%     \mathbf{A}(\mathbf{w})
+%     \mathbf{J}(\mathbf{w}),
+% \end{equation}
+% поэтому
+% \begin{equation}
+%     \|\mathbf{G}(\mathbf{w})\|_2
+%     \le
+%     \|\mathbf{A}(\mathbf{w})\|_2
+%     \|\mathbf{J}(\mathbf{w})\|_2^2
+%     \le
+%     M_{\mathbf{A}}\|\mathbf{J}(\mathbf{w})\|_2^2.
+% \end{equation}
+% Так как
+% \begin{equation}
+%     \mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top
+%     =
+%     \sum_{i\in\{Q,K,V,1,2\}}
+%     \mathbf{J}^{(i)}\mathbf{J}^{(i)\top},
+% \end{equation}
+% то
+% \begin{equation}
+%     \|\mathbf{J}(\mathbf{w})\|_2^2
+%     =
+%     \|\mathbf{J}(\mathbf{w})\mathbf{J}(\mathbf{w})^\top\|_2
+%     \le
+%     \sum_{i\in\{Q,K,V,1,2\}}
+%     \|\mathbf{J}^{(i)}\|_2^2.
+% \end{equation}
+% Получаем \eqref{eq:app-tr-GN-general-bound}.
+
+% Оценим теперь отдельные блоки.
+
+% \textbf{1. Оценка $\mathbf{J}^{(1)}$.}
+% По теореме \ref{thm:app-tr-block-jacobians}
+% \begin{equation}
+%     \mathbf{J}^{(1)}
+%     =
+%     \mathbf{J}_Z
+%     \left(
+%         \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%     \right)
+%     \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%     \left(
+%         \mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}
+%     \right).
+% \end{equation}
+% Следовательно,
+% \begin{align}
+%     \|\mathbf{J}^{(1)}\|_2
+%     &\le
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{I}_T \otimes \mathbf{W}_2^\top\|_2
+%     \|\mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)\|_2
+%     \|\mathbf{Y}\otimes \mathbf{I}_{d_{\mathrm{ff}}}\|_2 \\
+%     &=
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{W}_2\|_2
+%     \cdot 1 \cdot
+%     \|\mathbf{Y}\|_2.
+% \end{align}
+
+
+
+
+% \textbf{2. Оценка $\mathbf{J}^{(2)}$.}
+% Аналогично
+% \begin{equation}
+%     \mathbf{J}^{(2)}
+%     =
+%     \mathbf{J}_Z
+%     \left(
+%         \sigma(\mathbf{Y}\mathbf{W}_1)\otimes \mathbf{I}_d
+%     \right),
+% \end{equation}
+% поэтому
+% \begin{equation}
+%     \|\mathbf{J}^{(2)}\|_2
+%     \le
+%     \|\mathbf{J}_Z\|_2
+%     \|\sigma(\mathbf{Y}\mathbf{W}_1)\|_2.
+% \end{equation}
+% Так как ReLU является $1$-липшицевой и $\sigma(\mathbf{0})=\mathbf{0}$,
+% \begin{equation}
+%     \|\sigma(\mathbf{Y}\mathbf{W}_1)\|_2
+%     \le
+%     \|\mathbf{Y}\mathbf{W}_1\|_2
+%     \le
+%     \|\mathbf{Y}\|_2\|\mathbf{W}_1\|_2.
+% \end{equation}
+
+
+
+
+% \textbf{3. Оценка $\mathbf{J}^{(k)}$, $k\in\{Q,K,V\}$.}
+% Из теоремы \ref{thm:app-tr-block-jacobians}
+% \begin{equation}
+%     \mathbf{J}^{(k)}
+%     =
+%     \mathbf{J}_Z \mathbf{J}_{SY}\mathbf{J}_Y \mathbf{G}_k.
+% \end{equation}
+% Следовательно,
+% \begin{equation}
+%     \|\mathbf{J}^{(k)}\|_2
+%     \le
+%     \|\mathbf{J}_Z\|_2
+%     \|\mathbf{J}_{SY}\|_2
+%     \|\mathbf{J}_Y\|_2
+%     \|\mathbf{G}_k\|_2.
+% \end{equation}
+% Оценим $\|\mathbf{J}_{SY}\|_2$:
+% \begin{align}
+%     \|\mathbf{J}_{SY}\|_2
+%     &=
+%     \left\|
+%         \mathbf{I}_{Td}
+%         +
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_2^\top
+%         \right)
+%         \mathbf{D}_{\sigma}(\mathbf{Y}\mathbf{W}_1)
+%         \left(
+%             \mathbf{I}_T \otimes \mathbf{W}_1^\top
+%         \right)
+%     \right\|_2 \\
+%     &\le
+%     1
+%     +
+%     \|\mathbf{W}_2\|_2
+%     \|\mathbf{W}_1\|_2.
+% \end{align}
+% Подстановка завершает доказательство.
+% \end{proof}
+
+% \begin{theorem}
+%     \label{thm:app-tr-GN-explicit}
+%     Пусть выполнено
+%     \begin{equation}
+%         \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}}.
+%     \end{equation}
+%     Тогда
+%     \begin{multline}
+%         \label{eq:app-tr-GN-explicit}
+%         \|\mathbf{G}(\mathbf{w})\|_2
+%         \le
+%         M_{\mathbf{A}}
+%         \|\mathbf{J}_Z\|_2^2
+%         \Bigg[
+%             \|\mathbf{W}_2\|_2^2\|\mathbf{Y}\|_2^2
+%             +
+%             \|\mathbf{W}_1\|_2^2\|\mathbf{Y}\|_2^2
+%             +
+%             \\
+%             +
+%             \left(
+%                 \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%             \right)^2
+%             \|\mathbf{J}_Y\|_2^2
+%             \left(
+%                 T^2\|\mathbf{X}\|_2^2
+%                 +
+%                 \frac{C_{\mathrm{sm}}^2}{d_k}
+%                 \|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2\|\mathbf{X}\|_2^6
+%                 +
+%                 \frac{C_{\mathrm{sm}}^2}{d_k}
+%                 \|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2\|\mathbf{X}\|_2^6
+%             \right)
+%         \Bigg].
+%     \end{multline}
+% \end{theorem}
+
+% \begin{proof}
+% По теореме \ref{thm:app-tr-GN-general-bound}
+% \begin{equation}
+%     \|\mathbf{G}(\mathbf{w})\|_2
+%     \le
+%     M_{\mathbf{A}}
+%     \left(
+%         \|\mathbf{J}^{(Q)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(K)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(V)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(1)}\|_2^2
+%         +
+%         \|\mathbf{J}^{(2)}\|_2^2
+%     \right).
+% \end{equation}
+% Для FFN-параметров имеем
+% \begin{equation}
+%     \|\mathbf{J}^{(1)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \|\mathbf{W}_2\|_2^2
+%     \|\mathbf{Y}\|_2^2,
+% \end{equation}
+% \begin{equation}
+%     \|\mathbf{J}^{(2)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \|\mathbf{W}_1\|_2^2
+%     \|\mathbf{Y}\|_2^2.
+% \end{equation}
+% Для attention-параметров, используя лемму \ref{lemma:app-tr-SA-jacobian-bounds}, получаем
+% \begin{equation}
+%     \|\mathbf{J}^{(V)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \left(
+%         \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%     \right)^2
+%     \|\mathbf{J}_Y\|_2^2
+%     T^2\|\mathbf{X}\|_2^2,
+% \end{equation}
+% \begin{equation}
+%     \|\mathbf{J}^{(Q)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \left(
+%         \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%     \right)^2
+%     \|\mathbf{J}_Y\|_2^2
+%     \frac{C_{\mathrm{sm}}^2}{d_k}
+%     \|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2\|\mathbf{X}\|_2^6,
+% \end{equation}
+% \begin{equation}
+%     \|\mathbf{J}^{(K)}\|_2^2
+%     \le
+%     \|\mathbf{J}_Z\|_2^2
+%     \left(
+%         \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%     \right)^2
+%     \|\mathbf{J}_Y\|_2^2
+%     \frac{C_{\mathrm{sm}}^2}{d_k}
+%     \|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2\|\mathbf{X}\|_2^6.
+% \end{equation}
+% Суммируя все пять слагаемых, приходим к \eqref{eq:app-tr-GN-explicit}.
+% \end{proof}
+
+% \begin{corollary}
+%     \label{cor:app-tr-GN-uniform}
+%     Пусть
+%     \begin{equation}
+%         \|\mathbf{A}(\mathbf{w})\|_2 \le M_{\mathbf{A}},
+%         \qquad
+%         \|\mathbf{X}\|_2 \le M_{\mathbf{X}},
+%         \qquad
+%         \|\mathbf{Y}\|_2 \le M_{\mathbf{Y}},
+%     \end{equation}
+%     \begin{equation}
+%         \|\mathbf{W}_Q\|_2,\|\mathbf{W}_K\|_2,\|\mathbf{W}_V\|_2,\|\mathbf{W}_1\|_2,\|\mathbf{W}_2\|_2
+%         \le
+%         M_{\mathbf{W}},
+%     \end{equation}
+%     \begin{equation}
+%         \sigma_{\min}(\mathbf{U}) \ge \sigma_0,
+%         \qquad
+%         \sigma_{\min}(\mathbf{S}) \ge \sigma_0 > 0.
+%     \end{equation}
+%     Обозначим
+%     \begin{equation}
+%         C_{\mathrm{LN}}(M)
+%         :=
+%         \frac{1}{\sigma_0}
+%         +
+%         \frac{M^2}{\sqrt d\,\sigma_0^3}.
+%     \end{equation}
+%     Тогда
+%     \begin{multline}
+%         \label{eq:app-tr-GN-uniform}
+%         \|\mathbf{G}(\mathbf{w})\|_2
+%         \le
+%         M_{\mathbf{A}}
+%         C_{\mathrm{LN}}(\|\mathbf{S}\|_2)^2
+%         \Bigg[
+%             2M_{\mathbf{Y}}^2M_{\mathbf{W}}^2
+%             +
+%             \\
+%             +
+%             \left(
+%                 M_{\mathbf{W}}^2 + 1
+%             \right)^2
+%             C_{\mathrm{LN}}(\|\mathbf{U}\|_2)^2
+%             \left(
+%                 T^2 M_{\mathbf{X}}^2
+%                 +
+%                 \frac{2C_{\mathrm{sm}}^2}{d_k}
+%                 M_{\mathbf{W}}^4 M_{\mathbf{X}}^6
+%             \right)
+%         \Bigg].
+%     \end{multline}
+% \end{corollary}
+
+% \begin{proof}
+% По лемме \ref{lemma:app-tr-LN-jacobian-bound}
+% \begin{equation}
+%     \|\mathbf{J}_Y\|_2
+%     \le
+%     C_{\mathrm{LN}}(\|\mathbf{U}\|_2),
+%     \qquad
+%     \|\mathbf{J}_Z\|_2
+%     \le
+%     C_{\mathrm{LN}}(\|\mathbf{S}\|_2).
+% \end{equation}
+% Далее в теореме \ref{thm:app-tr-GN-explicit} подставляем равномерные оценки
+% \begin{equation}
+%     \|\mathbf{W}_Q\|_2,\|\mathbf{W}_K\|_2,\|\mathbf{W}_V\|_2,\|\mathbf{W}_1\|_2,\|\mathbf{W}_2\|_2
+%     \le M_{\mathbf{W}},
+% \end{equation}
+% \begin{equation}
+%     \|\mathbf{X}\|_2 \le M_{\mathbf{X}},
+%     \qquad
+%     \|\mathbf{Y}\|_2 \le M_{\mathbf{Y}}.
+% \end{equation}
+% Первые два члена дают
+% \begin{equation}
+%     \|\mathbf{W}_2\|_2^2\|\mathbf{Y}\|_2^2
+%     +
+%     \|\mathbf{W}_1\|_2^2\|\mathbf{Y}\|_2^2
+%     \le
+%     2M_{\mathbf{Y}}^2M_{\mathbf{W}}^2.
+% \end{equation}
+% Для attention-части получаем
+% \begin{equation}
+%     \|\mathbf{W}_2\|_2\|\mathbf{W}_1\|_2 + 1
+%     \le
+%     M_{\mathbf{W}}^2 + 1,
+% \end{equation}
+% а сумма двух старших членов порядка $\|\mathbf{X}\|_2^6$ оценивается как
+% \begin{equation}
+%     \frac{C_{\mathrm{sm}}^2}{d_k}
+%     \|\mathbf{W}_V\|_2^2\|\mathbf{W}_K\|_2^2\|\mathbf{X}\|_2^6
+%     +
+%     \frac{C_{\mathrm{sm}}^2}{d_k}
+%     \|\mathbf{W}_V\|_2^2\|\mathbf{W}_Q\|_2^2\|\mathbf{X}\|_2^6
+%     \le
+%     \frac{2C_{\mathrm{sm}}^2}{d_k}M_{\mathbf{W}}^4M_{\mathbf{X}}^6.
+% \end{equation}
+% Подстановка этих оценок в \eqref{eq:app-tr-GN-explicit} завершает доказательство.
+% \end{proof}
