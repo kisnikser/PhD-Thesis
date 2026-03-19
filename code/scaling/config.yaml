@@ -16,31 +16,67 @@ experiment:
   lr: 1.0e-3
   train_epochs: 100
   
-  # Sample sizes to test
-  sample_sizes: [100, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000]
+  # Sample sizes - extended range with finer grid
+  sample_sizes: [100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 30000]
   
-  # Architectures to compare
+  # MLP architectures: MLP-L-h (L layers, h hidden dim)
+  # CNN architectures: CNN-L-c (L conv layers, c channels)
   architectures:
-    - name: "MLP-small"
-      hidden_dim: 32
+    # MLP architectures
+    - name: "MLP-2-64"
+      type: "MLP"
       num_layers: 2
-    - name: "MLP-medium"
       hidden_dim: 64
+    - name: "MLP-2-128"
+      type: "MLP"
       num_layers: 2
-    - name: "MLP-large"
       hidden_dim: 128
-      num_layers: 2
-    - name: "MLP-deep"
-      hidden_dim: 64
+    - name: "MLP-4-64"
+      type: "MLP"
       num_layers: 4
+      hidden_dim: 64
+    - name: "MLP-4-128"
+      type: "MLP"
+      num_layers: 4
+      hidden_dim: 128
+    - name: "MLP-8-64"
+      type: "MLP"
+      num_layers: 8
+      hidden_dim: 64
+    # CNN architectures
+    - name: "CNN-2-32"
+      type: "CNN"
+      num_layers: 2
+      hidden_dim: 32
+    - name: "CNN-2-64"
+      type: "CNN"
+      num_layers: 2
+      hidden_dim: 64
+    - name: "CNN-4-32"
+      type: "CNN"
+      num_layers: 4
+      hidden_dim: 32
+    - name: "CNN-4-64"
+      type: "CNN"
+      num_layers: 4
+      hidden_dim: 64
+    - name: "CNN-8-32"
+      type: "CNN"
+      num_layers: 8
+      hidden_dim: 32
   
-  # Criteria parameters
+  # Criteria parameters for Delta estimation
   delta1_eps: 0.5
   delta1_num_directions: 100
   delta2_sigma: 0.5
   delta2_num_samples: 200
   
-  # Thresholds for sufficient sample size (10^2 to 10^-5)
-  epsilon_thresholds: [100, 10, 1, 0.1, 0.01, 0.001, 0.0001, 0.00001]
+  # Curvature estimation parameters
+  curvature_power_iters: 30
+  curvature_max_samples: 500
+  curvature_late_epochs: [90, 92, 94, 96, 98, 100]
+  
+  # Thresholds for sufficient sample size m*(epsilon)
+  epsilon_thresholds: [0.1, 0.05, 0.01]
   
   num_seeds: 3

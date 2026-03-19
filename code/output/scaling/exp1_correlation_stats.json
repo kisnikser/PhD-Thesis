@@ -1,0 +1,38 @@
+{
+  "0.1": {
+    "MLP": {
+      "spearman_r": 1.0,
+      "spearman_p": 0.0,
+      "n_points": 4
+    },
+    "CNN": {
+      "spearman_r": 1.0,
+      "spearman_p": 0.0,
+      "n_points": 4
+    }
+  },
+  "0.05": {
+    "MLP": {
+      "spearman_r": 1.0,
+      "spearman_p": 0.0,
+      "n_points": 4
+    },
+    "CNN": {
+      "spearman_r": 1.0,
+      "spearman_p": 0.0,
+      "n_points": 4
+    }
+  },
+  "0.01": {
+    "MLP": {
+      "spearman_r": 1.0,
+      "spearman_p": 0.0,
+      "n_points": 4
+    },
+    "CNN": {
+      "spearman_r": 1.0,
+      "spearman_p": 0.0,
+      "n_points": 4
+    }
+  }
+}

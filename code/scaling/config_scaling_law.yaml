@@ -16,26 +16,56 @@ experiment:
   lr: 1.0e-3
   train_epochs: 100
   
-  # Sample sizes - denser grid
-  sample_sizes: [100, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 5000, 7000, 10000, 15000, 20000]
+  # Sample sizes - extended range with finer grid (same as Experiment 1)
+  sample_sizes: [100, 200, 300, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 30000]
   
-  # Architectures: MLP vs CNN comparison
+  # Same 10 architectures as Experiment 1 for direct comparison
   architectures:
-    - name: "MLP-64"
+    # MLP architectures: MLP-L-h (L layers, h hidden dim)
+    - name: "MLP-2-64"
       type: "MLP"
-      hidden_dim: 64
       num_layers: 2
-    - name: "MLP-128"
+      hidden_dim: 64
+    - name: "MLP-2-128"
       type: "MLP"
+      num_layers: 2
       hidden_dim: 128
-      num_layers: 2
-    - name: "CNN-32"
-      type: "CNN"
-      hidden_dim: 32
-      num_layers: 2
-    - name: "CNN-64"
-      type: "CNN"
+    - name: "MLP-4-64"
+      type: "MLP"
+      num_layers: 4
       hidden_dim: 64
+    - name: "MLP-4-128"
+      type: "MLP"
+      num_layers: 4
+      hidden_dim: 128
+    - name: "MLP-8-64"
+      type: "MLP"
+      num_layers: 8
+      hidden_dim: 64
+    # CNN architectures: CNN-L-c (L conv layers, c channels)
+    - name: "CNN-2-32"
+      type: "CNN"
       num_layers: 2
+      hidden_dim: 32
+    - name: "CNN-2-64"
+      type: "CNN"
+      num_layers: 2
+      hidden_dim: 64
+    - name: "CNN-4-32"
+      type: "CNN"
+      num_layers: 4
+      hidden_dim: 32
+    - name: "CNN-4-64"
+      type: "CNN"
+      num_layers: 4
+      hidden_dim: 64
+    - name: "CNN-8-32"
+      type: "CNN"
+      num_layers: 8
+      hidden_dim: 32
+  
+  # Curvature estimation parameters (same as Experiment 1)
+  curvature_power_iters: 30
+  curvature_max_samples: 500
   
   num_seeds: 3

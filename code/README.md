@@ -41,14 +41,18 @@ python plot_surface_2d.py
 python visualize_surface_3d.py
 ```
 
-### Chapter 4: Scaling
+### Chapter 4: Scaling Laws and Sample Size Criteria
 
 ```bash
 cd scaling
-python run_experiments.py      # m*(ε)
-python visualize.py
-python run_scaling_law.py      # MLP vs CNN
-python visualize_scaling_law.py
+
+# Experiment 1: Curvature vs Sufficient Sample Size
+python run_experiments.py      # computes Delta_1, Delta_2, curvature proxy M_G
+python visualize.py            # plots: Delta(m), M_G vs m*, correlation analysis
+
+# Experiment 2: Scaling Law Interpretation
+python run_scaling_law.py      # computes train/test gap, curvature
+python visualize_scaling_law.py # plots: E_hat(m), scaling fit, C_A vs M_G
 ```
 
 ## Output files
@@ -57,4 +61,4 @@ Results are saved in `output/`:
 - `hessian/` — `hessian_figures.pdf`
 - `hessian_cnn/` — `hessian_figures.pdf`
 - `landscape/` — `landscape_convergence.pdf`, `hessian_spectrum.pdf`, `loss_surface_2d.pdf`, `loss_surface_3d.pdf`
-- `scaling/` — `delta_vs_k.pdf`, `sufficient_sample_size.pdf`, `mlp_vs_cnn_loss.pdf`, `scaling_law_fit.pdf`
+- `scaling/` — `exp1_delta2_convergence.pdf`, `exp1_depth_analysis.pdf`, `exp1_m_star_vs_params.pdf`
