@@ -10,11 +10,16 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+from shared.plot_style import apply_plot_style
+
+
+apply_plot_style()
 
 
 def load_results(path=None):
@@ -84,8 +89,8 @@ def plot_convergence(agg_data, ax, title=""):
     delta1_means = [agg_data[k]["delta1_mean"] for k in ks]
     delta2_means = [agg_data[k]["delta2_mean"] for k in ks]
     
-    ax.loglog(ks, delta1_means, "o-", label=r"$\Delta_1$ (one-point)", color="tab:blue", markersize=8)
-    ax.loglog(ks, delta2_means, "s-", label=r"$\Delta_2$ (mean-squared)", color="tab:orange", markersize=8)
+    ax.loglog(ks, delta1_means, "o-", label=r"$\Delta_1$ (one-point)", color="tab:blue")
+    ax.loglog(ks, delta2_means, "s-", label=r"$\Delta_2$ (mean-squared)", color="tab:orange")
     
     subspace_dims = set()
     for k in ks:
@@ -95,23 +100,22 @@ def plot_convergence(agg_data, ax, title=""):
     colors = plt.cm.Greens(np.linspace(0.4, 0.9, len(subspace_dims)))
     for i, D in enumerate(subspace_dims):
         means = [agg_data[k]["delta2_subspace"].get(D, {}).get("mean", np.nan) for k in ks]
-        ax.loglog(ks, means, "^--", label=rf"$\Delta_2^{{({D})}}$", color=colors[i], markersize=8)
+        ax.loglog(ks, means, "^--", label=rf"$\Delta_2^{{({D})}}$", color=colors[i])
     
     k_range = np.array([min(ks), max(ks)], dtype=float)
     
     alpha1, C1, _ = fit_power_law(np.array(ks), np.array(delta1_means))
     ref1 = C1 * k_range ** (-1)
-    ax.loglog(k_range, ref1, ":", color="gray", alpha=0.7, label=r"$\propto k^{-1}$", linewidth=2)
+    ax.loglog(k_range, ref1, ":", color="gray", alpha=0.7, label=r"$\propto k^{-1}$")
     
     alpha2, C2, _ = fit_power_law(np.array(ks), np.array(delta2_means))
     ref2 = C2 * k_range ** (-2)
-    ax.loglog(k_range, ref2, "--", color="gray", alpha=0.7, label=r"$\propto k^{-2}$", linewidth=2)
+    ax.loglog(k_range, ref2, "--", color="gray", alpha=0.7, label=r"$\propto k^{-2}$")
     
-    ax.set_xlabel("Sample size $k$", fontsize=14)
-    ax.set_ylabel("Criterion value", fontsize=14)
-    ax.set_title(title, fontsize=16)
+    ax.set_xlabel("Sample size $k$")
+    ax.set_ylabel("Criterion value")
+    ax.set_title(title)
     ax.legend(fontsize=12)
-    ax.tick_params(axis='both', which='major', labelsize=12)
     ax.grid(True, alpha=0.3)
 
 

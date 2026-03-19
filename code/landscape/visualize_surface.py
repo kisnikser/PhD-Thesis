@@ -8,7 +8,8 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import torch
 import torch.nn.functional as F
@@ -17,10 +18,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from omegaconf import OmegaConf
 
-from code.shared.data import get_mnist_dataset
-from code.hessian.mlp import get_mlp
-from code.landscape.eigenvectors import compute_top_eigenvectors
-from code.landscape.criteria import _get_flat_params, _set_flat_params
+from shared.data import get_mnist_dataset
+from hessian.mlp import get_mlp
+from eigenvectors import compute_top_eigenvectors
+from criteria import _get_flat_params, _set_flat_params
+from shared.plot_style import apply_plot_style
+
+
+apply_plot_style()
 
 
 def compute_loss_at_point(model, w, x, y):
@@ -35,11 +40,10 @@ def compute_loss_at_point(model, w, x, y):
 def plot_eigenvalue_spectrum(eigenvalues, ax, title="Hessian Eigenvalue Spectrum"):
     """Plot eigenvalues in log scale."""
     indices = np.arange(1, len(eigenvalues) + 1)
-    ax.semilogy(indices, eigenvalues, "o-", markersize=8, color="tab:blue")
-    ax.set_xlabel("Eigenvalue index $i$", fontsize=14)
-    ax.set_ylabel("Eigenvalue $\\lambda_i$", fontsize=14)
-    ax.set_title(title, fontsize=16)
-    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.semilogy(indices, eigenvalues, "o-", color="tab:blue")
+    ax.set_xlabel("Eigenvalue index $i$")
+    ax.set_ylabel("Eigenvalue $\\lambda_i$")
+    ax.set_title(title)
     ax.grid(True, alpha=0.3)
 
 
@@ -78,15 +82,14 @@ def plot_2d_surface(alphas, betas, Z, ax, title="", xlabel="", ylabel=""):
     
     levels = np.linspace(Z.min(), min(Z.max(), Z.min() + 5), 30)
     contour = ax.contourf(A, B, Z, levels=levels, cmap="viridis")
-    ax.contour(A, B, Z, levels=levels, colors="white", alpha=0.3, linewidths=0.5)
+    ax.contour(A, B, Z, levels=levels, colors="white", alpha=0.3)
     
-    ax.plot(0, 0, "r*", markersize=15, label="$w_k^*$")
+    ax.plot(0, 0, "r*", label=r"$\mathbf w_k^*$", markersize=10)
     
-    ax.set_xlabel(xlabel, fontsize=14)
-    ax.set_ylabel(ylabel, fontsize=14)
-    ax.set_title(title, fontsize=16)
-    ax.tick_params(axis='both', which='major', labelsize=12)
-    ax.legend(fontsize=12)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend()
     
     return contour
 
@@ -201,8 +204,8 @@ def main():
     contour2 = plot_2d_surface(
         alphas_e, betas_e, Z_eigen, axes[1],
         title="Loss Surface: Top-2 Eigenvectors",
-        xlabel=f"$u_1$ ($\\lambda_1={eigenvalues[0]:.1f}$)",
-        ylabel=f"$u_2$ ($\\lambda_2={eigenvalues[1]:.1f}$)"
+        xlabel=fr"$\mathbf u_1$ ($\lambda_1={eigenvalues[0]:.1f}$)",
+        ylabel=fr"$\mathbf u_2$ ($\lambda_2={eigenvalues[1]:.1f}$)"
     )
     
     plt.tight_layout()

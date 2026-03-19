@@ -9,23 +9,24 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Subset
 from omegaconf import OmegaConf
 
-from code.shared.data import get_mnist_dataset
-from code.hessian.mlp import get_mlp
-from code.landscape.criteria import (
+from shared.data import get_mnist_dataset
+from hessian.mlp import get_mlp
+from criteria import (
     compute_delta1,
     compute_delta2,
     compute_delta2_subspace,
     _get_flat_params,
     _set_flat_params,
 )
-from code.landscape.eigenvectors import compute_top_eigenvectors
+from eigenvectors import compute_top_eigenvectors
 
 
 def train_model(model, train_loader, lr, num_epochs, device, dtype):

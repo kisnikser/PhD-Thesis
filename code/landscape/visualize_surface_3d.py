@@ -9,7 +9,8 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import torch
 import torch.nn.functional as F
@@ -20,10 +21,14 @@ from matplotlib.ticker import ScalarFormatter
 import numpy as np
 from omegaconf import OmegaConf
 
-from code.shared.data import get_mnist_dataset
-from code.hessian.mlp import get_mlp
-from code.landscape.eigenvectors import compute_top_eigenvectors
-from code.landscape.criteria import _get_flat_params, _set_flat_params
+from shared.data import get_mnist_dataset
+from hessian.mlp import get_mlp
+from eigenvectors import compute_top_eigenvectors
+from criteria import _get_flat_params, _set_flat_params
+from shared.plot_style import apply_plot_style
+
+
+apply_plot_style()
 
 
 def compute_loss_at_point(model, w, x, y):
@@ -100,20 +105,17 @@ def plot_3d_surface(alphas, betas, Z, ax, title="", xlabel="", ylabel="",
     ax.scatter([0], [0], [z_center], 
                color='red', s=100, marker='*', label='$w_k^*$')
     
-    ax.set_xlabel(xlabel, fontsize=16, labelpad=10)
-    ax.set_ylabel(ylabel, fontsize=16, labelpad=10)
+    ax.set_xlabel(xlabel, labelpad=10)
+    ax.set_ylabel(ylabel, labelpad=10)
     
     # Add exponent to title if needed
     if exponent_label:
         full_title = f"{title}\n(Loss {exponent_label})"
     else:
         full_title = title
-    ax.set_title(full_title, fontsize=18, pad=20)
+    ax.set_title(full_title, pad=20)
     
     ax.view_init(elev=elev, azim=azim)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.tick_params(axis='z', which='major', labelsize=12)
-    
     # Hide z-axis label
     ax.set_zlabel("")
     
@@ -248,7 +250,7 @@ def main():
         elev=25, azim=45
     )
     
-    plt.subplots_adjust(left=0.05, right=0.95, wspace=0.15)
+    plt.subplots_adjust(left=0.05, right=0.95, wspace=-0.08)
     fig.savefig(out_dir / "loss_surface_3d.pdf", bbox_inches="tight")
     fig.savefig(out_dir / "loss_surface_3d.png", bbox_inches="tight", dpi=150)
     plt.close()

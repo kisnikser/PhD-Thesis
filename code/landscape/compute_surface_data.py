@@ -7,7 +7,8 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import torch
 import torch.nn.functional as F
@@ -15,10 +16,10 @@ from torch.utils.data import DataLoader, Subset
 import numpy as np
 from omegaconf import OmegaConf
 
-from code.shared.data import get_mnist_dataset
-from code.hessian.mlp import get_mlp
-from code.landscape.eigenvectors import compute_top_eigenvectors
-from code.landscape.criteria import _get_flat_params, _set_flat_params
+from shared.data import get_mnist_dataset
+from hessian.mlp import get_mlp
+from eigenvectors import compute_top_eigenvectors
+from criteria import _get_flat_params, _set_flat_params
 
 
 def compute_loss_at_point(model, w, x, y):

@@ -4,10 +4,15 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shared.plot_style import apply_plot_style
+
+
+apply_plot_style()
 
 
 def load_results(path=None):
@@ -36,11 +41,11 @@ def plot_rho_vs_epoch(data, ax):
         ax.plot(epochs, rho, "o-", color=colors[i % len(colors)], label=f"L={int(L)}, h={int(h)}")
     ax.axhline(1.0, color="gray", linestyle=":", alpha=0.7)
     ax.set_xlabel("Epoch")
-    ax.set_ylabel("ρ = ‖G‖₂ / ‖H‖₂")
+    ax.set_ylabel(r"$\rho = \|\mathbf G\|_2 / \|\mathbf H\|_2$")
     all_epochs = sorted(set(0 if r["epoch"] == -1 else r["epoch"] for r in data))
     ax.set_xticks(all_epochs)
     ax.set_xticklabels(["init" if e == 0 else str(int(e)) for e in all_epochs])
-    ax.legend(ncol=2, fontsize=8)
+    ax.legend(ncol=2, fontsize=10)
     ax.set_ylim(0, 1.05)
     ax.grid(True, alpha=0.3)
 
@@ -54,22 +59,22 @@ def plot_bound_vs_empirical(data, ax):
             continue
         g_norm = np.array([r["G_norm"] for r in data])[mask]
         g_bound = np.array([r["G_bound"] for r in data])[mask]
-        ax.scatter(g_bound, g_norm, color=colors[i % len(colors)], s=60, alpha=0.8, edgecolors="black", linewidths=0.5, label=f"L={int(L)}, h={int(h)}")
+        ax.scatter(g_bound, g_norm, color=colors[i % len(colors)], s=60, alpha=0.8, edgecolors="black", label=f"L={int(L)}, h={int(h)}")
     g_norm_all = np.array([r["G_norm"] for r in data])
     g_bound_all = np.array([r["G_bound"] for r in data])
     lims = [min(g_bound_all.min(), g_norm_all.min()) * 0.5, max(g_bound_all.max(), g_norm_all.max()) * 2]
-    ax.plot(lims, lims, "k--", alpha=0.5, label="G_bound = G_norm")
-    ax.set_xlabel("Theoretical bound ‖G‖₂")
-    ax.set_ylabel("Empirical ‖G‖₂")
+    ax.plot(lims, lims, "k--", alpha=0.5)
+    ax.set_xlabel(r"Theoretical bound $\|\mathbf G\|_2$")
+    ax.set_ylabel(r"Empirical $\|\mathbf G\|_2$")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.legend(ncol=2, fontsize=8)
+    ax.legend(ncol=2, fontsize=10)
     ax.grid(True, alpha=0.3)
 
 
 def make_table(data):
     groups = _groups(data)
-    header = ["Depth", "hidden_dim", "Epoch", "‖H‖₂", "‖G‖₂", "ρ_GN/H", "‖G‖₂ bound"]
+    header = ["Depth", "hidden_dim", "Epoch", r"$|\mathbf{H}|_2$", r"$|\mathbf{G}|_2$", r"$\rho_{\mathrm{GN}/H}$", r"$|\mathbf{G}|_2$ bound"]
     rows = []
     for (L, h) in groups:
         for r in sorted([x for x in data if x["depth"] == L and x.get("hidden_dim", 64) == h], key=lambda x: x["epoch"]):

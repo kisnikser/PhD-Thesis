@@ -8,10 +8,15 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shared.plot_style import apply_plot_style
+
+
+apply_plot_style()
 
 
 def main():
@@ -32,22 +37,21 @@ def main():
     # Colors for different epochs
     colors = plt.cm.viridis(np.linspace(0.1, 0.9, len(epochs)))
     
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(8, 6))
     
     for i, epoch in enumerate(epochs):
         eigenvalues = np.array(spectra[str(epoch)]["eigenvalues"])
         loss = spectra[str(epoch)]["loss"]
         indices = np.arange(1, len(eigenvalues) + 1)
         
-        label = f"Epoch {epoch} (Loss={loss:.2f})"
-        ax.semilogy(indices, eigenvalues, "o-", markersize=6, 
-                    color=colors[i], label=label, linewidth=2)
+        label = f"Epoch {epoch} (Loss={loss:.3f})"
+        ax.semilogy(indices, eigenvalues, "o-",
+                    color=colors[i], label=label)
     
-    ax.set_xlabel("Eigenvalue index $i$", fontsize=16)
-    ax.set_ylabel("Eigenvalue $\\lambda_i$", fontsize=16)
-    # ax.set_title("Hessian Eigenvalue Spectrum During Training", fontsize=18)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.legend(fontsize=12, loc='upper right')
+    ax.set_xlabel("Eigenvalue index $i$")
+    ax.set_ylabel("Eigenvalue $\\lambda_i$")
+    # ax.set_title("Hessian Eigenvalue Spectrum During Training")
+    ax.legend(loc='upper right')
     ax.grid(True, alpha=0.3)
     
     plt.tight_layout()

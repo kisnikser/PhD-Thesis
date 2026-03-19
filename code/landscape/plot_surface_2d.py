@@ -6,10 +6,15 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shared.plot_style import apply_plot_style
+
+
+apply_plot_style()
 
 
 def plot_2d_surface(alphas, betas, Z, ax, title="", xlabel="", ylabel=""):
@@ -18,15 +23,14 @@ def plot_2d_surface(alphas, betas, Z, ax, title="", xlabel="", ylabel=""):
     
     levels = np.linspace(Z.min(), min(Z.max(), Z.min() + 5), 30)
     contour = ax.contourf(A, B, Z, levels=levels, cmap="viridis")
-    ax.contour(A, B, Z, levels=levels, colors="white", alpha=0.3, linewidths=0.5)
+    ax.contour(A, B, Z, levels=levels, colors="white", alpha=0.3)
     
-    ax.plot(0, 0, "r*", markersize=15, label="$w_k^*$")
+    ax.plot(0, 0, "r*", label="$w_k^*$")
     
-    ax.set_xlabel(xlabel, fontsize=16)
-    ax.set_ylabel(ylabel, fontsize=16)
-    ax.set_title(title, fontsize=18)
-    ax.tick_params(axis='both', which='major', labelsize=14)
-    ax.legend(fontsize=12)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.legend()
     
     return contour
 

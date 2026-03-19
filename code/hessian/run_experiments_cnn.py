@@ -3,15 +3,16 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import torch
 import torch.nn.functional as F
 from omegaconf import OmegaConf
 
-from code.shared.data import get_mnist_loader
-from code.hessian.cnn import get_cnn
-from code.hessian.spectra import gn_matvec_cnn, hessian_matvec, power_iteration
+from shared.data import get_mnist_loader
+from cnn import get_cnn
+from spectra import gn_matvec_cnn, hessian_matvec, power_iteration
 
 
 def train_epoch(model, loader, optimizer, device, dtype):
