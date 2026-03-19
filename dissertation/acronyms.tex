@@ -1,5 +1,3 @@
-% TODO
-
 \nomenclature[00]{$\mathbb{R}$}{множество вещественных чисел}
 \nomenclature[01]{$\mathbb{X} \subset \mathbb{R}^{n}$}{пространство исходной переменной}
 \nomenclature[02]{$\mathbf{x} \in \mathbb{X}$}{вектор признакового описания}
@@ -12,7 +10,7 @@
 \nomenclature[09]{$\mathbf{w} \in \mathbb{W}$}{вектор параметров модели}
 \nomenclature[10]{$f_{\mathbf{w}}: \mathbb{X} \to \mathbb{Y}$}{параметрическая модель}
 \nomenclature[11]{$\ell: \mathbb{Y} \times \mathbb{Y} \to \mathbb{R}$}{функция ошибки}
-\nomenclature[12]{$\mathcal{L}_m: \mathbb{W} \to \mathbb{R}$}{эмирическая функция потерь на выборке~$\mathfrak{D}_{m}$}
+\nomenclature[12]{$\mathcal{L}_m: \mathbb{W} \to \mathbb{R}$}{эмпирическая функция потерь на выборке~$\mathfrak{D}_{m}$}
 \nomenclature[13]{$\mathcal{L}: \mathbb{W} \to \mathbb{R}$}{популяционная функция потерь}
 \nomenclature[14]{$p(\mathbf{y} | \mathbf{x}, \mathbf{w})$}{правдоподобие объекта}
 \nomenclature[15]{$p(\mathbf{w})$}{априорное распределение параметров модели}
@@ -27,7 +25,23 @@
 \nomenclature[24]{$\mathbf{A}(\mathbf{w}) \in \mathbb{R}^{K \times K}$}{матрица кривизны функции потерь по выходу модели}
 \nomenclature[25]{$\mathbf{G}(\mathbf{w}) \in \mathbb{R}^{N \times N}$}{гаусс-ньютоновская компонента матрицы Гессе}
 \nomenclature[26]{$\mathbf{R}(\mathbf{w}) \in \mathbb{R}^{N \times N}$}{остаточная компонента матрицы Гессе}
+\nomenclature[27]{$\mathbf{S}^{(p)}(\mathbf{w}) \in \mathbb{R}^{K \times n_p}$}{матрица распространения возмущения предактивации $p$-го слоя к выходу сети}
+\nomenclature[28]{$\mathbf{P}^{(p)}(\mathbf{w}) \in \mathbb{R}^{n_p \times N_p}$}{параметрический якобиан $p$-го слоя}
+\nomenclature[29]{$\mathbf{D}^{(p)}(\mathbf{w}) \in \mathbb{R}^{n_p \times n_p}$}{диагональная матрица производных активации}
+\nomenclature[30]{$q(\mathbf{w})$}{функция предпочтения по выбору точек для оценки сходимости ландшафта функции потерь}
+\nomenclature[31]{$\Delta_{p}(k)$}{критерий $p$-сходимости ландшафта функции потерь}
+\nomenclature[32]{$\Delta_{1}(k)$}{абсолютный одноточечный критерий сходимости ландшафта функции потерь}
+\nomenclature[33]{$\Delta_{2}(k)$}{среднеквадратичный критерий сходимости ландшафта функции потерь}
+\nomenclature[34]{$\Delta_{2}^{(D)}(k)$}{среднеквадратичный критерий сходимости в подпространстве наибольшей кривизны размерности $D$}
+\nomenclature[35]{$\mathcal{S}_{D} \subset \mathbb{R}^{N}$}{подпространство наибольшей кривизны размерности $D$}
+\nomenclature[36]{$M_{G}(\mathcal{A})$}{локальная архитектурно-зависимая константа кривизны}
+\nomenclature[37]{$\mathbf{X}_{m} = \left[ \mathbf{x}_1, \ldots, \mathbf{x}_m \right]^\top \in \mathbb{R}^{m \times n}$}{матрица объекты-признаки}
+\nomenclature[38]{$\mathbf{y}_{m} = \left[ y_1, \ldots, y_m \right]^\top \in \mathbb{R}^{m}$}{вектор значений целевой переменной}
+\nomenclature[39]{$L(\mathfrak{D}_m, \mathbf{w})$}{функция правдоподобия выборки}
+\nomenclature[40]{$l(\mathfrak{D}_m, \mathbf{w})$}{логарифмическая функция правдоподобия выборки}
+\nomenclature[41]{$\hat{\mathbf{w}}_{k} \in \mathbb{R}^{n}$}{оценка максимума правдоподобия по подвыборке $\mathfrak{D}_{k}$}
+\nomenclature[42]{$\mathcal{I}(\mathbf{w}) \in \mathbb{R}^{n \times n}$}{информационная матрица Фишера}
+\nomenclature[43]{$D_{\text{KL}}(p \| q)$}{дивергенция Кульбака~--"Лейблера}
+\nomenclature[44]{$\text{s-score}$}{функция близости распределений $\text{s-score}$}
 
-
-
-\printnomenclature[3.5cm] % Значение ширины столбца с обозначениями стоит подбирать вручную
+\printnomenclature[4.5cm] % Значение ширины столбца с обозначениями стоит подбирать вручную
