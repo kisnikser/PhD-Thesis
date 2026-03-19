@@ -14,22 +14,17 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy import stats
+from shared.plot_style import apply_plot_style
 
 
-plt.rcParams.update({
-    'font.size': 12,
-    'axes.labelsize': 14,
-    'axes.titlesize': 16,
-    'legend.fontsize': 10,
-    'xtick.labelsize': 12,
-    'ytick.labelsize': 12,
-})
+apply_plot_style()
 
 
 MLP_COLORS = plt.cm.Blues(np.linspace(0.4, 0.9, 5))
@@ -218,7 +213,10 @@ def get_architecture_fits(data):
 
 def plot_gap_vs_m(data, ax):
     """Plot generalization gap E_hat(m) vs m for all architectures."""
+    excluded_arches = {"CNN-2-32", "CNN-2-64"}
     for arch_name, arch_data in data["architectures"].items():
+        if arch_name in excluded_arches:
+            continue
         agg = aggregate_results(arch_data)
         m = agg["m"]
         gap_mean = agg["gap_mean"]
@@ -229,19 +227,18 @@ def plot_gap_vs_m(data, ax):
         color = get_arch_color(arch_name)
         marker = get_arch_marker(arch_name)
         
-        ax.loglog(m[mask], gap_mean[mask], f"{marker}-", color=color, 
-                  label=arch_name, linewidth=2, markersize=6, alpha=0.8)
+        ax.loglog(m[mask], gap_mean[mask], f"{marker}-", color=color, label=arch_name, alpha=0.8)
         
         lower = np.maximum(gap_mean[mask] - gap_std[mask], 1e-10)
         upper = gap_mean[mask] + gap_std[mask]
         ax.fill_between(m[mask], lower, upper, color=color, alpha=0.15)
     
     m_range = np.array([100, 10000], dtype=float)
-    ax.loglog(m_range, 10 / m_range, "k--", alpha=0.5, label=r"$\propto m^{-1}$", linewidth=1.5)
+    ax.loglog(m_range, 10 / m_range, "k--", alpha=0.5, label=r"$\propto m^{-1}$")
     
     ax.set_xlabel("Sample size $m$")
     ax.set_ylabel(r"Generalization gap $\widehat{\mathcal{E}}(m)$")
-    ax.legend(loc='upper right', ncol=2, fontsize=9)
+    ax.legend(loc='upper right', ncol=2)
     ax.grid(True, alpha=0.3, which='both')
 
 
@@ -257,7 +254,7 @@ def plot_scaling_law_fits(data, ax, use_shared_rho=False):
         mask = gap_mean > 0
         color = get_arch_color(arch_name)
         
-        ax.loglog(m[mask], gap_mean[mask], "o", color=color, markersize=6, alpha=0.7)
+        ax.loglog(m[mask], gap_mean[mask], "o", color=color, alpha=0.7)
         
         fit = next(f for f in fits if f["name"] == arch_name)
         
@@ -269,14 +266,14 @@ def plot_scaling_law_fits(data, ax, use_shared_rho=False):
             C = fit["C_individual"]
             rho = fit["rho_individual"]
             if C is not None:
-                label = f"{arch_name}: C={C:.1f}, ρ={rho:.2f}"
+                label = rf"{arch_name}: $C={C:.1f}, \rho={rho:.2f}$"
             else:
                 label = arch_name
         
         if C is not None:
             m_fit = np.linspace(m.min(), m.max(), 100)
             gap_fit = scaling_law_power(m_fit, C, rho)
-            ax.loglog(m_fit, gap_fit, "-", color=color, linewidth=2, label=label)
+            ax.loglog(m_fit, gap_fit, "-", color=color, label=label)
     
     ax.set_xlabel("Sample size $m$")
     ax.set_ylabel(r"Generalization gap $\widehat{\mathcal{E}}(m)$")
@@ -286,7 +283,7 @@ def plot_scaling_law_fits(data, ax, use_shared_rho=False):
     else:
         ax.set_title("Individual exponents")
     
-    ax.legend(loc='upper right', fontsize=8, ncol=2)
+    ax.legend(loc='upper right', ncol=2, fontsize=10)
     ax.grid(True, alpha=0.3, which='both')
 
 
@@ -314,8 +311,7 @@ def plot_C_vs_curvature(data, ax, use_shared_rho=True):
     for C, curv, name, arch_type in zip(Cs, curvatures, names, types):
         color = get_arch_color(name)
         marker = "o" if arch_type == "MLP" else "s"
-        ax.scatter(curv, C, c=[color], marker=marker, s=100,
-                   label=name, edgecolors='black', linewidth=0.5)
+        ax.scatter(curv, C, c=[color], marker=marker, s=100, label=name, edgecolors='black')
     
     if len(Cs) >= 3:
         log_curv = np.log(curvatures)
@@ -324,19 +320,19 @@ def plot_C_vs_curvature(data, ax, use_shared_rho=True):
         
         curv_fit = np.linspace(curvatures.min() * 0.8, curvatures.max() * 1.2, 100)
         C_fit = np.exp(intercept) * curv_fit ** slope
-        ax.plot(curv_fit, C_fit, 'k--', linewidth=2, alpha=0.7,
-                label=f"Fit: $C \\propto M_G^{{{slope:.2f}}}$ (R²={r_value**2:.2f})")
+        ax.plot(curv_fit, C_fit, 'k--', alpha=0.7,
+                label=rf"Fit: $C \propto M_G^{{{slope:.2f}}}$ ($R^2$={r_value**2:.2f})")
         
         pearson_r, _ = stats.pearsonr(curvatures, Cs)
         spearman_r, _ = stats.spearmanr(curvatures, Cs)
         
         ax.text(0.05, 0.95, f"Pearson r = {pearson_r:.2f}\nSpearman r = {spearman_r:.2f}",
-                transform=ax.transAxes, fontsize=10, verticalalignment='top',
+                transform=ax.transAxes, verticalalignment='top',
                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
     
     ax.set_xlabel(r"Curvature proxy $\widehat{M}_{\mathbf{G}}$")
     ax.set_ylabel(r"Scaling coefficient $C_{\mathcal{A}}$")
-    ax.legend(loc='lower right', fontsize=8, ncol=2)
+    ax.legend(loc='lower right', ncol=2)
     ax.grid(True, alpha=0.3)
     ax.set_xscale('log')
     ax.set_yscale('log')
@@ -361,17 +357,17 @@ def plot_mlp_vs_cnn_gap(data, ax):
     for i, (name, n_params, m, gap) in enumerate(mlp_data):
         mask = gap > 0
         ax.loglog(m[mask], gap[mask], linestyle=linestyles[i % len(linestyles)],
-                  color='steelblue', linewidth=2, label=f"{name} (N={n_params:,})")
+                  color='steelblue', label=f"{name} (N={n_params:,})")
     
     for i, (name, n_params, m, gap) in enumerate(cnn_data):
         mask = gap > 0
         ax.loglog(m[mask], gap[mask], linestyle=linestyles[i % len(linestyles)],
-                  color='darkorange', linewidth=2, label=f"{name} (N={n_params:,})")
+                  color='darkorange', label=f"{name} (N={n_params:,})")
     
     ax.set_xlabel("Sample size $m$")
     ax.set_ylabel(r"Generalization gap $\widehat{\mathcal{E}}(m)$")
     ax.set_title("MLP vs CNN Comparison")
-    ax.legend(loc='upper right', fontsize=9)
+    ax.legend(loc='upper right')
     ax.grid(True, alpha=0.3, which='both')
 
 

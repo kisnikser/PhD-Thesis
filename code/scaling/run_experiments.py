@@ -12,7 +12,8 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import torch
 import torch.nn.functional as F
@@ -20,15 +21,15 @@ from torch.utils.data import DataLoader, Subset
 from omegaconf import OmegaConf
 import numpy as np
 
-from code.shared.data import get_mnist_dataset
-from code.hessian.mlp import get_mlp
-from code.hessian.cnn import get_cnn
-from code.landscape.criteria import (
+from shared.data import get_mnist_dataset
+from hessian.mlp import get_mlp
+from hessian.cnn import get_cnn
+from landscape.criteria import (
     compute_delta1,
     compute_delta2,
     _get_flat_params,
 )
-from code.scaling.curvature import compute_curvature_proxy
+from curvature import compute_curvature_proxy
 
 
 def create_model(arch_config, conf, device, dtype):

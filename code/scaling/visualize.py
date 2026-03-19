@@ -12,10 +12,12 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shared.plot_style import apply_plot_style
 
 
 def spearmanr(x, y):
@@ -32,15 +34,7 @@ def spearmanr(x, y):
     
     return rho, 0.0
 
-plt.rcParams.update({
-    'font.size': 12,
-    'axes.labelsize': 14,
-    'axes.titlesize': 16,
-    'legend.fontsize': 11,
-    'xtick.labelsize': 12,
-    'ytick.labelsize': 12,
-    'figure.dpi': 100,
-})
+apply_plot_style()
 
 
 COLORS = {
@@ -131,19 +125,17 @@ def plot_delta2_convergence(data, ax):
         
         marker = DEPTH_MARKERS[depth]
         
-        ax.loglog(m, mean, f"{marker}-", color=color, label=arch_name, 
-                  linewidth=2, markersize=7, alpha=0.85)
+        ax.loglog(m, mean, f"{marker}-", color=color, label=arch_name, alpha=0.85)
         ax.fill_between(m, np.maximum(mean - std, 1e-10), mean + std, 
                         color=color, alpha=0.15)
     
     m_range = np.array([100, 10000], dtype=float)
     ref_val = 0.5
-    ax.loglog(m_range, ref_val * (m_range[0]/m_range)**2, 'k--', 
-              linewidth=2, alpha=0.6, label=r'$\propto m^{-2}$ (теория)')
+    ax.loglog(m_range, ref_val * (m_range[0]/m_range)**2, 'k--', alpha=0.6, label=r'$\propto m^{-2}$ (theory)')
     
-    ax.set_xlabel("Размер выборки $m$")
-    ax.set_ylabel(r"Критерий $\Delta_2(m)$")
-    ax.legend(loc='upper right', ncol=2, fontsize=9)
+    ax.set_xlabel(r"Sample size $m$")
+    ax.set_ylabel(r"Criterion $\Delta_2(m)$")
+    ax.legend(loc='upper right', ncol=2)
     ax.grid(True, alpha=0.3, which='both')
     ax.set_xlim([80, 15000])
 
@@ -152,10 +144,17 @@ def plot_depth_vs_m_star(data, ax, epsilon=0.05):
     """Plot depth vs m* for MLP and CNN families separately."""
     summaries = get_architecture_summary(data)
     
-    mlp_data = [(s["num_layers"], s["m_star"].get(epsilon), s["name"]) 
-                for s in summaries if s["type"] == "MLP"]
-    cnn_data = [(s["num_layers"], s["m_star"].get(epsilon), s["name"]) 
-                for s in summaries if s["type"] == "CNN"]
+    allowed_depths = {2, 4}
+    mlp_data = [
+        (s["num_layers"], s["m_star"].get(epsilon), s["name"])
+        for s in summaries
+        if s["type"] == "MLP" and s["num_layers"] in allowed_depths
+    ]
+    cnn_data = [
+        (s["num_layers"], s["m_star"].get(epsilon), s["name"])
+        for s in summaries
+        if s["type"] == "CNN" and s["num_layers"] in allowed_depths
+    ]
     
     mlp_depths = []
     mlp_m_stars = []
@@ -172,21 +171,17 @@ def plot_depth_vs_m_star(data, ax, epsilon=0.05):
             cnn_m_stars.append(m_star)
     
     if mlp_depths:
-        ax.semilogy(mlp_depths, mlp_m_stars, 'o-', color=COLORS['MLP'], 
-                   linewidth=2.5, markersize=12, label='MLP', markeredgecolor='white',
-                   markeredgewidth=1.5)
+        ax.semilogy(mlp_depths, mlp_m_stars, 'o-', color=COLORS['MLP'], label='MLP', markeredgecolor='white')
     
     if cnn_depths:
-        ax.semilogy(cnn_depths, cnn_m_stars, 's-', color=COLORS['CNN'],
-                   linewidth=2.5, markersize=12, label='CNN', markeredgecolor='white',
-                   markeredgewidth=1.5)
+        ax.semilogy(cnn_depths, cnn_m_stars, 's-', color=COLORS['CNN'], label='CNN', markeredgecolor='white')
     
-    ax.set_xlabel("Глубина $L$ (число слоёв)")
-    ax.set_ylabel(r"Достаточный размер выборки $m^*$")
-    ax.set_title(f"Влияние глубины на $m^*(\\varepsilon={epsilon})$")
-    ax.legend(fontsize=12)
+    ax.set_xlabel(r"Depth $L$ (number of layers)")
+    ax.set_ylabel(r"Sufficient sample size $m^*$")
+    ax.set_title(rf"Depth effect on $m^*(\varepsilon={epsilon})$")
+    ax.legend()
     ax.grid(True, alpha=0.3, which='both')
-    ax.set_xticks([2, 4, 8])
+    ax.set_xticks([2, 4])
 
 
 def plot_mlp_vs_cnn_comparison(data, ax, epsilon=0.05):
@@ -226,24 +221,22 @@ def plot_mlp_vs_cnn_comparison(data, ax, epsilon=0.05):
     x = np.array(x_positions)
     width = 0.35
     
-    bars1 = ax.bar(x - width/2, mlp_m_stars, width, label='MLP', 
-                   color=COLORS['MLP'], edgecolor='white', linewidth=1.5)
-    bars2 = ax.bar(x + width/2, cnn_m_stars, width, label='CNN',
-                   color=COLORS['CNN'], edgecolor='white', linewidth=1.5)
+    bars1 = ax.bar(x - width/2, mlp_m_stars, width, label='MLP', color=COLORS['MLP'], edgecolor='white')
+    bars2 = ax.bar(x + width/2, cnn_m_stars, width, label='CNN', color=COLORS['CNN'], edgecolor='white')
     
     for bar, m_star in zip(bars1, mlp_m_stars):
         ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100, 
-                f'{m_star}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+                f'{m_star}', ha='center', va='bottom', fontweight='bold')
     for bar, m_star in zip(bars2, cnn_m_stars):
         ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 100,
-                f'{m_star}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+                f'{m_star}', ha='center', va='bottom', fontweight='bold')
     
-    ax.set_xlabel("Глубина")
-    ax.set_ylabel(r"Достаточный размер выборки $m^*$")
+    ax.set_xlabel("Depth")
+    ax.set_ylabel(r"Sufficient sample size $m^*$")
     ax.set_title(f"MLP vs CNN: $m^*(\\varepsilon={epsilon})$")
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
-    ax.legend(fontsize=12)
+    ax.legend()
     ax.grid(True, alpha=0.3, axis='y')
     ax.set_yscale('log')
 
@@ -251,8 +244,11 @@ def plot_mlp_vs_cnn_comparison(data, ax, epsilon=0.05):
 def plot_m_star_vs_params(data, ax, epsilon=0.05):
     """Plot m* vs number of parameters for both families."""
     summaries = get_architecture_summary(data)
+    allowed_depths = {2, 4}
     
     for s in summaries:
+        if s["num_layers"] not in allowed_depths:
+            continue
         m_star = s["m_star"].get(epsilon)
         if m_star is None:
             continue
@@ -260,28 +256,23 @@ def plot_m_star_vs_params(data, ax, epsilon=0.05):
         color = COLORS[s["type"]]
         marker = DEPTH_MARKERS[s["num_layers"]]
         
-        ax.scatter(s["num_params"], m_star, c=color, marker=marker, s=150,
-                   edgecolors='white', linewidth=1.5, zorder=5)
+        ax.scatter(s["num_params"], m_star, c=color, marker=marker, s=150, edgecolors='white', zorder=5)
         
-        offset = (5, 5) if s["type"] == "MLP" else (5, -15)
-        ax.annotate(s["name"], (s["num_params"], m_star), 
-                   textcoords="offset points", xytext=offset, fontsize=8)
+        offset = (-55, -18)
+        ax.annotate(s["name"], (s["num_params"], m_star), textcoords="offset points", xytext=offset)
     
     from matplotlib.lines import Line2D
     legend_elements = [
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=COLORS['MLP'],
-               markersize=10, label='MLP'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=COLORS['CNN'],
-               markersize=10, label='CNN'),
-        Line2D([0], [0], marker='o', color='gray', markersize=8, label='L=2', linestyle=''),
-        Line2D([0], [0], marker='s', color='gray', markersize=8, label='L=4', linestyle=''),
-        Line2D([0], [0], marker='^', color='gray', markersize=8, label='L=8', linestyle=''),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=COLORS['MLP'], label='MLP'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=COLORS['CNN'], label='CNN'),
+        Line2D([0], [0], marker='o', color='gray', label='L=2', linestyle=''),
+        Line2D([0], [0], marker='s', color='gray', label='L=4', linestyle=''),
     ]
-    ax.legend(handles=legend_elements, loc='upper left', fontsize=9)
+    ax.legend(handles=legend_elements, loc='upper left')
     
-    ax.set_xlabel("Число параметров $N$")
-    ax.set_ylabel(r"Достаточный размер выборки $m^*$")
-    ax.set_title(f"$m^*(\\varepsilon={epsilon})$ vs число параметров")
+    ax.set_xlabel(r"Number of parameters $N$")
+    ax.set_ylabel(r"Sufficient sample size $m^*$")
+    ax.set_title(rf"$m^*(\varepsilon={epsilon})$ vs number of parameters")
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.grid(True, alpha=0.3, which='both')
@@ -293,7 +284,7 @@ def make_summary_table(data):
     epsilons = data["config"]["epsilon_thresholds"]
     
     lines = []
-    header = f"{'Архитектура':<12} {'Тип':<5} {'N':>10} {'L':>3}"
+    header = f"{'Architecture':<12} {'Type':<5} {'N':>10} {'L':>3}"
     for eps in epsilons:
         header += f" {'m*('+str(eps)+')':>10}"
     lines.append(header)
@@ -362,12 +353,12 @@ def main():
         data = json.load(f)
     
     print("=" * 70)
-    print("Эксперимент 1: Достаточный размер выборки")
+    print("Experiment 1: Sufficient sample size")
     print("=" * 70)
     
     fig, ax = plt.subplots(figsize=(10, 7))
     plot_delta2_convergence(data, ax)
-    ax.set_title(r"Сходимость критерия $\Delta_2(m)$")
+    ax.set_title(r"Convergence of criterion $\Delta_2(m)$")
     plt.tight_layout()
     fig.savefig(out_dir / "exp1_delta2_convergence.pdf", bbox_inches="tight")
     fig.savefig(out_dir / "exp1_delta2_convergence.png", bbox_inches="tight", dpi=150)
@@ -392,18 +383,18 @@ def main():
     print(f"Saved {out_dir / 'exp1_m_star_vs_params.pdf'}")
     
     print("\n" + "=" * 70)
-    print("Таблица результатов")
+    print("Results table")
     print("=" * 70)
     table = make_summary_table(data)
     print(table)
     
     with open(out_dir / "exp1_results_table.txt", "w") as f:
-        f.write("Эксперимент 1: Достаточный размер выборки\n")
+        f.write("Experiment 1: Sufficient sample size\n")
         f.write("=" * 70 + "\n\n")
         f.write(table)
     
     print("\n" + "=" * 70)
-    print("Корреляция: глубина vs m* (внутри семейства)")
+    print("Correlation: depth vs m* (within family)")
     print("=" * 70)
     
     corr_results = {}
@@ -418,12 +409,12 @@ def main():
         json.dump(corr_results, f, indent=2)
     
     print("\n" + "=" * 70)
-    print("Ключевые выводы")
+    print("Key findings")
     print("=" * 70)
-    print("1. Критерий Δ₂(m) убывает со скоростью ~m⁻² (соответствует теории)")
-    print("2. Внутри каждого семейства: ↑глубина → ↑m* (соответствует теории)")
-    print("3. CNN требуют меньше данных, чем MLP при схожей глубине")
-    print("   (согласуется с теоретическим множителем K_max для свёрток)")
+    print("1. Criterion Delta_2(m) decays approximately as m^{-2} (matches theory)")
+    print("2. Within each family: larger depth implies larger m* (matches theory)")
+    print("3. CNNs require less data than MLPs at similar depth")
+    print("   (consistent with the theoretical convolutional factor K_max)")
 
 
 if __name__ == "__main__":

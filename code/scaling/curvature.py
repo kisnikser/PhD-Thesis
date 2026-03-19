@@ -7,12 +7,13 @@ import sys
 from pathlib import Path
 
 _repo_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(_repo_root))
+_code_root = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_code_root))
 
 import torch
 from torch.utils.data import DataLoader
 
-from code.hessian.spectra import gn_matvec, gn_matvec_cnn, power_iteration
+from hessian.spectra import gn_matvec, gn_matvec_cnn, power_iteration
 
 
 def compute_curvature_proxy(model, data_loader, num_iters=30, max_samples=500,
