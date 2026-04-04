@@ -163,105 +163,6 @@
 \end{columns}
 \end{frame}
 
-\begin{frame}{Критерии сходимости поверхности функции потерь}
-
-\begin{block}{Общий критерий $p$-сходимости}
-    \vspace{-0.8em}
-    \[
-        \Delta_{p}(k+1)
-        =
-        \int
-        \left|
-            \mathcal{L}_{k+1}(\mathbf{w})-\mathcal{L}_{k}(\mathbf{w})
-        \right|^{p}
-        q(\mathbf{w})\, d\mathbf{w},
-    \]
-    где $q(\mathbf{w})$ задает предпочтение по выбору точек в пространстве параметров модели.
-    \vspace{-0.8em}
-\end{block}
-
-\begin{columns}[T]
-    \begin{column}{0.33\textwidth}
-        \centering
-        \includegraphics[width=0.9\linewidth]{criterion_abs.pdf}
-
-        \vspace{0.2em}
-        \small
-        \textbf{Абсолютный одноточечный}
-        \[
-            \Delta_1(k+1)
-            =
-            \left|
-                \mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)
-            \right|
-        \]
-        \[
-            q(\tilde{\mathbf w})=\delta(\tilde{\mathbf w}-\mathbf w)
-        \]
-        \[
-            \Delta_1(k+1)=\mathcal O(k^{-1})
-        \]
-    \end{column}
-
-    \begin{column}{0.33\textwidth}
-        \centering
-        \includegraphics[width=0.9\linewidth]{criterion_squared.pdf}
-
-        \vspace{0.2em}
-        \small
-        \textbf{Среднеквадратичный}
-        \[
-            \Delta_2(k+1)
-            =
-            \mathbb E_{q(\mathbf w)}
-            \left[
-                \big(
-                    \mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)
-                \big)^2
-            \right]
-        \]
-        \[
-            q(\mathbf w)=\mathcal N(\mathbf w_k^*,\sigma^2\mathbf I_N)
-        \]
-        \[
-            \Delta_2(k+1)=\mathcal O(k^{-2})
-        \]
-    \end{column}
-
-    \begin{column}{0.33\textwidth}
-        \centering
-        \includegraphics[width=0.9\linewidth]{criterion_squared_subspace.pdf}
-
-        \vspace{0.2em}
-        \small
-        \textbf{В подпространстве кривизны}
-        \[
-            \Delta_2^{(D)}(k+1)
-            =
-            \mathbb E_{q(\mathbf w)}
-            \left[
-                \big(
-                    \mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)
-                \big)^2
-            \right]
-        \]
-        \[
-            \mathrm{supp}\,q \subset \mathbf w_k^*+\mathcal S_D
-        \]
-        \[
-            \Delta_2^{(D)}(k+1)=\mathcal O(k^{-2})
-        \]
-    \end{column}
-\end{columns}
-
-\vspace{0.2em}
-
-\begin{block}{Ключевой вывод}
-    Усреднение по распределению точек в пространстве параметров ускоряет стабилизацию ландшафта от \alert{\textbf{$\mathcal O(k^{-1})$}} до \alert{\textbf{$\mathcal O(k^{-2})$}}, а ограничение подпространством наибольшей кривизны сохраняет этот порядок при меньшей размерности.
-\end{block}
-
-\end{frame}
-
 \begin{frame}{Критерий сходимости поверхности функции потерь}
 \begin{columns}[T]
     \begin{column}{0.57\textwidth}
@@ -278,7 +179,7 @@
     \begin{column}{0.4\textwidth}
         \begin{figure}
             \centering
-            \includegraphics[width=\linewidth]{criterion_general.pdf}
+            \includegraphics[width=\linewidth]{criterion_general.png}
         \end{figure}
     \end{column}
 \end{columns}
@@ -306,7 +207,7 @@
     \begin{column}{0.4\textwidth}
         \begin{figure}
             \centering
-            \includegraphics[width=\linewidth]{criterion_abs.pdf}
+            \includegraphics[width=\linewidth]{criterion_abs.png}
         \end{figure}
     \end{column}
 \end{columns}
@@ -341,7 +242,7 @@
     \begin{column}{0.4\textwidth}
         \begin{figure}
             \centering
-            \includegraphics[width=\linewidth]{criterion_squared.pdf}
+            \includegraphics[width=\linewidth]{criterion_squared.png}
         \end{figure}
     \end{column}
 \end{columns}
@@ -370,7 +271,7 @@
     \begin{column}{0.4\textwidth}
         \begin{figure}
             \centering
-            \includegraphics[width=\linewidth]{criterion_squared_subspace.pdf}
+            \includegraphics[width=\linewidth]{criterion_squared_subspace.png}
         \end{figure}
     \end{column}
 \end{columns}
@@ -532,7 +433,7 @@
     \begin{column}{0.4\textwidth}
         \begin{figure}
             \centering
-            \includegraphics[width=\linewidth]{likelihood.pdf}
+            \includegraphics[width=\linewidth]{likelihood.png}
         \end{figure}
     \end{column}
 \end{columns}
@@ -589,7 +490,7 @@
         \vspace{-1.5em}
         \begin{figure}
             \centering
-            \includegraphics[width=\linewidth]{posterior_ru_short.pdf}
+            \includegraphics[width=\linewidth]{posterior_ru_short.png}
         \end{figure}
     \end{column}
 \end{columns}
