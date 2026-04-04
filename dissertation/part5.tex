@@ -29,7 +29,7 @@ m^*:\quad \mathbb P(T_m > c_\alpha | H_1)\ge 1-\beta,
 \textbf{Вероятностная модель линейной регрессии.} Объектом называется пара $(\mathbf{x}, y)$, где $\mathbf{x} \in \mathbb{R}^n$ "--- вектор признакового описания, $y \in \mathbb{R}$ "--- целевая переменная. Выборка размера~$m$ задается множеством $\mathfrak{D}_m = \{(\mathbf{x}_i, y_i)\}_{i=1}^m$ из $m$ независимых реализаций пар~$(\mathbf{x}, y)$. Вводятся матрица объекты-признаки $\mathbf{X}_m = \left[ \mathbf{x}_1, \ldots, \mathbf{x}_m \right]^\top \in \mathbb{R}^{m \times n}$ и вектор значений целевой переменной $\mathbf{y}_m = \left[ y_1, \ldots, y_m \right]^\top \in \mathbb{R}^{m}$. Вероятностная модель линейной регрессии задается правдоподобием
 \begin{equation}
     \label{eq:linreg-likelihood}
-    p(y | \mathbf{x}, \mathbf{w}) = \mathcal{N}(y | \mathbf{w}^\top \mathbf{x}, \sigma^2 \mathbf{I}),
+    p(y | \mathbf{x}, \mathbf{w}) = \mathcal{N}(y | \mathbf{w}^\top \mathbf{x}, \sigma^2),
 \end{equation}
 где $\mathbf{w} \in \mathbb{R}^n$ "--- вектор параметров, $\sigma^2 > 0$ "--- дисперсия шума. Для простой выборки функция правдоподобия имеет вид
 \begin{equation}
@@ -523,7 +523,7 @@ p(\mathbf{w} | \mathfrak{D}_k) = \frac{p(\mathfrak{D}_k | \mathbf{w}) p(\mathbf{
         \begin{tabular}{@{}lcccccc@{}} 
             \toprule
             Название выборки & Объектов $m$ & Признаков $n$ & D & M & KL & S \\
-             |rule
+            \midrule
             Abalone & 4177 & 8 & 96 & 96 & 3921 & 4091 \\
             Auto MPG & 392 & 8 & 15 & 15 & 62 & --- \\
             Automobile & 159 & 25 & 70 & 156 & 156 & --- \\
