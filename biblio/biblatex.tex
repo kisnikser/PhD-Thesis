@@ -131,6 +131,10 @@ sorting=none,% настройка сортировки списка литера
 \addbibresource[label=bl-author]{biblio/author.bib}
 \addbibresource[label=bl-registered]{biblio/registered.bib}
 
+% Команды ёлочек из babel. В XeLaTeX с polyglossia их нет, а в .bib они используются.
+\providecommand{\flqq}{«}
+\providecommand{\frqq}{»}
+
 %http://tex.stackexchange.com/a/141831/79756
 %There is a way to automatically map the language field to the langid field. The following lines in the preamble should be enough to do that.
 %This command will copy the language field into the langid field and will then delete the contents of the language field. The language field will only be deleted if it was successfully copied into the langid field.
@@ -216,16 +220,16 @@ sorting=none,% настройка сортировки списка литера
             \step[fieldsource=authorprogram,final=true]
             \step[fieldset=keywords,fieldvalue={,biblioauthorprogram},append=true]
         }
-        \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники (perdatasource: basename файла, не полный путь — biblatex 3.13+)
-            \perdatasource{external.bib}
+        \map[overwrite]{ % путь как в \addbibresource: biber 2.21 сличает его целиком, а не по имени файла
+            \perdatasource{biblio/external.bib}
             \step[fieldset=keywords, fieldvalue={,biblioexternal},append=true]
         }
         \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники
-            \perdatasource{author.bib}
+            \perdatasource{biblio/author.bib}
             \step[fieldset=keywords, fieldvalue={,biblioauthor},append=true]
         }
         \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники
-            \perdatasource{registered.bib}
+            \perdatasource{biblio/registered.bib}
             \step[fieldset=keywords, fieldvalue={,biblioregistered},append=true]
         }
         \map[overwrite]{ % добавляем ключевые слова, чтобы различать источники
@@ -657,4 +661,6 @@ sorting=none,% настройка сортировки списка литера
 \newcommand*{\insertbiblioexternal}{
     % \printbibliography[heading=pubgroup,    section=0, keyword=biblioexternal,     title=\bibtitlefull]
     \printbibliography[heading=pubgroup,    section=0, keyword=biblioexternal,     title=\bibtitlefull,resetnumbers=true]% (сброс нумерации)
+    % Пустой проход тем же фильтром: считает напечатанные пункты в citeexternal.
+    \printbibliography[heading=nobibheading, section=0, keyword=biblioexternal, env=countexternal]
 }

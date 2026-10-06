@@ -193,3 +193,26 @@
     \newtotcounter{totalappendix}
     \newtotcounter{totalchapter}
 }
+
+%% Цифры объёма для автореферата. Он собирается отдельно и своих счётчиков диссертации не видит.
+\makeatletter
+\newwrite\dissvolumeout
+\newcommand{\dissvolume@write}[1]{%
+    \immediate\write\dissvolumeout{%
+        \string\@ifundefined{c@#1@totc}{\string\newcounter{#1@totc}}{}%
+        ^^J%
+        \string\setcounter{#1@totc}{\number\totvalue{#1}}%
+    }%
+}
+\AtEndDocument{%
+    \immediate\openout\dissvolumeout=common/dissvolume.tex
+    \immediate\write\dissvolumeout{\string\makeatletter}%
+    \dissvolume@write{TotPages}%
+    \dissvolume@write{totalcount@figure}%
+    \dissvolume@write{totalcount@table}%
+    \dissvolume@write{totalchapter}%
+    \dissvolume@write{citeexternal}%
+    \immediate\write\dissvolumeout{\string\makeatother}%
+    \immediate\closeout\dissvolumeout
+}
+\makeatother

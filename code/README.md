@@ -1,4 +1,4 @@
-в# Code
+# Code
 
 ## Structure
 
@@ -62,3 +62,20 @@ Results are saved in `output/`:
 - `hessian_cnn/` — `hessian_figures.pdf`
 - `landscape/` — `landscape_convergence.pdf`, `hessian_spectrum.pdf`, `loss_surface_2d.pdf`, `loss_surface_3d.pdf`
 - `scaling/` — `exp1_delta2_convergence.pdf`, `exp1_depth_analysis.pdf`, `exp1_m_star_vs_params.pdf`
+
+## Figures printed in the dissertation
+
+Data plots are redrawn from saved measurements in `output/`.
+The style is `shared/plot_style.py`: text and mathematics are set by LaTeX, so bold symbols, hats and subscripts match the dissertation. Decimal comma.
+PyTorch is used where the measurement is a network, an automatic derivative, or a Hessian.
+Ordinary least squares and the likelihood bootstrap stay on NumPy and SciPy, the stack that produced the printed numbers.
+
+```bash
+python -m hessian.fig_hessian          # chapter 2, from output/hessian*.json
+python landscape/replot_surface.py     # chapter 3 surfaces, from output/landscape/surface_data.npz
+python replot_confirming.py            # chapters 3-4 criteria, from output/*.json
+python -m scaling.fig_exact_models     # chapter 4 exact models, from output/scaling/exact_models.json
+python ch5_replot.py                   # chapter 5, from output/ch5/curves.npz
+```
+
+Schematic figures drawn in Inkscape (`criterion_*.pdf`, `losses_assumption.pdf`, `likelihood.pdf`, `posterior_ru*.pdf`) are not produced by these scripts.

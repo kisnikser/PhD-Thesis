@@ -1,6 +1,6 @@
 \chapter{Критерии достаточного размера выборки и интерпретация законов масштабирования для параметрических моделей}\label{ch:scaling-laws}
 
-В данной главе результаты глав~\ref{ch:hessian} и~\ref{ch:landscapes} объединяются в единую схему. Сначала из ранее полученных архитектурно-зависимых оценок локальной кривизны и критериев стабилизации ландшафта выводятся критерии достаточного размера выборки для параметрических моделей. Эти утверждения являются прямыми следствиями результатов предыдущих глав. Затем рассматривается более общая интерпретация полученных оценок в терминах законов масштабирования. Эта часть главы носит структурный характер и опирается на дополнительные предположения, связывающие локальные свойства оптимизационной поверхности с вкладом конечности обучающей выборки в итоговое значение функции потерь.
+Оценки кривизны и порядок стабилизации ландшафта здесь складываются в критерии достаточного размера выборки и в схему законов масштабирования. Сначала из ранее полученных архитектурно-зависимых оценок локальной кривизны и критериев стабилизации ландшафта выводятся критерии достаточного размера выборки для параметрических моделей. Эти утверждения являются прямыми следствиями результатов предыдущих глав. Затем рассматривается более общая интерпретация полученных оценок в терминах законов масштабирования. Эта часть главы носит структурный характер и опирается на дополнительные предположения, связывающие локальные свойства оптимизационной поверхности с вкладом конечности обучающей выборки в итоговое значение функции потерь.
 
 \section{Введение}
 
@@ -44,12 +44,12 @@
     LR
     =
     2\bigl(
-        l(\mathfrak D,\hat{\mathbf w})
+        l(\mathfrak D, \hat{\mathbf w})
         -
-        l(\mathfrak D,\hat{\mathbf w}^{\,0})
+        l(\mathfrak D, \hat{\mathbf w}^{\,0})
     \bigr),
 \end{equation}
-где $l(\mathfrak D,\mathbf w)$ "--- логарифм функции правдоподобия, $\hat{\mathbf w}$ "--- оценка максимального правдоподобия без ограничений, а $\hat{\mathbf w}^{\,0}$ "--- оценка при фиксированных параметрах, соответствующих нулевой гипотезе.
+где $l(\mathfrak D, \mathbf w)$ "--- логарифм функции правдоподобия, $\hat{\mathbf w}$ "--- оценка максимального правдоподобия без ограничений, а $\hat{\mathbf w}^{\,0}$ "--- оценка при фиксированных параметрах, соответствующих нулевой гипотезе.
 
 Статистика Вальда записывается в виде
 \begin{equation}
@@ -80,12 +80,12 @@
     =
     \ln
     \frac{
-        L(\mathfrak D_{\mathcal L(m)},\hat{\mathbf w})
+        L(\mathfrak D_{\mathcal L(m)}, \hat{\mathbf w})
     }{
-        L(\mathfrak D_{\mathcal T(m)},\hat{\mathbf w})
+        L(\mathfrak D_{\mathcal T(m)}, \hat{\mathbf w})
     },
 \end{equation}
-где $L(\mathfrak D,\hat{\mathbf w})$ "--- правдоподобие или иная характеристика качества модели на соответствующей выборке. Тогда размер выборки считается достаточным, если для всех $m\ge m^*$ выполняется
+где $L(\mathfrak D, \hat{\mathbf w})$ "--- правдоподобие или иная характеристика качества модели на соответствующей выборке. Тогда размер выборки считается достаточным, если для всех $m\ge m^*$ выполняется
 \begin{equation}
     \label{eq:review-rs-mstar}
     \mathbb E\,RS(m)\le \varepsilon.
@@ -93,7 +93,7 @@
 
 Другой распространенный класс эвристических методов основан на бутстрапе. В этом случае для каждого $m$ строятся доверительные интервалы для оцениваемых параметров модели, и достаточный размер выборки определяется через их ширину. Если
 \begin{equation}
-    (a_i^m,b_i^m),\quad i=1,\dots,n,
+    (a_i^m, b_i^m), \quad i=1, \dots, n,
 \end{equation}
 обозначают доверительные интервалы для параметров модели, то можно использовать критерий
 \begin{equation}
@@ -180,7 +180,7 @@
 \begin{equation}
     \mathcal L_m(\mathbf w)
     =
-    \frac{1}{m}\sum_{i=1}^m \ell(f_{\mathbf w}(\mathbf x_i),\mathbf y_i),
+    \frac{1}{m}\sum_{i=1}^m \ell(f_{\mathbf w}(\mathbf x_i), \mathbf y_i),
 \end{equation}
 а матрица Гессе на одном объекте допускает разложение Гаусса"--~Ньютона
 \begin{equation}
@@ -287,7 +287,7 @@
     Тогда для абсолютного одноточечного критерия сходимости размер выборки
     \begin{equation}
         \label{eq:scaling-m1}
-        m_1^*(\varepsilon,\mathcal A)
+        m_1^*(\varepsilon, \mathcal A)
         =
         \frac{
             2M_{\ell}
@@ -346,7 +346,7 @@
 
 Данная оценка является наиболее локальной и наиболее консервативной: она контролирует изменение ландшафта в одной фиксированной точке окрестности минимума.
 
-\textbf{Среднеквадратичный критерий достаточного размера выборки.} Перейдем к среднеквадратичному критерию в полном пространстве параметров. Согласно главе~\ref{ch:landscapes}, скорость его убывания равна $\mathcal O(m^{-2})$.
+\textbf{Среднеквадратичный критерий достаточного размера выборки.} Перейдем к среднеквадратичному критерию в полном пространстве параметров. Согласно главе~\ref{ch:landscapes}, порядок его убывания равен $\mathcal O(m^{-2})$ и следует из усреднения по объектам; матрица Гессе входит в константу.
 
 \begin{theorem}
     \label{thm:scaling-sufficient-squared}
@@ -358,12 +358,12 @@
     \end{equation}
     Тогда для среднеквадратичного критерия с гауссовской функцией предпочтения
     \begin{equation}
-        q(\mathbf w)=\mathcal N(\mathbf w^*,\sigma^2\mathbf I_N)
+        q(\mathbf w)=\mathcal N(\mathbf w^*, \sigma^2\mathbf I_N)
     \end{equation}
     размер выборки
     \begin{equation}
         \label{eq:scaling-m2}
-        m_2^*(\varepsilon,\mathcal A)
+        m_2^*(\varepsilon, \mathcal A)
         =
         \sqrt{
             \frac{
@@ -437,7 +437,7 @@
     Тогда для среднеквадратичного критерия сходимости в подпространстве наибольшей кривизны размерности $D$ размер выборки
     \begin{equation}
         \label{eq:scaling-m3}
-        m_3^*(\varepsilon,\mathcal A,D)
+        m_3^*(\varepsilon, \mathcal A, D)
         =
         \sqrt{
             \frac{
@@ -489,7 +489,7 @@
     Для $L$-слойной полносвязной сети при выполнении условий глав~\ref{ch:hessian} и~\ref{ch:landscapes} достаточный размер выборки по одноточечному критерию удовлетворяет
     \begin{equation}
         \label{eq:scaling-fcnn-m1}
-        m_{1,\mathrm{FC}}^*
+        m_{1, \mathrm{FC}}^*
         =
         \frac{
             2M_{\ell}
@@ -505,7 +505,7 @@
     по среднеквадратичному критерию
     \begin{equation}
         \label{eq:scaling-fcnn-m2}
-        m_{2,\mathrm{FC}}^*
+        m_{2, \mathrm{FC}}^*
         =
         \Bigg[
             \frac{
@@ -524,7 +524,7 @@
     а по подпространственному критерию
     \begin{equation}
         \label{eq:scaling-fcnn-m3}
-        m_{3,\mathrm{FC}}^*
+        m_{3, \mathrm{FC}}^*
         =
         \Bigg[
             \frac{
@@ -556,7 +556,7 @@
     Для $L$-слойной сверточной сети при выполнении условий глав~\ref{ch:hessian} и~\ref{ch:landscapes} достаточный размер выборки по одноточечному критерию удовлетворяет
     \begin{equation}
         \label{eq:scaling-cnn-m1}
-        m_{1,\mathrm{CNN}}^*
+        m_{1, \mathrm{CNN}}^*
         =
         \frac{
             2M_{\ell}
@@ -572,38 +572,36 @@
     по среднеквадратичному критерию
     \begin{equation}
         \label{eq:scaling-cnn-m2}
-        m_{2,\mathrm{CNN}}^*
+        m_{2, \mathrm{CNN}}^*
         =
         \Bigg[
             \frac{
-                12M_{\ell}^2
-                +
-                3\sigma^2 M_{\mathbf g}^2
-                +
-                3\sigma^4(N^2+2N)
+                \begin{aligned}
+                &12M_{\ell}^2 + 3\sigma^2 M_{\mathbf g}^2 \\
+                &+ 3\sigma^4(N^2+2N)
                 \left(
                     L M_{\mathbf x}^2 M_{\mathbf A}K_{\max}(M_{\mathcal W}M_{\sigma})^{2L-2}
                     +\delta_R
                 \right)^2
+                \end{aligned}
             }{\varepsilon}
         \Bigg]^{1/2},
     \end{equation}
     а по подпространственному критерию
     \begin{equation}
         \label{eq:scaling-cnn-m3}
-        m_{3,\mathrm{CNN}}^*
+        m_{3, \mathrm{CNN}}^*
         =
         \Bigg[
             \frac{
-                12M_{\ell}^2
-                +
-                3\sigma^2 M_{\mathbf g}^2
-                +
-                3\sigma^4(D^2+2D)
+                \begin{aligned}
+                &12M_{\ell}^2 + 3\sigma^2 M_{\mathbf g}^2 \\
+                &+ 3\sigma^4(D^2+2D)
                 \left(
                     L M_{\mathbf x}^2 M_{\mathbf A}K_{\max}(M_{\mathcal W}M_{\sigma})^{2L-2}
                     +\delta_R
                 \right)^2
+                \end{aligned}
             }{\varepsilon}
         \Bigg]^{1/2}.
     \end{equation}
@@ -629,7 +627,7 @@
 \begin{equation}
     \mathcal L(\mathbf w)
     =
-    \mathbb E_{(\mathbf x,\mathbf y)}[\ell(f_{\mathbf w}(\mathbf x),\mathbf y)].
+    \mathbb E_{(\mathbf x, \mathbf y)}[\ell(f_{\mathbf w}(\mathbf x), \mathbf y)].
 \end{equation}
 Пусть $\mathbf w_{\infty}^*$ есть глобальный минимизатор популяционного риска в предельном классе допустимых моделей. Введем \emph{ошибку выразимости}
 \begin{equation}
@@ -643,26 +641,26 @@
 \end{equation}
 Эта величина характеризует ограниченность класса моделей конечной размерности и убывает при увеличении числа параметров.
 
-Пусть $\mathbf w_m^*$ обозначает параметр, полученный обучением на выборке размера $m$. Тогда эмпирическая функция потерь в этой точке допускает естественную декомпозицию
+Пусть $\mathbf w_m^*$ обозначает параметр, полученный обучением на выборке $\mathfrak D_m$ размера $m$. Законы масштабирования описывают качество на новых данных, поэтому рассматривается популяционная функция потерь в найденной точке, усредненная по случайной выборке (и по случайности обучения):
 \begin{equation}
     \label{eq:scaling-loss-decomp}
-    \mathcal L_m(\mathbf w_m^*)
+    \mathbb E_{\mathfrak D_m}\,\mathcal L(\mathbf w_m^*)
     =
     \underbrace{\mathcal L(\mathbf w_{\infty}^*)}_{E}
     +
-    \underbrace{\big(\mathcal L(\mathbf w_m^*)-\mathcal L(\mathbf w_{\infty}^*)\big)}_{\text{ошибка модели}}
+    \underbrace{\Big(\inf_{\mathbf w \in \mathcal W_N}\mathcal L(\mathbf w)-\mathcal L(\mathbf w_{\infty}^*)\Big)}_{\Phi(N)}
     +
-    \underbrace{\big(\mathcal L_m(\mathbf w_m^*)-\mathcal L(\mathbf w_m^*)\big)}_{\mathcal E(m)}.
+    \underbrace{\Big(\mathbb E_{\mathfrak D_m}\,\mathcal L(\mathbf w_m^*)-\inf_{\mathbf w \in \mathcal W_N}\mathcal L(\mathbf w)\Big)}_{\mathcal E(m)}.
 \end{equation}
-Здесь $E$ есть неустранимая ошибка задачи, второе слагаемое отражает ограниченность класса моделей, а третье слагаемое соответствует отклонению эмпирической функции потерь от популяционной в найденной точке.
+Здесь $E$ есть неустранимая ошибка задачи, $\Phi(N)$ "--- ошибка выразимости класса моделей~\eqref{eq:scaling-Phi}, а $\mathcal E(m) \geqslant 0$ "--- \emph{ошибка оценивания}, то есть та часть ошибки, которую может устранить увеличение объема данных при фиксированном классе моделей. Декомпозиция~\eqref{eq:scaling-loss-decomp} является тождеством. Она относится к среднему риску: именно для среднего по выборкам получены точные формулы ниже (утверждение~\ref{prop:scaling-ols-exact}).
 
 \begin{remark}
-    Среднее слагаемое в~\eqref{eq:scaling-loss-decomp} зависит не только от числа параметров $N$, но и от алгоритма оптимизации, инициализации и конкретной выборки. В дальнейшем оно рассматривается как величина, мажорируемая ошибкой выразимости $\Phi(N)$ при достаточно эффективной оптимизации.
+    Если обучение не достигает минимума эмпирического риска, то в $\mathcal E(m)$ входит и ошибка оптимизации. В дальнейшем предполагается, что точка $\mathbf w_m^*$ является минимизатором эмпирического риска в той же окрестности $\mathcal U_R(\mathbf w^*)$, в которой определены величины~\eqref{eq:scaling-MG-def} и~\eqref{eq:scaling-deltaR}.
 \end{remark}
 
-\textbf{Структурное предположение о data term.} Результаты главы~\ref{ch:landscapes} показывают, что при добавлении одного объекта к выборке размером $k$ изменение ландшафта функции потерь в локальной окрестности минимума убывает как $\mathcal O(k^{-1})$ для одноточечного критерия и как $\mathcal O(k^{-2})$ для усредненных квадратов. Все эти оценки контролируются величиной $M_{\mathbf G}(\mathcal A)+\delta_R$.
+\textbf{Структурное предположение об ошибке оценивания.} Тождество усреднения дает порядки $\mathcal O(k^{-1})$ для одноточечного критерия и $\mathcal O(k^{-2})$ для усредненных квадратов. Константы этих оценок контролируются величиной $M_{\mathbf G}(\mathcal A)+\delta_R$.
 
-Это наблюдение не дает прямой теоремы о скорости убывания ошибки оценивания $\mathcal E(m)$, однако мотивирует следующее структурное предположение: если ландшафт функции потерь стабилизируется по мере увеличения объема данных, то и вклад конечности выборки в итоговое значение функции потерь должен уменьшаться с тем же геометрическим масштабом.
+Это наблюдение не дает прямой теоремы о скорости убывания ошибки оценивания $\mathcal E(m)$, однако мотивирует следующее структурное предположение.
 
 \begin{assumption}[Локальный статистический режим]
     \label{assumption:scaling-local-stat}
@@ -672,27 +670,238 @@
         \item остаточная компонента $\delta_R$ мала по сравнению с $M_{\mathbf G}(\mathcal A)$;
         \item локальный минимум $\mathbf w_m^*$ является достаточно устойчивым, так что влияние конечности выборки на значение функции потерь определяется локальной геометрией поверхности.
     \end{enumerate}
-    Тогда существуют показатель $\rho \in (0,1]$ и константа $C>0$ такие, что
+    Тогда существуют показатель $\rho \in (0, 1]$ и константа $C>0$ такие, что
     \begin{equation}
         \label{eq:scaling-estimation-assumption}
-        |\mathcal E(m)|
+        \mathcal E(m)
         \le
         \frac{C\left(M_{\mathbf G}(\mathcal A)+\delta_R\right)}{m^{\rho}}.
     \end{equation}
 \end{assumption}
 
 \begin{remark}
-    Предположение~\ref{assumption:scaling-local-stat} не является прямым следствием предыдущих глав и должно рассматриваться как структурное. Его смысл состоит в том, что вклад конечности обучающей выборки в итоговое качество наследует тот же геометрический масштаб, который определяет стабилизацию локального ландшафта функции потерь.
+    Предположение~\ref{assumption:scaling-local-stat} не является прямым следствием предыдущих глав и должно рассматриваться как структурное. Ниже показано, что для линейной регрессии оно выполняется точно с $\rho = 1$, а для гладких моделей в локальном режиме "--- асимптотически. При этом точная константа ошибки оценивания определяется отношением шума градиентов к кривизне $\operatorname{tr}(\mathbf H^{-1}\mathbf C)$, а произведение $M_{\mathbf G}(\mathcal A)$ на остальные множители в~\eqref{eq:scaling-estimation-assumption} является его \emph{верхней оценкой} (лемма~\ref{lem:scaling-trace-bound}).
 \end{remark}
+
+\textbf{Точно решаемый случай: линейная регрессия.} Рассмотрим модель $y = \mathbf w_\star^\top \mathbf x + \varepsilon$, где $\mathbf x \in \mathbb R^n$, $\mathbf x \sim \mathcal N(\mathbf 0, \boldsymbol\Sigma)$, $\boldsymbol\Sigma \succ 0$, шум $\varepsilon \sim \mathcal N(0, \sigma^2)$ не зависит от $\mathbf x$, функция потерь $\ell = \frac12 (y - \mathbf w^\top \mathbf x)^2$, а $\hat{\mathbf w}_m$ "--- оценка наименьших квадратов по $m > n + 1$ объектам. Класс моделей содержит $\mathbf w_\star$, поэтому $\Phi(N) = 0$ при $N = n$. Матрица Гессе популяционного риска и ковариация градиентов в точке $\mathbf w_\star$ равны
+\begin{equation}
+    \label{eq:scaling-ols-HC}
+    \mathbf H = \boldsymbol\Sigma,
+    \qquad
+    \mathbf C = \operatorname{Cov}\nabla\ell(\mathbf w_\star) = \sigma^2 \boldsymbol\Sigma,
+    \qquad
+    \operatorname{tr}(\mathbf H^{-1}\mathbf C) = \sigma^2 n.
+\end{equation}
+
+\begin{proposition}
+    \label{prop:scaling-ols-exact}
+    В описанной модели
+    \begin{equation}
+        \label{eq:scaling-ols-exact}
+        \mathcal E(m)
+        =
+        \mathbb E\,\mathcal L(\hat{\mathbf w}_m) - \mathcal L(\mathbf w_\star)
+        =
+        \frac{\sigma^2 n}{2(m - n - 1)}
+        =
+        \frac{\operatorname{tr}(\mathbf H^{-1}\mathbf C)}{2m}\left(1 + \frac{n+1}{m-n-1}\right).
+    \end{equation}
+\end{proposition}
+
+\begin{proof}
+    Для квадратичной функции потерь $\mathcal L(\mathbf w) - \mathcal L(\mathbf w_\star) = \frac12 (\mathbf w - \mathbf w_\star)^\top \boldsymbol\Sigma (\mathbf w - \mathbf w_\star)$. Для матрицы объектов $\mathbf X \in \mathbb R^{m \times n}$ и вектора шума $\boldsymbol\varepsilon$ имеем $\hat{\mathbf w}_m - \mathbf w_\star = (\mathbf X^\top\mathbf X)^{-1}\mathbf X^\top\boldsymbol\varepsilon$, откуда при фиксированной $\mathbf X$
+    \[
+        \mathbb E_{\boldsymbol\varepsilon}\big[(\hat{\mathbf w}_m - \mathbf w_\star)(\hat{\mathbf w}_m - \mathbf w_\star)^\top\big] = \sigma^2 (\mathbf X^\top\mathbf X)^{-1}.
+    \]
+    Матрица $\mathbf X^\top\mathbf X$ имеет распределение Уишарта $W_n(\boldsymbol\Sigma, m)$, и при $m > n + 1$ справедливо $\mathbb E(\mathbf X^\top\mathbf X)^{-1} = \boldsymbol\Sigma^{-1}/(m - n - 1)$; формула для риска метода наименьших квадратов при случайной матрице объектов"--~признаков известна~\cite{breiman1983variables}. Следовательно,
+    \[
+        \mathbb E\,\mathcal L(\hat{\mathbf w}_m) - \mathcal L(\mathbf w_\star)
+        = \frac{\sigma^2}{2}\operatorname{tr}\big(\boldsymbol\Sigma\,\mathbb E(\mathbf X^\top\mathbf X)^{-1}\big)
+        = \frac{\sigma^2 n}{2(m - n - 1)}.
+    \]
+    Последнее равенство в~\eqref{eq:scaling-ols-exact} проверяется подстановкой $\operatorname{tr}(\mathbf H^{-1}\mathbf C) = \sigma^2 n$ из~\eqref{eq:scaling-ols-HC}.
+\end{proof}
+
+Таким образом, для линейной регрессии ошибка оценивания убывает в точности со скоростью $m^{-1}$ (с поправкой порядка $n/m$), ландшафт функции потерь точно квадратичен ($\delta_R = 0$), а константа при $m^{-1}$ равна $\operatorname{tr}(\mathbf H^{-1}\mathbf C)/2$. Численная проверка методом Монте-Карло ($n = 10$, неизотропная матрица $\boldsymbol\Sigma$, $10^5$ повторений) совпадает с~\eqref{eq:scaling-ols-exact} в пределах полутора стандартных ошибок при $m \in \{20, 50, 200\}$.
+
+Связь этой константы с архитектурно-зависимой кривизной устанавливает следующая лемма.
+
+\begin{lemma}
+    \label{lem:scaling-trace-bound}
+    Пусть $\mathbf H \succ 0$, $\mathbf C \succeq 0$. Тогда $\operatorname{tr}(\mathbf H^{-1}\mathbf C) \leqslant \|\mathbf C\|_2 \operatorname{tr}(\mathbf H^{-1})$. Если, кроме того, в точке $\mathbf w^*$ градиент функции потерь на объекте имеет вид $\nabla \ell_i = \mathbf J_i^\top \mathbf s_i$, где $\mathbf J_i = \partial f_{\mathbf w}(\mathbf x_i)/\partial \mathbf w$, $\mathbf s_i = \partial \ell / \partial f$, матрица $\mathbf A_i = \partial^2 \ell / \partial f^2 \succeq a_{\min}\mathbf I$, $a_{\min} > 0$, и $\|\mathbf G_i(\mathbf w^*)\|_2 \leqslant M_{\mathbf G}(\mathcal A)$ для почти всех объектов, то
+    \begin{equation}
+        \label{eq:scaling-trace-bound}
+        \operatorname{tr}(\mathbf H^{-1}\mathbf C)
+        \leqslant
+        \|\mathbf C\|_2 \operatorname{tr}(\mathbf H^{-1})
+        \leqslant
+        \frac{\mathbb E\|\mathbf s\|^2}{a_{\min}}\, M_{\mathbf G}(\mathcal A)\, \operatorname{tr}(\mathbf H^{-1}).
+    \end{equation}
+\end{lemma}
+
+\begin{proof}
+    Для $\mathbf H \succ 0$ и $\mathbf C \succeq 0$ имеем $\operatorname{tr}(\mathbf H^{-1}\mathbf C) = \operatorname{tr}(\mathbf H^{-1/2}\mathbf C\mathbf H^{-1/2}) \leqslant \|\mathbf C\|_2 \operatorname{tr}(\mathbf H^{-1})$. Далее $\mathbf C \preceq \mathbb E[\nabla\ell\,\nabla\ell^\top]$, и для любого вектора $\mathbf v$
+    \[
+        \mathbf v^\top \nabla\ell_i\nabla\ell_i^\top \mathbf v = (\mathbf s_i^\top \mathbf J_i \mathbf v)^2 \leqslant \|\mathbf s_i\|^2 \|\mathbf J_i\mathbf v\|^2 \leqslant \frac{\|\mathbf s_i\|^2}{a_{\min}}\, \mathbf v^\top \mathbf J_i^\top \mathbf A_i \mathbf J_i \mathbf v = \frac{\|\mathbf s_i\|^2}{a_{\min}}\, \mathbf v^\top \mathbf G_i \mathbf v,
+    \]
+    откуда $\|\mathbf C\|_2 \leqslant \mathbb E[\|\mathbf s\|^2 \|\mathbf G\|_2]/a_{\min} \leqslant \mathbb E\|\mathbf s\|^2 M_{\mathbf G}(\mathcal A)/a_{\min}$.
+\end{proof}
+
+\begin{corollary}
+    \label{cor:scaling-ols-assumption}
+    Для линейной регрессии $\operatorname{tr}(\mathbf H^{-1}\mathbf C) = \sigma^2 n \leqslant \sigma^2 \|\boldsymbol\Sigma\|_2 \operatorname{tr}(\boldsymbol\Sigma^{-1})$. Если признаки ограничены, $\|\mathbf x\| \leqslant M_{\mathbf x}$, то $\|\boldsymbol\Sigma\|_2 \leqslant M_{\mathbf x}^2 = M_{\mathbf G}$, и при $m \geqslant 2(n+1)$ предположение~\ref{assumption:scaling-local-stat} выполняется с $\rho = 1$, $\delta_R = 0$ и
+    \[
+        C = \sigma^2 \operatorname{tr}(\boldsymbol\Sigma^{-1}).
+    \]
+    Для гауссовского распределения признаков та же оценка справедлива с $\|\boldsymbol\Sigma\|_2 = \|\mathbf H\|_2$ вместо $M_{\mathbf G}$.
+\end{corollary}
+
+\begin{proof}
+    Первое неравенство есть лемма~\ref{lem:scaling-trace-bound} при $\mathbf C = \sigma^2\boldsymbol\Sigma$, второе следует из $\|\mathbb E\,\mathbf x\mathbf x^\top\|_2 \leqslant \mathbb E\|\mathbf x\|^2 \leqslant M_{\mathbf x}^2$. Подстановка в~\eqref{eq:scaling-ols-exact} и неравенство $1 + (n+1)/(m-n-1) \leqslant 2$ при $m \geqslant 2(n+1)$ дают $\mathcal E(m) \leqslant \sigma^2 \operatorname{tr}(\boldsymbol\Sigma^{-1}) M_{\mathbf G} / m$.
+\end{proof}
+
+\begin{remark}
+    Для гладких моделей, обученных до минимума эмпирического риска, классическое разложение для оценок максимального правдоподобия при неверно заданной модели~\cite{white1982misspecified}, лежащее в основе информационного критерия Такеучи, дает $\mathcal E(m) = \operatorname{tr}(\mathbf H^{-1}\mathbf C)/(2m) + o(m^{-1})$ при положительно определенной матрице Гессе в точке минимума. Вместе с леммой~\ref{lem:scaling-trace-bound} это обосновывает предположение~\ref{assumption:scaling-local-stat} в локальном режиме с $\rho = 1$, но лишь асимптотически и с константой, содержащей помимо $M_{\mathbf G}(\mathcal A)$ множитель $\operatorname{tr}(\mathbf H^{-1})$, который определяется наименьшими собственными значениями матрицы Гессе и результатами главы~\ref{ch:hessian} не контролируется. Оценка~\eqref{eq:scaling-trace-bound} может быть грубой: в численном примере нелинейной регрессии $f_{\mathbf w}(\mathbf x) = \sigma(\mathbf w^\top\mathbf x)$ первое неравенство завышает $\operatorname{tr}(\mathbf H^{-1}\mathbf C)$ в 8 раз, второе "--- примерно в 500 раз. Поэтому архитектурная зависимость ошибки оценивания через $M_{\mathbf G}(\mathcal A)$ является зависимостью верхней оценки, а не самой величины.
+\end{remark}
+
+\textbf{Точно решаемый закон масштабирования: линейная модель с неполным набором признаков.} В хорошо специфицированной линейной регрессии ошибка выразимости равна нулю, поэтому утверждение~\ref{prop:scaling-ols-exact} описывает лишь одно слагаемое декомпозиции~\eqref{eq:scaling-loss-decomp}: зависимости от размера модели и компромисса между числом параметров и объемом данных в нем нет. Рассмотрим модель, класс которой содержит лишь часть признаков истинной зависимости. В этой постановке все три слагаемых декомпозиции вычисляются в замкнутой форме, а показатели закона масштабирования определяются спектром матрицы Гессе и распределением энергии истинной зависимости по ее собственным направлениям.
+
+Пусть вектор признаков $\mathbf x \in \mathbb R^{D}$, $D \leqslant \infty$, имеет распределение $\mathcal N(\mathbf 0, \boldsymbol\Lambda)$, где $\boldsymbol\Lambda = \operatorname{diag}(\lambda_1, \lambda_2, \dots)$, $\lambda_1 \geqslant \lambda_2 \geqslant \dots > 0$, $\sum_j \lambda_j < \infty$, а ответ порождается соотношением
+\begin{equation}
+    \label{eq:scaling-ms-model}
+    y = \sum_{j=1}^{D} \theta_j^\star x_j + \varepsilon,
+    \qquad
+    \varepsilon \sim \mathcal N(0, \sigma^2),
+\end{equation}
+где шум $\varepsilon$ не зависит от $\mathbf x$ и $\sum_j \lambda_j (\theta_j^\star)^2 < \infty$. Функция потерь квадратичная, а модель с $N$ параметрами использует первые $N$ признаков: $f_{\mathbf w}(\mathbf x) = \sum_{j \leqslant N} w_j x_j$, $\mathbf w \in \mathcal W_N = \mathbb R^N$. Через $\hat{\mathbf w}_{N, m}$ обозначим оценку наименьших квадратов по $m > N + 1$ независимым объектам.
+
+Матрица Гессе популяционного риска не зависит от точки и равна $\boldsymbol\Lambda$, поэтому $\lambda_j$ "--- собственные значения кривизны, а координатные оси "--- ее собственные направления. Величина $e_j = \lambda_j (\theta_j^\star)^2$ есть вклад $j$-го собственного направления кривизны в дисперсию истинной зависимости. Обозначим
+\begin{equation}
+    \label{eq:scaling-ms-phi}
+    \Phi(N) = \frac12 \sum_{j > N} e_j,
+    \qquad
+    \sigma_N^2 = \sigma^2 + 2\Phi(N).
+\end{equation}
+
+\begin{lemma}
+    \label{lem:scaling-ms-risk}
+    Для любого $\mathbf w \in \mathcal W_N$
+    \[
+        \mathcal L(\mathbf w)
+        = \frac{\sigma^2}{2} + \Phi(N) + \frac12 (\mathbf w - \boldsymbol\theta^\star_{\leqslant N})^\top \boldsymbol\Lambda_N (\mathbf w - \boldsymbol\theta^\star_{\leqslant N}),
+    \]
+    где $\boldsymbol\theta^\star_{\leqslant N}$ "--- первые $N$ координат вектора $\boldsymbol\theta^\star$, а $\boldsymbol\Lambda_N = \operatorname{diag}(\lambda_1, \dots, \lambda_N)$. В частности, $E = \sigma^2/2$, а величина $\Phi(N)$ из~\eqref{eq:scaling-ms-phi} совпадает с ошибкой выразимости~\eqref{eq:scaling-Phi}.
+\end{lemma}
+
+\begin{proof}
+    Остаток $y - f_{\mathbf w}(\mathbf x) = \sum_{j \leqslant N}(\theta_j^\star - w_j)x_j + \sum_{j > N}\theta_j^\star x_j + \varepsilon$ есть сумма независимых центрированных слагаемых, поскольку координаты гауссовского вектора с диагональной ковариационной матрицей независимы. Его дисперсия равна сумме дисперсий слагаемых.
+\end{proof}
+
+\begin{theorem}
+    \label{thm:scaling-ms-exact}
+    В модели~\eqref{eq:scaling-ms-model} при $m > N + 1$
+    \begin{equation}
+        \label{eq:scaling-ms-exact}
+        \mathbb E\,\mathcal L(\hat{\mathbf w}_{N, m})
+        =
+        \frac{\sigma^2}{2}
+        +
+        \Phi(N)
+        +
+        \frac{\sigma_N^2\, N}{2(m - N - 1)},
+    \end{equation}
+    причем ошибка оценивания равна
+    \[
+        \mathcal E(N, m) = \frac{\operatorname{tr}(\mathbf H_N^{-1}\mathbf C_N)}{2m}\left(1 + \frac{N+1}{m-N-1}\right),
+        \qquad
+        \mathbf H_N = \boldsymbol\Lambda_N,
+        \quad
+        \mathbf C_N = \sigma_N^2 \boldsymbol\Lambda_N,
+    \]
+    где $\mathbf H_N$ и $\mathbf C_N$ "--- матрица Гессе и ковариационная матрица градиентов модели с $N$ параметрами в точке $\boldsymbol\theta^\star_{\leqslant N}$.
+\end{theorem}
+
+\begin{proof}
+    Запишем $y = (\boldsymbol\theta^\star_{\leqslant N})^\top \mathbf x_{\leqslant N} + \xi$, где $\xi = \sum_{j>N}\theta_j^\star x_j + \varepsilon$. Величина $\xi$ не зависит от $\mathbf x_{\leqslant N}$, центрирована и имеет дисперсию $\sigma_N^2$. Следовательно, относительно признаков модели задача является хорошо специфицированной линейной регрессией с гауссовским распределением признаков $\mathcal N(\mathbf 0, \boldsymbol\Lambda_N)$ и шумом дисперсии $\sigma_N^2$. Доказательство утверждения~\ref{prop:scaling-ols-exact} использует лишь независимость шума от признаков, поэтому $\mathbb E\,\mathcal L(\hat{\mathbf w}_{N, m}) - \inf_{\mathcal W_N}\mathcal L = \sigma_N^2 N/(2(m - N - 1))$; остальные слагаемые дает лемма~\ref{lem:scaling-ms-risk}. Представление через $\operatorname{tr}(\mathbf H_N^{-1}\mathbf C_N) = \sigma_N^2 N$ проверяется подстановкой.
+\end{proof}
+
+Формула~\eqref{eq:scaling-ms-exact} есть точный вид декомпозиции~\eqref{eq:scaling-loss-decomp}. Ошибка оценивания зависит не только от $m$, но и от $N$: через число параметров и через эффективный шум $\sigma_N^2$, в который входит не описанная моделью часть зависимости. При $m \to N + 1$ ошибка оценивания неограниченно растет, что соответствует порогу интерполяции.
+
+Пусть энергия истинной зависимости убывает по собственным направлениям кривизны степенным образом:
+\begin{equation}
+    \label{eq:scaling-ms-power}
+    e_j = c\, j^{-b}, \qquad c > 0, \quad b > 1.
+\end{equation}
+Если, например, $\lambda_j \asymp j^{-a}$ и $(\theta_j^\star)^2 \asymp j^{-\beta}$, то $b = a + \beta$: при той же скорости убывания коэффициентов более быстрое убывание спектра кривизны увеличивает показатель $b$.
+
+\begin{corollary}
+    \label{cor:scaling-ms-exponents}
+    Пусть выполнено~\eqref{eq:scaling-ms-power} и $D = \infty$. Тогда:
+    \begin{enumerate}
+        \item $\Phi(N) = \dfrac{c\,N^{1-b}}{2(b-1)}\big(1 + o(1)\big)$ при $N \to \infty$, то есть в предположении~\ref{assumption:scaling-Phi} показатель равен $\alpha = b - 1$;
+        \item при фиксированном $N$ ошибка оценивания убывает как $\sigma_N^2 N/(2m)$, то есть $\rho = 1$;
+        \item при оптимальном выборе размера модели для заданного $m$ имеем $N^*(m) \asymp (c\,m/\sigma^2)^{1/b}$ и
+        \[
+            \min_{N}\, \mathbb E\,\mathcal L(\hat{\mathbf w}_{N, m}) - E \asymp m^{-\frac{b-1}{b}},
+        \]
+        то есть показатель убывания риска по объему данных равен $(b-1)/b = \alpha/(\alpha+1) < 1$;
+        \item при вычислительном бюджете $\mathcal C = N m$
+        \[
+            N^* \asymp \mathcal C^{\frac{1}{b+1}} = \mathcal C^{\frac{1}{\alpha+2}},
+            \qquad
+            m^* \asymp \mathcal C^{\frac{b}{b+1}},
+            \qquad
+            \mathbb E\,\mathcal L - E \asymp \mathcal C^{-\frac{b-1}{b+1}}.
+        \]
+    \end{enumerate}
+\end{corollary}
+
+\begin{proof}
+    Пункт~1 следует из сравнения суммы $\sum_{j>N} j^{-b}$ с интегралом, пункт~2 "--- непосредственно из~\eqref{eq:scaling-ms-exact}. Для пунктов~3 и~4 при $N/m \to 0$ главная часть избыточного риска равна $g(N) = \frac{c\,N^{1-b}}{2(b-1)} + \frac{\sigma^2 N}{2m}$, поскольку $\sigma_N^2 = \sigma^2 + o(1)$ и $(N+1)/(m-N-1) \to 0$. Условие $g'(N) = 0$ дает $N^* = (c\,m/\sigma^2)^{1/b}$ и $g(N^*) = \frac{b}{b-1}\cdot\frac{\sigma^2 N^*}{2m} \asymp m^{1/b - 1}$. При $m = \mathcal C/N$ минимизация $\frac{c\,N^{1-b}}{2(b-1)} + \frac{\sigma^2 N^2}{2\mathcal C}$ дает $N^{b+1} = c\,\mathcal C/(2\sigma^2)$, откуда следуют выражения для $N^*$, $m^*$ и минимального риска.
+\end{proof}
+
+\begin{remark}
+    \label{rem:scaling-ms-curvature}
+    Показатели $\alpha = b - 1$ и $(b-1)/b$ определяются согласованностью истинной зависимости со спектром кривизны, а не одной кривизной: поскольку $e_j = \lambda_j(\theta_j^\star)^2$, они зависят от суммы показателей убывания собственных значений матрицы Гессе и коэффициентов истинной зависимости. Показатель по объему данных, меньший единицы, возникает только при согласованном росте размера модели с объемом данных; при фиксированном $N$ в локальном режиме $\rho = 1$. Рост ошибки оценивания с размером модели определяется величиной $\operatorname{tr}(\mathbf H_N^{-1}\mathbf C_N) = \sigma_N^2 N$, то есть эффективным числом параметров, тогда как спектральная норма $\|\mathbf H_N\|_2 = \lambda_1$ от $N$ не зависит.
+\end{remark}
+
+Тот же показатель возникает при гребневой регрессии на всех признаках, $\hat{\mathbf w}_\mu = \arg\min_{\mathbf w}\, \mathcal L_m(\mathbf w) + \frac{\mu}{2}\|\mathbf w\|^2$, где роль размера модели играет эффективная размерность $d_{\mathrm{eff}}(\mu) = \sum_j \lambda_j/(\lambda_j + \mu)$. В первом порядке по $1/m$
+\begin{equation}
+    \label{eq:scaling-ms-ridge}
+    \mathbb E\,\mathcal L(\hat{\mathbf w}_\mu) - E
+    \approx
+    \frac12 \sum_j e_j \frac{\mu^2}{(\lambda_j + \mu)^2}
+    +
+    \frac{\sigma^2}{2m} \sum_j \frac{\lambda_j^2}{(\lambda_j + \mu)^2},
+\end{equation}
+где второе слагаемое есть $\operatorname{tr}(\mathbf H_\mu^{-1}\mathbf H\mathbf H_\mu^{-1}\mathbf C)/(2m)$ при $\mathbf H = \boldsymbol\Lambda$, $\mathbf C = \sigma^2\boldsymbol\Lambda$ и $\mathbf H_\mu = \mathbf H + \mu\mathbf I$, то есть регуляризованная форма отношения шума к кривизне. При $\lambda_j \asymp j^{-a}$ и~\eqref{eq:scaling-ms-power} смещение имеет порядок $\mu^{(b-1)/a}$, а дисперсия "--- порядок $\mu^{-1/a}/m$; выбор $\mu^* \asymp m^{-a/b}$ дает тот же показатель $m^{-(b-1)/b}$, если $(b-1)/a \leqslant 2$ (иначе смещение насыщается). Формула~\eqref{eq:scaling-ms-ridge} асимптотическая; строгие оценки скорости для регуляризованного метода наименьших квадратов и описание кривых обучения через спектр ядра известны~\cite{caponnetto2007optimal,bordelon2020spectrum}, а законы масштабирования для линейных моделей со степенными спектрами исследованы в работах~\cite{bordelon2024dynamical,lin2024scaling}. Вклад настоящего раздела состоит не в новых скоростях, а в том, что в этой модели все слагаемые схемы~\eqref{eq:scaling-local-law} вычисляются точно и выражаются через отношение шума к кривизне.
+
+Формулы~\eqref{eq:scaling-ols-exact} и~\eqref{eq:scaling-ms-exact} сопоставлены с оценками методом Монте-Карло на рисунке~\ref{fig:scaling-exact-ols}, а показатели следствия~\ref{cor:scaling-ms-exponents} "--- на рисунке~\ref{fig:scaling-exact-exponents}.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{ch4_exact_ols.pdf}
+    \caption[Точно решаемые модели: сравнение формул с методом Монте-Карло]{Точно решаемые модели: (а) средний избыточный риск метода наименьших квадратов при $n = 10$ и формула~\eqref{eq:scaling-ols-exact}; (б) средний риск модели с $N$ признаками при $\lambda_j = j^{-1{,}5}$, $e_j = j^{-2}$, $\sigma = 0{,}5$ и формула~\eqref{eq:scaling-ms-exact}; штриховая линия --- минимум по $N$. Точки --- метод Монте-Карло, отрезки --- две стандартные ошибки}
+    \label{fig:scaling-exact-ols}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{ch4_exact_exponents.pdf}
+    \caption[Показатели закона масштабирования в модели с неполным набором признаков]{Показатели закона масштабирования в модели с неполным набором признаков ($D = 10^6$, $\lambda_j = j^{-1{,}5}$): (а) риск при оптимальном размере модели в зависимости от объема данных для трех значений $b$, штриховые линии --- теоретический наклон $-(b-1)/b$; (б) вычислительно-оптимальный размер модели в зависимости от бюджета $\mathcal C = Nm$ и его наклон в сравнении с теоретическим значением $1/(b+1)$}
+    \label{fig:scaling-exact-exponents}
+\end{figure}
+
+Формула~\eqref{eq:scaling-ms-exact} проверена методом Монте-Карло при $D = 1000$, $\lambda_j = j^{-1{,}5}$, $e_j = j^{-2}$, $\sigma = 0{,}5$ (4\,000 повторений): расхождение не превышает двух стандартных ошибок при $N \in \{10, 40\}$ и $m \in \{N + 6, \ 2N, \ 10N\}$, включая окрестность порога интерполяции. Формула~\eqref{eq:scaling-ms-ridge} отличается от оценки Монте-Карло на 1--5\,\% при $m \geqslant 5\, d_{\mathrm{eff}}(\mu)$. Наклоны в логарифмических координатах при $D = 10^6$ совпадают с предсказаниями следствия~\ref{cor:scaling-ms-exponents}: $-0{,}51$, $-0{,}67$ и $-0{,}60$ при предсказанных $-0{,}5$, $-0{,}667$ и $-0{,}6$ для $(a, b) = (1{,}5;\,2)$, $(1{,}5;\,3)$ и $(1{,}2;\,2{,}5)$; гребневая регрессия с оптимальным $\mu$ дает $-0{,}50$, $-0{,}66$ и $-0{,}60$.
 
 \textbf{Схема локального закона масштабирования.} В рамках предположения~\ref{assumption:scaling-local-stat} естественно получается следующая оценка.
 
 \begin{proposition}
     \label{prop:scaling-local-law}
-    Пусть выполнено предположение~\ref{assumption:scaling-local-stat}. Тогда для значения эмпирической функции потерь в точке решения $\mathbf w_m^*$ справедлива оценка
+    Пусть выполнено предположение~\ref{assumption:scaling-local-stat}. Тогда для среднего значения популяционной функции потерь в точке решения $\mathbf w_m^*$ справедлива оценка
     \begin{equation}
         \label{eq:scaling-local-law}
-        \mathcal L_m(\mathbf w_m^*)
+        \mathbb E_{\mathfrak D_m}\,\mathcal L(\mathbf w_m^*)
         \le
         E
         +
@@ -703,37 +912,15 @@
 \end{proposition}
 
 \begin{proof}
-    Из~\eqref{eq:scaling-loss-decomp} имеем
-    \begin{equation}
-        \mathcal L_m(\mathbf w_m^*)
-        =
-        E
-        +
-        \big(\mathcal L(\mathbf w_m^*)-\mathcal L(\mathbf w_{\infty}^*)\big)
-        +
-        \mathcal E(m).
-    \end{equation}
-    По определению ошибки выразимости и при предположении о достаточно эффективной оптимизации получаем
-    \begin{equation}
-        \mathcal L(\mathbf w_m^*)-\mathcal L(\mathbf w_{\infty}^*)
-        \le
-        \Phi(N).
-    \end{equation}
-    Далее по предположению~\ref{assumption:scaling-local-stat}
-    \begin{equation}
-        |\mathcal E(m)|
-        \le
-        \frac{C\left(M_{\mathbf G}(\mathcal A)+\delta_R\right)}{m^{\rho}}.
-    \end{equation}
-    Подстановка этих двух оценок завершает доказательство.
+    Утверждение следует из тождества~\eqref{eq:scaling-loss-decomp} и оценки~\eqref{eq:scaling-estimation-assumption}.
 \end{proof}
 
-Формула~\eqref{eq:scaling-local-law} задает теоретически мотивированную схему закона масштабирования: итоговое значение функции потерь представляется как сумма трех вкладов "--- неустранимой ошибки, ошибки выразимости и data term, определяемого локальными свойствами оптимизационной поверхности.
+Формула~\eqref{eq:scaling-local-law} задает теоретически мотивированную схему закона масштабирования: средний риск на новых данных представляется как сумма трех вкладов "--- неустранимой ошибки, ошибки выразимости и ошибки оценивания, верхняя оценка которой выражается через локальные свойства оптимизационной поверхности. Для линейной регрессии схема является точной (утверждение~\ref{prop:scaling-ols-exact}, следствие~\ref{cor:scaling-ols-assumption}).
 
 В режиме хорошей подгонки, когда $\delta_R \ll M_{\mathbf G}(\mathcal A)$, формула~\eqref{eq:scaling-local-law} упрощается до
 \begin{equation}
     \label{eq:scaling-local-law-simplified}
-    \mathcal L_m(\mathbf w_m^*)
+    \mathbb E_{\mathfrak D_m}\,\mathcal L(\mathbf w_m^*)
     \lesssim
     E
     +
@@ -758,7 +945,7 @@
 Тогда из~\eqref{eq:scaling-local-law-simplified} получаем
 \begin{equation}
     \label{eq:scaling-law-general}
-    \mathcal L_m(\mathbf w_m^*)
+    \mathbb E_{\mathfrak D_m}\,\mathcal L(\mathbf w_m^*)
     \lesssim
     E
     +
@@ -767,7 +954,7 @@
     \frac{C M_{\mathbf G}(\mathcal A)}{m^{\rho}}.
 \end{equation}
 
-Эта формула уже имеет вид закона масштабирования: одно слагаемое убывает с ростом размера модели, другое "--- с ростом объема данных. Однако в отличие от purely empirical аппроксимаций, здесь коэффициент при data term зависит от архитектуры через локальную кривизну оптимизационной поверхности.
+Эта формула уже имеет вид закона масштабирования: одно слагаемое убывает с ростом размера модели, другое "--- с ростом объема данных. В отличие от чисто эмпирических аппроксимаций, здесь коэффициент верхней оценки ошибки оценивания зависит от архитектуры через локальную кривизну оптимизационной поверхности; точный коэффициент равен $\operatorname{tr}(\mathbf H^{-1}\mathbf C)/2$ (утверждение~\ref{prop:scaling-ols-exact}, лемма~\ref{lem:scaling-trace-bound}).
 
 \textbf{Режимы масштабирования архитектуры.} Существенным обстоятельством является то, что величина $M_{\mathbf G}(\mathcal A)$ зависит не только от числа параметров $N$, но и от режима роста архитектуры. Поэтому необходимо различать по крайней мере два типичных сценария.
 
@@ -775,7 +962,7 @@
 Пусть глубина сети фиксирована, а число параметров растет за счет увеличения ширины слоев. В этом случае при нормировке весов, сохраняющей ограниченность операторных норм, величина $M_{\mathbf G}(\mathcal A)$ может оставаться ограниченной или расти медленно. Тогда основной эффект увеличения $N$ определяется убыванием ошибки выразимости.
 
 \textbf{Масштабирование по глубине.}
-Если число параметров растет за счет увеличения глубины, то в полносвязных и сверточных архитектурах $M_{\mathbf G}(\mathcal A)$ содержит длинные произведения операторных норм. Это может приводить к значительно более быстрому росту data term, чем в режиме width scaling.
+Если число параметров растет за счет увеличения глубины, то в полносвязных и сверточных архитектурах $M_{\mathbf G}(\mathcal A)$ содержит длинные произведения операторных норм. Это может приводить к значительно более быстрому росту верхней оценки ошибки оценивания, чем при масштабировании по ширине.
 
 Следовательно, один и тот же формальный параметр $N$ может соответствовать различным геометрическим режимам, а значит и различным законам зависимости качества от данных.
 
@@ -797,14 +984,20 @@
     +
     \frac{A}{N^{\alpha}}
     +
-    \frac{C M_{\mathbf G}(N)}{(\mathcal C/N)^{\rho}}.
+    \frac{K(N)}{(\mathcal C/N)^{\rho}},
 \end{equation}
+где $K(N)$ "--- коэффициент оценки ошибки оценивания~\eqref{eq:scaling-estimation-assumption} для модели с $N$ параметрами, $K(N) = C\big(M_{\mathbf G}(\mathcal A_N) + \delta_R\big)$.
 
 Для дальнейшего анализа предположим, что в фиксированном режиме масштабирования существует показатель $\gamma \ge 0$, такой что
 \begin{equation}
     \label{eq:scaling-gamma}
-    M_{\mathbf G}(N)\sim B N^{\gamma}.
+    K(N)\sim B N^{\gamma}.
 \end{equation}
+
+\begin{remark}
+    \label{rem:scaling-gamma-meaning}
+    В точно решаемой модели~\eqref{eq:scaling-ms-model} коэффициент ошибки оценивания равен $\operatorname{tr}(\mathbf H_N^{-1}\mathbf C_N)/2 = \sigma_N^2 N/2$, поэтому $\gamma = 1$, и утверждение~\ref{prop:scaling-optimal} ниже дает $N^* \propto \mathcal C^{1/(\alpha+2)}$ в согласии со следствием~\ref{cor:scaling-ms-exponents}. Если же в качестве коэффициента взять спектральную норму кривизны, то $\|\mathbf H_N\|_2 = \lambda_1$ от $N$ не зависит, получается $\gamma = 0$ и неверный прогноз $N^* \propto \mathcal C^{1/(\alpha+1)}$. Следовательно, показатель $\gamma$ описывает рост с размером модели отношения шума к кривизне $\operatorname{tr}(\mathbf H^{-1}\mathbf C)$, а архитектурно-зависимая константа $M_{\mathbf G}(\mathcal A)$ входит лишь в его верхнюю оценку (лемма~\ref{lem:scaling-trace-bound}).
+\end{remark}
 
 \begin{proposition}
     \label{prop:scaling-optimal}
@@ -833,7 +1026,7 @@
         =
         \frac{A}{N^{\alpha}}
         +
-        \frac{CB}{\mathcal C^{\rho}}N^{\gamma+\rho}.
+        \frac{B}{\mathcal C^{\rho}}N^{\gamma+\rho}.
     \end{equation}
     Ее производная равна
     \begin{equation}
@@ -841,13 +1034,13 @@
         =
         -\alpha A N^{-\alpha-1}
         +
-        \frac{CB(\gamma+\rho)}{\mathcal C^{\rho}}N^{\gamma+\rho-1}.
+        \frac{B(\gamma+\rho)}{\mathcal C^{\rho}}N^{\gamma+\rho-1}.
     \end{equation}
     Приравнивая ее к нулю, получаем
     \begin{equation}
         \alpha A N^{-\alpha-1}
         =
-        \frac{CB(\gamma+\rho)}{\mathcal C^{\rho}}N^{\gamma+\rho-1},
+        \frac{B(\gamma+\rho)}{\mathcal C^{\rho}}N^{\gamma+\rho-1},
     \end{equation}
     откуда
     \begin{equation}
@@ -871,18 +1064,18 @@
     \end{equation}
 \end{proof}
 
-Предложение~\ref{prop:scaling-optimal} показывает, что оптимальное соотношение между моделью и данными определяется не только скоростью убывания ошибки выразимости, но и тем, насколько быстро растет локальная кривизна архитектуры в выбранном режиме масштабирования.
+Утверждение~\ref{prop:scaling-optimal} показывает, что оптимальное соотношение между моделью и данными определяется не только скоростью убывания ошибки выразимости, но и тем, насколько быстро с размером модели растет отношение шума к кривизне, то есть эффективное число параметров (замечание~\ref{rem:scaling-gamma-meaning}).
 
 \section{Вычислительные эксперименты}
 
-В данном разделе проводится эмпирическая проверка двух групп утверждений главы. В первом эксперименте исследуется связь между стабилизацией ландшафта функции потерь и достаточным размером выборки. Во втором эксперименте рассматривается более общая структурная интерпретация в терминах закона масштабирования для обобщающего разрыва. Программный код реализован на фреймворке \textbf{PyTorch} и доступен в репозитории диссертации по адресу
+В данном разделе проводится эмпирическая проверка двух групп утверждений главы. В первом эксперименте исследуется связь между стабилизацией ландшафта функции потерь и достаточным размером выборки. Во втором эксперименте проверяется асимптотика локального режима на линейной и логистической регрессии: константа берется из популяционного спектра и по кривой не подбирается. Программный код реализован на фреймворке \textbf{PyTorch} и доступен в репозитории диссертации по адресу
 \begin{center}
     \href{https://github.com/kisnikser/PhD-Thesis/tree/main/code/scaling}{\texttt{https://github.com/kisnikser/PhD-Thesis/code/scaling}}.
 \end{center}
 
-Эксперименты проводятся на задаче многоклассовой классификации датасета MNIST. Во всех запусках используется оптимизатор Adam с learning rate $10^{-3}$, batch size $128$ и число эпох обучения $100$. Все приводимые ниже величины усредняются по трем независимым запускам с различными случайными seed.
+Эксперименты проводятся на задаче многоклассовой классификации набора данных MNIST. Во всех запусках используется оптимизатор Adam с шагом обучения $10^{-3}$, размером мини-пакета $128$ и числом эпох обучения $100$. Все приводимые ниже величины усредняются по трем независимым запускам с различными начальными значениями генератора.
 
-\textbf{Архитектуры.} В эксперименты включены два класса моделей: полносвязные и сверточные сети с различной глубиной и шириной. Для полносвязных сетей используется обозначение MLP-$L$-$h$, где $L$~--- число линейных слоев, $h$~--- ширина скрытых слоев. Для сверточных сетей используется обозначение CNN-$L$-$c$, где $L$~--- число сверточных слоев, $c$~--- число каналов. Во всех CNN используется ядро $3\times 3$, шаг $1$, ReLU-активация и глобальный average pooling перед классификатором.
+\textbf{Архитектуры.} В эксперименты включены два класса моделей: полносвязные и сверточные сети с различной глубиной и шириной. Для полносвязных сетей используется обозначение MLP-$L$-$h$, где $L$~--- число линейных слоев, $h$~--- ширина скрытых слоев. Для сверточных сетей используется обозначение CNN-$L$-$c$, где $L$~--- число сверточных слоев, $c$~--- число каналов. Во всех сверточных сетях используется ядро $3\times 3$, шаг $1$, активация ReLU (англ. rectified linear unit) и глобальное усреднение (англ. global average pooling) перед классификатором.
 
 \begin{table}[htbp]
     \centering
@@ -918,26 +1111,26 @@ m \in \{100, \ldots, 30000\}
 \]
 модель обучается с нуля на подвыборке соответствующего объема. После обучения вычисляется среднеквадратичный критерий стабилизации ландшафта $\Delta_2(m)$, а для фиксированных порогов
 \[
-\varepsilon \in \{10^{-1},\,5\cdot 10^{-2},\,10^{-2}\}
+\varepsilon \in \{10^{-1}, \,5\cdot 10^{-2}, \,10^{-2}\}
 \]
 определяется достаточный размер выборки
 \[
-m^*(\varepsilon,\mathcal A)=\min\{m:\Delta_2(m)\le\varepsilon\}.
+m^*(\varepsilon, \mathcal A)=\min\{m:\Delta_2(m)\le\varepsilon\}.
 \]
 
-На рисунке~\ref{fig:delta2-convergence} представлена зависимость критерия $\Delta_2(m)$ от размера выборки для всех рассматриваемых архитектур в логарифмических координатах. Штриховой линией показана эталонная скорость убывания $\propto m^{-2}$, соответствующая оценкам главы~\ref{ch:landscapes}.
+На рисунке~\ref{fig:delta2-convergence} представлена зависимость критерия $\Delta_2(m)$ от размера выборки для всех рассматриваемых архитектур в логарифмических координатах. Штриховая линия имеет наклон $-2$ и проходит через одну точку кривой. Это порядок из тождества усреднения, а не показатель, подобранный по точкам.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.85\linewidth]{exp1_delta2_convergence.pdf}
-    \caption{Сходимость критерия $\Delta_2(m)$ для различных архитектур. Штриховая линия показывает теоретическую скорость $\propto m^{-2}$}
+    \includegraphics[width=\linewidth]{exp1_delta2_convergence.pdf}
+    \caption{Сходимость критерия $\Delta_2(m)$ для различных архитектур. Штриховая линия имеет наклон $-2$ и проходит через одну точку; это порядок из тождества усреднения, а не подобранный показатель}
     \label{fig:delta2-convergence}
 \end{figure}
 
-Результаты показывают, что для большинства рассматриваемых архитектур критерий $\Delta_2(m)$ убывает с ростом $m$ по закону, близкому к эталонной зависимости $\propto m^{-2}$. В частности, для полносвязных моделей оценки логарифмического наклона находятся вблизи значения $2$, а для сверточных архитектур наблюдается та же качественная тенденция, хотя разброс между отдельными конфигурациями больше. При фиксированном размере выборки более глубокие модели, как правило, демонстрируют большие значения $\Delta_2(m)$, что согласуется с архитектурно-зависимыми оценками, содержащими множитель глубины $L$.
+Результаты показывают, что для большинства рассматриваемых архитектур критерий $\Delta_2(m)$ убывает с ростом $m$ с наклоном, близким к $-2$. В частности, для полносвязных моделей оценки логарифмического наклона находятся вблизи значения $2$, а для сверточных архитектур наблюдается та же качественная тенденция, хотя разброс между отдельными конфигурациями больше. Этот наклон проверяет порядок из тождества усреднения. Числитель оценки, зависящий от $M_{\mathbf{G}}$, график не измеряет. При фиксированном размере выборки более глубокие модели, как правило, демонстрируют большие значения $\Delta_2(m)$, что согласуется с архитектурно-зависимыми оценками, содержащими множитель глубины $L$, но не является проверкой самой константы.
 
 \textbf{Влияние глубины на достаточный размер выборки.}
-Из теоретических результатов главы следует, что достаточный размер выборки растет с увеличением глубины архитектуры. Для проверки этого предсказания анализируется зависимость $m^*(\varepsilon,\mathcal A)$ от числа слоев $L$ отдельно для полносвязных и сверточных архитектур.
+Из теоретических результатов главы следует, что достаточный размер выборки растет с увеличением глубины архитектуры. Для проверки этого предсказания анализируется зависимость $m^*(\varepsilon, \mathcal A)$ от числа слоев $L$ отдельно для полносвязных и сверточных архитектур.
 
 \begin{table}[htbp]
     \centering
@@ -968,8 +1161,8 @@ m^*(\varepsilon,\mathcal A)=\min\{m:\Delta_2(m)\le\varepsilon\}.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.95\linewidth]{exp1_depth_analysis.pdf}
-    \caption{Влияние глубины на достаточный размер выборки. Слева: зависимость $m^*$ от $L$ для MLP и CNN. Справа: сравнение MLP и CNN при одинаковой глубине}
+    \includegraphics[width=\linewidth]{exp1_depth_analysis.pdf}
+    \caption[Достаточный размер выборки и глубина архитектуры]{Влияние глубины на достаточный размер выборки при $\varepsilon = 0{,}05$. Слева: $m^*$ для MLP и CNN; пустой треугольник --- порог не достигнут до $30\,000$. Справа: пары одной глубины, подпись --- глубина и ширина MLP}
     \label{fig:depth-analysis}
 \end{figure}
 
@@ -982,48 +1175,39 @@ m^*(\varepsilon,\mathcal A)=\min\{m:\Delta_2(m)\le\varepsilon\}.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.75\linewidth]{exp1_m_star_vs_params.pdf}
+    \includegraphics[width=\linewidth]{exp1_m_star_vs_params.pdf}
     \caption{Достаточный размер выборки $m^*(\varepsilon)$ в зависимости от числа параметров для MLP и CNN}
     \label{fig:m-star-vs-params}
 \end{figure}
 
 Таким образом, первый вычислительный эксперимент подтверждает следующие теоретические предсказания главы:
 \begin{enumerate}
-    \item критерий $\Delta_2(m)$ убывает с ростом $m$ по закону, согласующемуся с оценкой порядка $\mathcal O(m^{-2})$;
+    \item критерий $\Delta_2(m)$ убывает с ростом $m$ с порядком, близким к $\mathcal O(m^{-2})$. Этот порядок совпадает с оценкой главы~\ref{ch:landscapes} и следует из усреднения по объектам; эксперимент не измеряет архитектурную константу $M_{\mathbf{G}}$;
     \item внутри каждого семейства архитектур достаточный размер выборки монотонно возрастает с глубиной;
     \item преимущество сверточных архитектур по $m^*$ отчетливо проявляется для мелких моделей, но не является универсальным для всех рассмотренных конфигураций.
 \end{enumerate}
 
-\textbf{Эксперимент 2: структурная интерпретация в терминах закона масштабирования.}
-Во втором эксперименте для того же набора архитектур и тех же размеров выборки измеряются обучение и тестовая ошибка, а также обобщающий разрыв
+\textbf{Эксперимент 2: локальный режим.}
+Для гладкой модели с невырожденным минимумом локальный режим дает
 \[
-\widehat{\mathcal E}(m)=\mathcal L_{\mathrm{test}}-\mathcal L_{\mathrm{train}}.
+\mathbb E\,\mathcal E(k)
+=
+\frac{\operatorname{tr}(\mathbf H^{-1}\mathbf C)}{2k}
++
+o(k^{-1}).
 \]
-Дополнительно для каждой архитектуры вычисляется curvature proxy $\widehat M_{\mathbf G}$. Далее рассматриваются две аппроксимации вида
-\[
-\widehat{\mathcal E}(m)\approx \frac{C_{\mathcal A}}{m^{\rho}},
-\]
-где либо показатель $\rho$ подбирается индивидуально для каждой архитектуры, либо фиксируется общим для всех моделей. В соответствии с используемой реализацией аппроксимация строится по тем значениям $m$, для которых усредненный по seed обобщающий разрыв остается положительным.
+Константа вычисляется по популяционным матрицам и не оценивается по кривой обучения. Для линейной регрессии без регуляризации средний избыточный риск известен точно, $\sigma^2 n / (2(k - n - 1))$, и совпадает с этой асимптотикой при $k \gg n$.
 
-На рисунке~\ref{fig:exp2-gap-vs-m} показано убывание положительной части обобщающего разрыва с ростом объема обучающей выборки. Во всех рассматриваемых архитектурах на малых и средних размерах выборки наблюдается выраженное уменьшение gap, однако скорость этого уменьшения зависит от семейства моделей и глубины.
+Проверка выполнена методом Монте-Карло: $n = 20$, размеры выборки $k \in \{100, 200, 400, 800, 1600\}$, $2\,000$ независимых повторений на каждую точку. На рисунке~\ref{fig:local-regime}~(а) произведение $k$ на средний избыточный риск линейной модели лежит на точной формуле; штриховая линия --- предел $\operatorname{tr}(\mathbf H^{-1}\mathbf C)/2$. На рисунке~\ref{fig:local-regime}~(б) та же величина для логистической регрессии выходит на константу, посчитанную по популяционному спектру. Замена $15\%$ меток эту константу почти не сдвигает, и обе кривые к ней подходят.
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.85\linewidth]{exp2_gap_vs_m.pdf}
-    \caption{Обобщающий разрыв $\widehat{\mathcal E}(m)$ в зависимости от размера выборки. На графике показаны только положительные средние значения gap}
-    \label{fig:exp2-gap-vs-m}
+    \includegraphics[width=\linewidth]{ch4_local_regime.pdf}
+    \caption[Локальный режим: Монте-Карло и константа из спектра]{Локальный режим, $n = 20$, $2\,000$ повторений, отрезки --- две стандартные ошибки. (а) Линейная регрессия: точки --- Монте-Карло, сплошная линия --- точная формула, штриховая --- $\operatorname{tr}(\mathbf H^{-1}\mathbf C)/2$. (б) Логистическая регрессия с верными метками и с заменой $15\%$ меток; штриховая линия --- та же константа по популяционному спектру}
+    \label{fig:local-regime}
 \end{figure}
 
-Результаты аппроксимации представлены на рисунке~\ref{fig:exp2-scaling-fit}. Для индивидуальных степенных законов получаются достаточно высокие значения $R^2$ для большинства архитектур, что указывает на наличие устойчивого степенного режима в положительной части gap. При этом показатели степени заметно различаются между моделями: для неглубоких и средних MLP они лежат примерно в диапазоне $0.25{-}0.32$, для CNN "--- в диапазоне $0.67{-}0.79$, а для наиболее глубоких моделей принимают промежуточные значения. Общий показатель, оптимальный в смысле усредненного качества аппроксимации, равен $\rho_{\mathrm{shared}}\approx 0.349$ и дает лишь грубое описание всех архитектур одновременно.
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.95\linewidth]{exp2_scaling_law_fit.pdf}
-    \caption{Аппроксимация обобщающего разрыва степенным законом. Слева: индивидуальные показатели степени для каждой архитектуры. Справа: аппроксимация с общим показателем $\rho_{\mathrm{shared}}$}
-    \label{fig:exp2-scaling-fit}
-\end{figure}
-
-Таким образом, второй эксперимент согласуется со структурной схемой раздела~\ref{sec:scaling-laws-main}: для фиксированных архитектур положительная часть обобщающего разрыва допускает степенную аппроксимацию по $m$ с архитектурно-зависимыми коэффициентом и показателем степени.
+Таким образом, там, где минимум невырожден и модель не интерполирует выборку, предсказанная константа локального режима совпадает с расчетом. Показатель степени при этом не подбирается.
 
 \section{Обсуждение}
 
@@ -1031,6 +1215,6 @@ m^*(\varepsilon,\mathcal A)=\min\{m:\Delta_2(m)\le\varepsilon\}.
 
 Наиболее строгий результат главы состоит в том, что достаточный размер выборки может быть выражен через архитектурно-зависимую верхнюю границу на спектральную норму гаусс"--~ньютоновской компоненты матрицы Гессе. Для полносвязных и сверточных сетей это приводит к явным формулам, связывающим объем данных с глубиной, нормами весовых операторов, свойствами функций активации и, в сверточном случае, размером рецептивного поля.
 
-Наряду с этим в главе предложена более общая интерпретация полученных результатов в терминах законов масштабирования параметрических моделей. Эта часть носит структурный характер: она опирается на дополнительные предположения о связи между локальной геометрией оптимизационной поверхности и вкладом конечности обучающей выборки в итоговое значение функции потерь. Поэтому ее следует рассматривать не как строго доказанную в полной общности теорию, а как теоретически мотивированную схему, согласованную с результатами предыдущих глав.
+Наряду с этим в главе предложена более общая интерпретация полученных результатов в терминах законов масштабирования параметрических моделей. Эта часть носит структурный характер: она опирается на дополнительные предположения о связи между локальной геометрией оптимизационной поверхности и вкладом конечности обучающей выборки в итоговое значение функции потерь. Поэтому ее следует рассматривать не как строго доказанную в полной общности теорию, а как теоретически мотивированную схему, согласованную с результатами предыдущих глав. Для линейной регрессии схема доказана точно: средний избыточный риск равен $\operatorname{tr}(\mathbf H^{-1}\mathbf C)/(2m)$ с поправкой порядка $n/m$, а архитектурно-зависимая константа $M_{\mathbf G}(\mathcal A)$ входит в верхнюю оценку этой величины. Для линейной модели с неполным набором признаков схема реализуется точно со всеми тремя слагаемыми, а показатели закона масштабирования по размеру модели и объему данных выражаются через спектр матрицы Гессе и распределение по нему энергии истинной зависимости (теорема~\ref{thm:scaling-ms-exact}, следствие~\ref{cor:scaling-ms-exponents}). Для гладких моделей в локальном режиме схема обоснована асимптотически; вне локального режима предположение~\ref{assumption:scaling-local-stat} остается структурным.
 
-Тем самым глава выполняет двойную роль. С одной стороны, она завершает строгую линию диссертации, связывая оценки локальной кривизны с критериями достаточного размера выборки. С другой стороны, она показывает, как эти результаты могут быть интерпретированы в более широкой задаче описания законов масштабирования параметрических моделей машинного обучения.
+Тем самым глава выполняет двойную роль. С одной стороны, она завершает строгую линию диссертации, связывая оценки локальной кривизны с критериями достаточного размера выборки. С другой стороны, она показывает, как эти результаты могут быть интерпретированы в более широкой задаче описания масштабирования параметрических моделей машинного обучения. Вероятностная линейная модель позволяет описать достаточность выборки сходимостью распределения параметров, а не только стабилизацией поверхности.

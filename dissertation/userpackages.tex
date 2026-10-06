@@ -41,3 +41,8 @@
       \renewcommand{\gitMarkFormat}{\rmfamily\color{Gray}\small\bfseries}
    }{}
 }{}
+
+% Кавычка " --- активный символ polyglossia (гаусс"--~ньютоновская).
+% В закладках PDF XeTeX из TeX Live 2026 разворачивает её до деления на ноль.
+% В самом тексте сокращение не меняется.
+\begingroup\lccode`~=`"\lowercase{\endgroup\pdfstringdefDisableCommands{\def~{}}}

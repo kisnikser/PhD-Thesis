@@ -1,6 +1,10 @@
 % Оглавление (ГОСТ Р 7.0.11-2011, 5.2)
 \ifdefmacro{\microtypesetup}{\microtypesetup{protrusion=false}}{} % не рекомендуется применять пакет микротипографики к автоматически генерируемому оглавлению
+% Одна строка из отбивки под заголовком, только здесь: иначе «Список таблиц» остаётся один на третьей странице.
+\begingroup
+\setlength{\afterchapskip}{\dimexpr\afterchapskip-\baselineskip\relax}
 \tableofcontents*
+\endgroup
 \addtocontents{toc}{\protect\tocheader}
 \endTOCtrue
 \ifdefmacro{\microtypesetup}{\microtypesetup{protrusion=true}}{}

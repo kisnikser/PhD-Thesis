@@ -2,6 +2,21 @@
 code/data
 misc/
 
+# LaTeX auxiliaries. The PDFs are kept.
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.nav
+*.out
+*.snm
+*.synctex.gz
+*.toc
+*.xdv
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
