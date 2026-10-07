@@ -8,7 +8,7 @@
 
 Классические результаты теории статистического обучения гарантируют сходимость эмпирической функции потерь к популяционной при увеличении размера выборки~\cite{vapnik1998statistical,shalev2014understanding}. Однако из этого не следует автоматически, как меняются локальные геометрические характеристики ландшафта, в частности градиент, кривизна и спектральная структура матрицы Гессе в окрестности точек минимума. Между тем именно эти величины определяют локальную форму поверхности и играют существенную роль в анализе обучения глубоких моделей~\cite{dauphin2014,sagun2017hessian,ghorbani2019investigation,papyan2020traces}.
 
-Эмпирические исследования показывают, что в глубоких нейронных сетях спектр матрицы Гессе обычно имеет выраженно неоднородную структуру: большая часть собственных значений сосредоточена вблизи нуля, тогда как небольшое число выбросов задает основные направления локальной кривизны~\cite{sagun2017hessian,ghorbani2019investigation,papyan2019measurements,papyan2020traces,singh2021analytic}. Это делает естественным рассмотрение не только глобальных характеристик изменения ландшафта, но и их ограничений на маломерные подпространства, натянутые на главные собственные векторы матрицы Гессе.
+Эмпирические исследования показывают, что в глубоких нейронных сетях спектр матрицы Гессе обычно имеет выраженно неоднородную структуру: большая часть собственных значений сосредоточена вблизи нуля, тогда как небольшое число выбросов задает основные направления локальной кривизны~\cite{sagun2017hessian,ghorbani2019investigation,papyan2019,papyan2020traces,singh2021analytic}. Это делает естественным рассмотрение не только глобальных характеристик изменения ландшафта, но и их ограничений на маломерные подпространства, натянутые на главные собственные векторы матрицы Гессе.
 
 В данной главе предлагается подход к анализу стабилизации ландшафта функции потерь при увеличении объема обучающей выборки, основанный на сравнении эмпирических функций потерь на выборках размеров $k$ и $k+1$. В качестве исходного объекта рассматривается разность $\mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)$, которая затем исследуется в окрестности точки локального минимума с помощью квадратичной аппроксимации. Такой переход позволяет выразить изменение ландшафта через три составляющие: сдвиг значения функции потерь в точке минимума, градиентное рассогласование и разность матриц Гессе. На этой основе вводится общий критерий $p$-сходимости с функцией предпочтения точек в пространстве параметров, а затем рассматриваются его частные случаи, допускающие явные теоретические оценки.
 
@@ -570,7 +570,7 @@
         \label{eq:squared-criterion-general-proof-step2}
         \Delta_2(k+1)
         =
-        \mathbb E
+        \mathbb E_{\mathbf v}
         \left[
             \left(
                 a_k+\mathbf b_k^\top \mathbf v+\frac12 \mathbf v^\top \mathbf A_k \mathbf v
@@ -591,9 +591,9 @@
         \leqslant
         3a_k^2
         +
-        3\mathbb E\big[(\mathbf b_k^\top \mathbf v)^2\big]
+        3\mathbb E_{\mathbf v}\big[(\mathbf b_k^\top \mathbf v)^2\big]
         +
-        \frac{3}{4}\mathbb E\big[(\mathbf v^\top \mathbf A_k \mathbf v)^2\big].
+        \frac{3}{4}\mathbb E_{\mathbf v}\big[(\mathbf v^\top \mathbf A_k \mathbf v)^2\big].
     \end{equation}
 
     \textbf{Нулевой член.}
@@ -665,9 +665,9 @@
     Для второго момента линейной формы гауссовского вектора получаем
     \begin{equation}
         \label{eq:squared-criterion-general-proof-step11}
-        \mathbb E\big[(\mathbf b_k^\top \mathbf v)^2\big]
+        \mathbb E_{\mathbf v}\big[(\mathbf b_k^\top \mathbf v)^2\big]
         =
-        \mathbf b_k^\top \mathbb E[\mathbf v\mathbf v^\top]\mathbf b_k
+        \mathbf b_k^\top \mathbb E_{\mathbf v}[\mathbf v\mathbf v^\top]\mathbf b_k
         =
         \sigma^2 \|\mathbf b_k\|_2^2
         \leqslant
@@ -678,7 +678,7 @@
     Так как матрица $\mathbf A_k$ симметрична, а $\mathbf v \sim \mathcal N(\mathbf 0, \sigma^2\mathbf I_N)$, то
     \begin{equation}
         \label{eq:squared-criterion-general-proof-step12}
-        \mathbb E
+        \mathbb E_{\mathbf v}
         \big[
             (\mathbf v^\top \mathbf A_k \mathbf v)^2
         \big]
@@ -705,7 +705,7 @@
     откуда
     \begin{equation}
         \label{eq:squared-criterion-general-proof-step13}
-        \mathbb E
+        \mathbb E_{\mathbf v}
         \big[
             (\mathbf v^\top \mathbf A_k \mathbf v)^2
         \big]
@@ -772,7 +772,7 @@
     в~\eqref{eq:squared-criterion-general-proof-step13}, получаем
     \begin{equation}
         \label{eq:squared-criterion-general-proof-step19}
-        \mathbb E
+        \mathbb E_{\mathbf v}
         \big[
             (\mathbf v^\top \mathbf A_k \mathbf v)^2
         \big]
@@ -1034,9 +1034,9 @@
     \begin{equation}
         \label{eq:subspace-remainder}
         \Bigl|
-            \mathbb{E}\bigl[\mathbf{z}^\top\mathbf{U}^\top\mathbf{A}\mathbf{U}\mathbf{z}\bigr]
+            \mathbb{E}_{\mathbf{z}}\bigl[\mathbf{z}^\top\mathbf{U}^\top\mathbf{A}\mathbf{U}\mathbf{z}\bigr]
             -
-            \mathbb{E}\bigl[\mathbf{z}^\top\mathbf{V}^\top\mathbf{A}\mathbf{V}\mathbf{z}\bigr]
+            \mathbb{E}_{\mathbf{z}}\bigl[\mathbf{z}^\top\mathbf{V}^\top\mathbf{A}\mathbf{V}\mathbf{z}\bigr]
         \Bigr|
         \leqslant
         2\sqrt{2}\,D\sigma^2\|\mathbf{A}\|_2\sin\theta.
@@ -1155,9 +1155,9 @@
         \leqslant
         3a_k^2
         +
-        3\mathbb E\big[(\mathbf c_k^\top \mathbf z)^2\big]
+        3\mathbb E_{\mathbf z}\big[(\mathbf c_k^\top \mathbf z)^2\big]
         +
-        \frac34 \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big].
+        \frac34 \mathbb E_{\mathbf z}\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big].
     \end{equation}
 
     \textbf{Нулевой член.}
@@ -1198,7 +1198,7 @@
     Следовательно,
     \begin{equation}
         \label{eq:squared-subspace-general-proof-step5}
-        \mathbb E\big[(\mathbf c_k^\top \mathbf z)^2\big]
+        \mathbb E_{\mathbf z}\big[(\mathbf c_k^\top \mathbf z)^2\big]
         =
         \sigma^2\|\mathbf c_k\|_2^2
         \leqslant
@@ -1210,7 +1210,7 @@
     $\mathbf z \sim \mathcal N(\mathbf 0, \sigma^2\mathbf I_D)$, то
     \begin{equation}
         \label{eq:squared-subspace-general-proof-step6}
-        \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
+        \mathbb E_{\mathbf z}\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
         =
         2\sigma^4 \operatorname{Tr}(\mathbf B_k^2)
         +
@@ -1225,7 +1225,7 @@
     откуда
     \begin{equation}
         \label{eq:squared-subspace-general-proof-step7}
-        \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
+        \mathbb E_{\mathbf z}\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
         \leqslant
         \sigma^4(D^2+2D)\|\mathbf B_k\|_2^2.
     \end{equation}
@@ -1275,7 +1275,7 @@
     в~\eqref{eq:squared-subspace-general-proof-step7}, получаем
     \begin{equation}
         \label{eq:squared-subspace-general-proof-step12}
-        \mathbb E\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
+        \mathbb E_{\mathbf z}\big[(\mathbf z^\top \mathbf B_k \mathbf z)^2\big]
         \leqslant
         \frac{4\sigma^4(D^2+2D)M_{\mathbf H}^2}{(k+1)^2}.
     \end{equation}
@@ -1348,7 +1348,7 @@
     \end{equation}
     Далее
     \begin{equation}
-        \mathbb E
+        \mathbb E_{\mathbf z}
         \big[
             (\mathbf z^\top \mathbf B_k \mathbf z)^2
         \big]

@@ -88,7 +88,7 @@
 где $L(\mathfrak D, \hat{\mathbf w})$ "--- правдоподобие или иная характеристика качества модели на соответствующей выборке. Тогда размер выборки считается достаточным, если для всех $m\ge m^*$ выполняется
 \begin{equation}
     \label{eq:review-rs-mstar}
-    \mathbb E\,RS(m)\le \varepsilon.
+    \mathbb E_{\mathfrak D_m}\,RS(m)\le \varepsilon.
 \end{equation}
 
 Другой распространенный класс эвристических методов основан на бутстрапе. В этом случае для каждого $m$ строятся доверительные интервалы для оцениваемых параметров модели, и достаточный размер выборки определяется через их ширину. Если
@@ -116,7 +116,7 @@
     \forall m\ge m^*
     \quad
     \mathbb E_{\mathfrak D_m}
-    \mathsf D[\mathbf w | \mathfrak D_m]
+    \mathbb{D}[\mathbf w | \mathfrak D_m]
     \le l,
 \end{equation}
 где $l>0$ задает допустимый уровень неопределенности.
@@ -134,7 +134,7 @@
     \forall m\ge m^*
     \quad
     \mathbb E_{\mathfrak D_m}
-    \mathsf P\{\mathbf w\in A(\mathfrak D_m)\}
+    \mathbb{P}\{\mathbf w\in A(\mathfrak D_m)\}
     \ge 1-\alpha.
 \end{equation}
 
@@ -700,7 +700,7 @@
         \label{eq:scaling-ols-exact}
         \mathcal E(m)
         =
-        \mathbb E\,\mathcal L(\hat{\mathbf w}_m) - \mathcal L(\mathbf w_\star)
+        \mathbb E_{\mathfrak D_m}\,\mathcal L(\hat{\mathbf w}_m) - \mathcal L(\mathbf w_\star)
         =
         \frac{\sigma^2 n}{2(m - n - 1)}
         =
@@ -713,10 +713,10 @@
     \[
         \mathbb E_{\boldsymbol\varepsilon}\big[(\hat{\mathbf w}_m - \mathbf w_\star)(\hat{\mathbf w}_m - \mathbf w_\star)^\top\big] = \sigma^2 (\mathbf X^\top\mathbf X)^{-1}.
     \]
-    Матрица $\mathbf X^\top\mathbf X$ имеет распределение Уишарта $W_n(\boldsymbol\Sigma, m)$, и при $m > n + 1$ справедливо $\mathbb E(\mathbf X^\top\mathbf X)^{-1} = \boldsymbol\Sigma^{-1}/(m - n - 1)$; формула для риска метода наименьших квадратов при случайной матрице объектов"--~признаков известна~\cite{breiman1983variables}. Следовательно,
+    Матрица $\mathbf X^\top\mathbf X$ имеет распределение Уишарта $W_n(\boldsymbol\Sigma, m)$, и при $m > n + 1$ справедливо $\mathbb E_{\mathbf X}(\mathbf X^\top\mathbf X)^{-1} = \boldsymbol\Sigma^{-1}/(m - n - 1)$; формула для риска метода наименьших квадратов при случайной матрице объектов"--~признаков известна~\cite{breiman1983variables}. Следовательно,
     \[
-        \mathbb E\,\mathcal L(\hat{\mathbf w}_m) - \mathcal L(\mathbf w_\star)
-        = \frac{\sigma^2}{2}\operatorname{tr}\big(\boldsymbol\Sigma\,\mathbb E(\mathbf X^\top\mathbf X)^{-1}\big)
+        \mathbb E_{\mathfrak D_m}\,\mathcal L(\hat{\mathbf w}_m) - \mathcal L(\mathbf w_\star)
+        = \frac{\sigma^2}{2}\operatorname{tr}\big(\boldsymbol\Sigma\,\mathbb E_{\mathbf X}(\mathbf X^\top\mathbf X)^{-1}\big)
         = \frac{\sigma^2 n}{2(m - n - 1)}.
     \]
     Последнее равенство в~\eqref{eq:scaling-ols-exact} проверяется подстановкой $\operatorname{tr}(\mathbf H^{-1}\mathbf C) = \sigma^2 n$ из~\eqref{eq:scaling-ols-HC}.
@@ -735,16 +735,16 @@
         \leqslant
         \|\mathbf C\|_2 \operatorname{tr}(\mathbf H^{-1})
         \leqslant
-        \frac{\mathbb E\|\mathbf s\|^2}{a_{\min}}\, M_{\mathbf G}(\mathcal A)\, \operatorname{tr}(\mathbf H^{-1}).
+        \frac{\mathbb E_{(\mathbf x, \mathbf y)}\|\mathbf s\|^2}{a_{\min}}\, M_{\mathbf G}(\mathcal A)\, \operatorname{tr}(\mathbf H^{-1}).
     \end{equation}
 \end{lemma}
 
 \begin{proof}
-    Для $\mathbf H \succ 0$ и $\mathbf C \succeq 0$ имеем $\operatorname{tr}(\mathbf H^{-1}\mathbf C) = \operatorname{tr}(\mathbf H^{-1/2}\mathbf C\mathbf H^{-1/2}) \leqslant \|\mathbf C\|_2 \operatorname{tr}(\mathbf H^{-1})$. Далее $\mathbf C \preceq \mathbb E[\nabla\ell\,\nabla\ell^\top]$, и для любого вектора $\mathbf v$
+    Для $\mathbf H \succ 0$ и $\mathbf C \succeq 0$ имеем $\operatorname{tr}(\mathbf H^{-1}\mathbf C) = \operatorname{tr}(\mathbf H^{-1/2}\mathbf C\mathbf H^{-1/2}) \leqslant \|\mathbf C\|_2 \operatorname{tr}(\mathbf H^{-1})$. Далее $\mathbf C \preceq \mathbb E_{(\mathbf x, \mathbf y)}[\nabla\ell\,\nabla\ell^\top]$, и для любого вектора $\mathbf v$
     \[
         \mathbf v^\top \nabla\ell_i\nabla\ell_i^\top \mathbf v = (\mathbf s_i^\top \mathbf J_i \mathbf v)^2 \leqslant \|\mathbf s_i\|^2 \|\mathbf J_i\mathbf v\|^2 \leqslant \frac{\|\mathbf s_i\|^2}{a_{\min}}\, \mathbf v^\top \mathbf J_i^\top \mathbf A_i \mathbf J_i \mathbf v = \frac{\|\mathbf s_i\|^2}{a_{\min}}\, \mathbf v^\top \mathbf G_i \mathbf v,
     \]
-    откуда $\|\mathbf C\|_2 \leqslant \mathbb E[\|\mathbf s\|^2 \|\mathbf G\|_2]/a_{\min} \leqslant \mathbb E\|\mathbf s\|^2 M_{\mathbf G}(\mathcal A)/a_{\min}$.
+    откуда $\|\mathbf C\|_2 \leqslant \mathbb E_{(\mathbf x, \mathbf y)}[\|\mathbf s\|^2 \|\mathbf G\|_2]/a_{\min} \leqslant \mathbb E_{(\mathbf x, \mathbf y)}\|\mathbf s\|^2 M_{\mathbf G}(\mathcal A)/a_{\min}$.
 \end{proof}
 
 \begin{corollary}
@@ -757,7 +757,7 @@
 \end{corollary}
 
 \begin{proof}
-    Первое неравенство есть лемма~\ref{lem:scaling-trace-bound} при $\mathbf C = \sigma^2\boldsymbol\Sigma$, второе следует из $\|\mathbb E\,\mathbf x\mathbf x^\top\|_2 \leqslant \mathbb E\|\mathbf x\|^2 \leqslant M_{\mathbf x}^2$. Подстановка в~\eqref{eq:scaling-ols-exact} и неравенство $1 + (n+1)/(m-n-1) \leqslant 2$ при $m \geqslant 2(n+1)$ дают $\mathcal E(m) \leqslant \sigma^2 \operatorname{tr}(\boldsymbol\Sigma^{-1}) M_{\mathbf G} / m$.
+    Первое неравенство есть лемма~\ref{lem:scaling-trace-bound} при $\mathbf C = \sigma^2\boldsymbol\Sigma$, второе следует из $\|\mathbb E_{\mathbf x}\,\mathbf x\mathbf x^\top\|_2 \leqslant \mathbb E_{\mathbf x}\|\mathbf x\|^2 \leqslant M_{\mathbf x}^2$. Подстановка в~\eqref{eq:scaling-ols-exact} и неравенство $1 + (n+1)/(m-n-1) \leqslant 2$ при $m \geqslant 2(n+1)$ дают $\mathcal E(m) \leqslant \sigma^2 \operatorname{tr}(\boldsymbol\Sigma^{-1}) M_{\mathbf G} / m$.
 \end{proof}
 
 \begin{remark}
@@ -802,7 +802,7 @@
     В модели~\eqref{eq:scaling-ms-model} при $m > N + 1$
     \begin{equation}
         \label{eq:scaling-ms-exact}
-        \mathbb E\,\mathcal L(\hat{\mathbf w}_{N, m})
+        \mathbb E_{\mathfrak D_m}\,\mathcal L(\hat{\mathbf w}_{N, m})
         =
         \frac{\sigma^2}{2}
         +
@@ -822,7 +822,7 @@
 \end{theorem}
 
 \begin{proof}
-    Запишем $y = (\boldsymbol\theta^\star_{\leqslant N})^\top \mathbf x_{\leqslant N} + \xi$, где $\xi = \sum_{j>N}\theta_j^\star x_j + \varepsilon$. Величина $\xi$ не зависит от $\mathbf x_{\leqslant N}$, центрирована и имеет дисперсию $\sigma_N^2$. Следовательно, относительно признаков модели задача является хорошо специфицированной линейной регрессией с гауссовским распределением признаков $\mathcal N(\mathbf 0, \boldsymbol\Lambda_N)$ и шумом дисперсии $\sigma_N^2$. Доказательство утверждения~\ref{prop:scaling-ols-exact} использует лишь независимость шума от признаков, поэтому $\mathbb E\,\mathcal L(\hat{\mathbf w}_{N, m}) - \inf_{\mathcal W_N}\mathcal L = \sigma_N^2 N/(2(m - N - 1))$; остальные слагаемые дает лемма~\ref{lem:scaling-ms-risk}. Представление через $\operatorname{tr}(\mathbf H_N^{-1}\mathbf C_N) = \sigma_N^2 N$ проверяется подстановкой.
+    Запишем $y = (\boldsymbol\theta^\star_{\leqslant N})^\top \mathbf x_{\leqslant N} + \xi$, где $\xi = \sum_{j>N}\theta_j^\star x_j + \varepsilon$. Величина $\xi$ не зависит от $\mathbf x_{\leqslant N}$, центрирована и имеет дисперсию $\sigma_N^2$. Следовательно, относительно признаков модели задача является хорошо специфицированной линейной регрессией с гауссовским распределением признаков $\mathcal N(\mathbf 0, \boldsymbol\Lambda_N)$ и шумом дисперсии $\sigma_N^2$. Доказательство утверждения~\ref{prop:scaling-ols-exact} использует лишь независимость шума от признаков, поэтому $\mathbb E_{\mathfrak D_m}\,\mathcal L(\hat{\mathbf w}_{N, m}) - \inf_{\mathcal W_N}\mathcal L = \sigma_N^2 N/(2(m - N - 1))$; остальные слагаемые дает лемма~\ref{lem:scaling-ms-risk}. Представление через $\operatorname{tr}(\mathbf H_N^{-1}\mathbf C_N) = \sigma_N^2 N$ проверяется подстановкой.
 \end{proof}
 
 Формула~\eqref{eq:scaling-ms-exact} есть точный вид декомпозиции~\eqref{eq:scaling-loss-decomp}. Ошибка оценивания зависит не только от $m$, но и от $N$: через число параметров и через эффективный шум $\sigma_N^2$, в который входит не описанная моделью часть зависимости. При $m \to N + 1$ ошибка оценивания неограниченно растет, что соответствует порогу интерполяции.
@@ -842,7 +842,7 @@
         \item при фиксированном $N$ ошибка оценивания убывает как $\sigma_N^2 N/(2m)$, то есть $\rho = 1$;
         \item при оптимальном выборе размера модели для заданного $m$ имеем $N^*(m) \asymp (c\,m/\sigma^2)^{1/b}$ и
         \[
-            \min_{N}\, \mathbb E\,\mathcal L(\hat{\mathbf w}_{N, m}) - E \asymp m^{-\frac{b-1}{b}},
+            \min_{N}\, \mathbb E_{\mathfrak D_m}\,\mathcal L(\hat{\mathbf w}_{N, m}) - E \asymp m^{-\frac{b-1}{b}},
         \]
         то есть показатель убывания риска по объему данных равен $(b-1)/b = \alpha/(\alpha+1) < 1$;
         \item при вычислительном бюджете $\mathcal C = N m$
@@ -851,7 +851,7 @@
             \qquad
             m^* \asymp \mathcal C^{\frac{b}{b+1}},
             \qquad
-            \mathbb E\,\mathcal L - E \asymp \mathcal C^{-\frac{b-1}{b+1}}.
+            \mathbb E_{\mathfrak D_m}\,\mathcal L - E \asymp \mathcal C^{-\frac{b-1}{b+1}}.
         \]
     \end{enumerate}
 \end{corollary}
@@ -868,7 +868,7 @@
 Тот же показатель возникает при гребневой регрессии на всех признаках, $\hat{\mathbf w}_\mu = \arg\min_{\mathbf w}\, \mathcal L_m(\mathbf w) + \frac{\mu}{2}\|\mathbf w\|^2$, где роль размера модели играет эффективная размерность $d_{\mathrm{eff}}(\mu) = \sum_j \lambda_j/(\lambda_j + \mu)$. В первом порядке по $1/m$
 \begin{equation}
     \label{eq:scaling-ms-ridge}
-    \mathbb E\,\mathcal L(\hat{\mathbf w}_\mu) - E
+    \mathbb E_{\mathfrak D_m}\,\mathcal L(\hat{\mathbf w}_\mu) - E
     \approx
     \frac12 \sum_j e_j \frac{\mu^2}{(\lambda_j + \mu)^2}
     +
@@ -1190,7 +1190,7 @@ m^*(\varepsilon, \mathcal A)=\min\{m:\Delta_2(m)\le\varepsilon\}.
 \textbf{Эксперимент 2: локальный режим.}
 Для гладкой модели с невырожденным минимумом локальный режим дает
 \[
-\mathbb E\,\mathcal E(k)
+\mathbb E_{\mathfrak D_k}\,\mathcal E(k)
 =
 \frac{\operatorname{tr}(\mathbf H^{-1}\mathbf C)}{2k}
 +
@@ -1217,4 +1217,4 @@ o(k^{-1}).
 
 Наряду с этим в главе предложена более общая интерпретация полученных результатов в терминах законов масштабирования параметрических моделей. Эта часть носит структурный характер: она опирается на дополнительные предположения о связи между локальной геометрией оптимизационной поверхности и вкладом конечности обучающей выборки в итоговое значение функции потерь. Поэтому ее следует рассматривать не как строго доказанную в полной общности теорию, а как теоретически мотивированную схему, согласованную с результатами предыдущих глав. Для линейной регрессии схема доказана точно: средний избыточный риск равен $\operatorname{tr}(\mathbf H^{-1}\mathbf C)/(2m)$ с поправкой порядка $n/m$, а архитектурно-зависимая константа $M_{\mathbf G}(\mathcal A)$ входит в верхнюю оценку этой величины. Для линейной модели с неполным набором признаков схема реализуется точно со всеми тремя слагаемыми, а показатели закона масштабирования по размеру модели и объему данных выражаются через спектр матрицы Гессе и распределение по нему энергии истинной зависимости (теорема~\ref{thm:scaling-ms-exact}, следствие~\ref{cor:scaling-ms-exponents}). Для гладких моделей в локальном режиме схема обоснована асимптотически; вне локального режима предположение~\ref{assumption:scaling-local-stat} остается структурным.
 
-Тем самым глава выполняет двойную роль. С одной стороны, она завершает строгую линию диссертации, связывая оценки локальной кривизны с критериями достаточного размера выборки. С другой стороны, она показывает, как эти результаты могут быть интерпретированы в более широкой задаче описания масштабирования параметрических моделей машинного обучения. Вероятностная линейная модель позволяет описать достаточность выборки сходимостью распределения параметров, а не только стабилизацией поверхности.
+Тем самым глава выполняет двойную роль. С одной стороны, она завершает строгую линию диссертации, связывая оценки локальной кривизны с критериями достаточного размера выборки. С другой стороны, она показывает, как эти результаты оценивают масштабируемость параметрических моделей машинного обучения. Вероятностная линейная модель позволяет описать достаточность выборки сходимостью распределения параметров, а не только стабилизацией поверхности.

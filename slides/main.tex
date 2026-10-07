@@ -5,13 +5,10 @@
 \usepackage[T1,T2A]{fontenc}
 \usepackage[main=russian,english]{babel}
 
-\usepackage{svg}
 \usepackage{cmap}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta}
+\usetikzlibrary{positioning,arrows.meta,calc,fit}
 \usepackage{array}
-\usepackage{cancel}
-\usepackage{multicol}
 \usepackage{booktabs}
 \usepackage{csquotes}
 \usepackage{amssymb,amsfonts,amsmath}
@@ -20,7 +17,7 @@
 \usefonttheme[onlymath]{serif}
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{footline}[page number]
-\setbeamertemplate{blocks}[rounded=true,shadow=true}
+\setbeamertemplate{blocks}[rounded=true,shadow=true]
 \setbeamersize{text margin left=0.5cm,text margin right=0.5cm}
 \setbeamerfont{author}{size=\normalsize}
 \setbeamerfont{institute}{size=\normalsize}
@@ -31,510 +28,729 @@
 
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\tr}{tr}
 
-\title{Масштабирование параметрических моделей машинного обучения на основе локальной геометрии оптимизационной поверхности}
+% chapter tag in the upper right corner of a frame
+\newcommand{\chap}[1]{%
+    \begin{tikzpicture}[remember picture,overlay]
+        \node[anchor=north east,inner sep=3pt,font=\scriptsize\bfseries,text=white,fill=darkred!80,rounded corners=2pt]
+            at ($(current page.north east)+(-0.25,-0.22)$) {Глава #1};
+    \end{tikzpicture}%
+}
+
+\title{Ландшафтный метод оценки масштабируемости параметрических моделей машинного обучения}
 \author{
-    Киселев Никита Сергеевич
+    Киселев Никита Сергеевич\\
+    Научный руководитель: к.ф.-м.н. Грабовой~А.\,В.
 }
 \institute{
-    Диссертация на соискание ученой степени\\
-    кандидата физико-математических наук\\
-    1.2.1 --- Искусственный интеллект и машинное обучение\\
-    Научный руководитель: к.ф.-м.н. Грабовой~А.\,В.
+    Диссертация на соискание ученой степени кандидата физико-математических наук\\
+    1.2.1 --- Искусственный интеллект и машинное обучение
 }
 \date{Москва --- 2026}
 
 \begin{document}
 
+%======================================================================
 \begin{frame}
     \thispagestyle{empty}
     \maketitle
 \end{frame}
 
-\begin{frame}{Масштабирование параметрических моделей машинного обучения на основе локальной геометрии оптимизационной поверхности}
+%======================================================================
+\begin{frame}{Ландшафтный метод оценки масштабируемости параметрических моделей машинного обучения}
     \begin{block}{Проблема}
         Эмпирические законы масштабирования воспроизводятся на практике, но не имеют общего теоретического объяснения. Множество оптимальных параметров зависит от конечной обучающей выборки.
     \end{block}
     \begin{block}{Требуется}
-        Описать масштабирование параметрических моделей на основе локальной геометрии оптимизационной поверхности и определить по нему достаточный размер обучающей выборки.
+        Описать зависимость качества параметрической модели заданной архитектуры от ее размера и~объема обучающих данных для их совместного выбора и~определить достаточный размер выборки.
     \end{block}
     \begin{block}{Метод решения}
-        Анализ \alert{\textbf{стабилизации ландшафта функции потерь}} при росте выборки: для нейронных сетей "--- через спектр матрицы Гессе, для линейных моделей "--- через правдоподобие и апостериорные распределения.
+        Анализ локальной геометрии \alert{\textbf{ландшафта функции потерь}} и~ее стабилизации при росте выборки: для нейронных сетей "--- через спектр матрицы Гессе, для линейных моделей "--- через правдоподобие и~апостериорные распределения.
     \end{block}
 \end{frame}
 
-\begin{frame}{Разложение Гаусса"--~Ньютона матрицы Гессе}
+
+%======================================================================
+\begin{frame}{Постановка задачи\chap{2}}
+    \small
+    \begin{block}{Выборка и~модель}
+        Объект $(\mathbf x,\mathbf y)$: $\mathbf x\in\mathbb R^n$ "--- признаковое описание, $\mathbf y\in\mathbb R^K$ "--- целевая переменная. Выборка $\mathfrak D_m=\{(\mathbf x_i,\mathbf y_i)\}_{i=1}^m$ состоит из~$m$ независимых реализаций пары $(\mathbf x,\mathbf y)$ из неизвестного распределения $p(\mathbf x,\mathbf y)$. Параметрическая модель $f_{\mathbf w}:\mathbb R^n\to\mathbb R^K$, $\mathbf w\in\mathbb R^N$, аппроксимирует зависимость $\mathbf y$ от~$\mathbf x$.
+    \end{block}
+    \begin{block}{Задача обучения}
+        \vspace{-1.0em}
+        \[
+            \mathcal L_m(\mathbf w)=\frac1m\sum_{i=1}^m\underbrace{\ell\bigl(f_{\mathbf w}(\mathbf x_i),\mathbf y_i\bigr)}_{\ell_i(\mathbf w)}\ \to\ \min_{\mathbf w\in\mathbb R^N},
+            \qquad
+            \mathbf w_m^*\in\argmin_{\mathbf w\in\mathbb R^N}\mathcal L_m(\mathbf w),
+        \]
+        \[
+            \mathcal L(\mathbf w)=\mathbb E_{(\mathbf x,\mathbf y)\sim p}\,\ell\bigl(f_{\mathbf w}(\mathbf x),\mathbf y\bigr)
+            \quad\text{"--- популяционный риск}.
+        \]
+        \vspace{-1.3em}
+    \end{block}
+    \begin{block}{Локальная геометрия ландшафта}
+        \vspace{-1.0em}
+        \[
+            \mathbf g^{(m)}(\mathbf w)=\nabla_{\mathbf w}\mathcal L_m(\mathbf w)\in\mathbb R^N,
+            \qquad
+            \mathbf H^{(m)}(\mathbf w)=\nabla^2_{\mathbf w}\mathcal L_m(\mathbf w)=\frac1m\sum_{i=1}^m\mathbf H_i(\mathbf w)\in\mathbb R^{N\times N}.
+        \]
+        \vspace{-1.3em}
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Разложение Гаусса"--~Ньютона\chap{2}}
+    \begin{block}{Обозначения на одном объекте $(\mathbf x,\mathbf y)$}
+        \vspace{-1.0em}
+        \[
+            \mathbf z=f_{\mathbf w}(\mathbf x)\in\mathbb R^{K},
+            \qquad
+            \mathbf J(\mathbf w)=\frac{\partial\mathbf z}{\partial\mathbf w}\in\mathbb R^{K\times N},
+            \qquad
+            \mathbf A(\mathbf w)=\nabla_{\mathbf z}^2\ell(\mathbf z,\mathbf y)\in\mathbb R^{K\times K}.
+        \]
+        \vspace{-1.3em}
+    \end{block}
+    \begin{block}{Разложение матрицы Гессе на одном объекте}
+        \vspace{-1.0em}
+        \[
+            \mathbf H(\mathbf w)=\mathbf G(\mathbf w)+\mathbf R(\mathbf w),
+            \qquad
+            \mathbf G(\mathbf w)=\mathbf J(\mathbf w)^\top\mathbf A(\mathbf w)\mathbf J(\mathbf w),
+            \qquad
+            \mathbf R(\mathbf w)=\sum_{c=1}^{K}\frac{\partial\ell(\mathbf z,\mathbf y)}{\partial z_c}\,\nabla_{\mathbf w}^2 z_c.
+        \]
+        \vspace{-1.3em}
+    \end{block}
+    \begin{block}{Ключевая идея}
+        Остаточная компонента $\mathbf R(\mathbf w)$ пропорциональна производным $\partial\ell/\partial z_c$ и~\alert{\textbf{ослабевает в~окрестности минимума}}, а~также вносит вклад преимущественно в~область малых собственных значений. Спектрально значимую часть матрицы Гессе задает \alert{\textbf{гаусс"--~ньютоновская компонента $\mathbf G(\mathbf w)$}}: через нее в~кривизну входит архитектура модели.
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Блочная факторизация гаусс"--~ньютоновской компоненты\chap{2}}
+    \small
+    \begin{block}{Определение}
+        Сеть \alert{\textbf{матрично-представима}}, если $\mathbf x^{(1)}=\mathbf x$, $\mathbf z^{(p)}=T^{(p)}_{\mathbf w^{(p)}}(\mathbf x^{(p)})$, $\mathbf x^{(p+1)}=\sigma^{(p)}(\mathbf z^{(p)})$, $f_{\mathbf w}(\mathbf x)=\mathbf z^{(L)}$, где оператор $T^{(p)}_{\mathbf w^{(p)}}$ линеен по входу и~допускает матричное представление по~параметрам $\mathbf w^{(p)}\in\mathbb R^{N_p}$.
+    \end{block}
+    \vspace{-0.6em}
+    \begin{figure}
+        \centering
+        \resizebox{0.47\linewidth}{!}{\input{figs/gn_factorization.tikz}}
+    \end{figure}
+    \vspace{-1.0em}
+    \begin{block}{Лемма (Киселев, 2026)}
+        Пусть $f_{\mathbf w}$ "--- матрично-представимая сеть. Тогда $\mathbf G(\mathbf w)=\bigl[\mathbf G^{(p,q)}(\mathbf w)\bigr]_{p,q=1}^L$, где
+        \[
+            \mathbf G^{(p,q)}(\mathbf w)=\mathbf P^{(p)\top}\mathbf S^{(p)\top}\mathbf A\,\mathbf S^{(q)}\mathbf P^{(q)},
+            \qquad
+            \mathbf P^{(p)}=\frac{\partial\mathbf z^{(p)}}{\partial\mathbf w^{(p)}},
+            \quad
+            \mathbf S^{(p)}=\frac{\partial\mathbf z}{\partial\mathbf z^{(p)}}.
+        \]
+        \vspace{-1.3em}
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Архитектурно-зависимые оценки $\|\mathbf G\|_2$\chap{2}}
+    \small
+    \begin{block}{Теорема (Киселев, 2024)}
+        Пусть $f_{\mathbf w}$ "--- $L$-слойная \alert{\textbf{полносвязная}} сеть без смещений и~для всех $p=1,\ldots,L$
+        \[
+            \|\mathbf x\|_2\leqslant M_{\mathbf x},
+            \quad
+            \|\mathbf A(\mathbf w)\|_2\leqslant M_{\mathbf A},
+            \quad
+            \|\mathbf W^{(p)}\|_2\leqslant M_{\mathbf W},
+            \quad
+            \|\mathbf D^{(p)}\|_2\leqslant M_{\sigma},
+        \]
+        где $\mathbf D^{(p)}$ "--- матрица производных активации. Тогда
+        \[
+            \|\mathbf G(\mathbf w)\|_2\leqslant L M_{\mathbf x}^2 M_{\mathbf A}\,(M_{\mathbf W}M_{\sigma})^{2L-2}.
+        \]
+        Если, кроме того, $\sigma=\mathrm{ReLU}$, а~$\ell$ "--- кросс-энтропия, то $\|\mathbf G(\mathbf w)\|_2\leqslant\sqrt2\,L M_{\mathbf x}^2 M_{\mathbf W}^{2L-2}$.
+    \end{block}
+    \begin{block}{Теорема (Мешков, Киселев, 2024)}
+        Пусть $f_{\mathbf w}$ "--- $L$-слойная \alert{\textbf{сверточная}} сеть без смещений, для всех $p=1,\ldots,L$ выполнено $\|\mathbf x\|_2\leqslant M_{\mathbf x}$, $\|\mathbf A(\mathbf w)\|_2\leqslant M_{\mathbf A}$, $\|\mathcal W^{(p)}\|_1\leqslant M_{\mathcal W}$, $\|\mathbf D^{(p)}\|_2\leqslant M_{\sigma}$ и~$K_{\max}=\max_p C_{\mathrm{out}}^{(p)}k_hk_w$. Тогда
+        \[
+            \|\mathbf G(\mathbf w)\|_2\leqslant L M_{\mathbf x}^2 M_{\mathbf A}\,K_{\max}\,(M_{\mathcal W}M_{\sigma})^{2L-2}.
+        \]
+        \vspace{-1.3em}
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Эксперимент: гаусс"--~ньютоновская компонента и~матрица Гессе\chap{2}}
+    \small
+    \textbf{Цель:} проверить, что $\|\mathbf G\|_2$ близка к~$\|\mathbf H\|_2$, и~сравнить верхние оценки с~измеренными нормами.
+    \textbf{Постановка:} MNIST, 10 классов; MLP ($L$ линейных слоев) и~CNN ($L$ сверточных слоев, глобальное усреднение, линейный классификатор), $L\in\{2,4,8\}$, ширина $h\in\{64,128,256\}$; Adam, 10 эпох. Нормы вычисляются степенным методом на мини-пакете $128$ после инициализации и~эпох $1$, $5$, $10$.
+    \begin{columns}[T]
+        \begin{column}{0.49\textwidth}
+            \centering
+            \includegraphics[width=0.84\linewidth]{hessian_figures.pdf}\\
+            \footnotesize MLP: (а)~$\|\mathbf G\|_2/\|\mathbf H\|_2$; (б)~оценка$/$измерение
+        \end{column}
+        \begin{column}{0.49\textwidth}
+            \centering
+            \includegraphics[width=0.84\linewidth]{hessian_figures_cnn.pdf}\\
+            \footnotesize CNN: (а)~$\|\mathbf G\|_2/\|\mathbf H\|_2$; (б)~оценка$/$измерение
+        \end{column}
+    \end{columns}
+    \begin{block}{Вывод}
+        На поздних эпохах $\|\mathbf G\|_2\approx\|\mathbf H\|_2$: компонента $\mathbf G$ приближает спектрально значимую часть $\mathbf H$. Превышение оценки над измерением растет с~глубиной, как множитель $(M_{\mathbf W}M_\sigma)^{2L-2}$: оценка передает структуру зависимости от архитектуры, а~не точное значение нормы.
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Критерий сходимости поверхности функции потерь\chap{3}}
+\small
 \begin{columns}[T]
-    \begin{column}{0.56\textwidth}
-        \begin{block}{Функция потерь и матрица Гессе}
-            \vspace{-0.5em}
+    \begin{column}{0.57\textwidth}
+        \begin{minipage}{\linewidth}\raggedright
+            Критерий $p$-сходимости ландшафта функции потерь при добавлении одного объекта в~выборку $\mathfrak D_k$ с~минимумом $\mathbf w_k^*$ функции $\mathcal L_k$:
             \[
-                \mathfrak{D}_m=\{(\mathbf{x}_i,\mathbf{y}_i)\}_{i=1}^m
+                \Delta_p(k+1)=\int\bigl|\mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)\bigr|^p q(\mathbf w)\,d\mathbf w,
+            \]
+            где плотность $q$ с~основной массой вблизи $\mathbf w_k^*$ задает \alert{\textbf{функцию предпочтения}} точек в~пространстве параметров.
+        \end{minipage}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{criterion_general.pdf}
+    \end{column}
+\end{columns}
+\begin{block}{Утверждение (тождество усреднения)}
+    Для любой точки $\mathbf w$
+    \[
+        \mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)=\frac{\ell_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)}{k+1}.
+    \]
+    Поэтому если $|\ell_i(\mathbf w)|\leqslant M_\ell$ для всех $i$, то $\Delta_p(k+1)\leqslant(2M_\ell)^p/(k+1)^p$: порядок $k^{-p}$ задается усреднением по~объектам, а~локальная геометрия ландшафта определяет константу.
+\end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Схема теоретического анализа критериев\chap{3}}
+\footnotesize
+\begin{columns}[T]
+    \begin{column}{0.64\textwidth}
+        \begin{block}{Шаг 1. Квадратичная аппроксимация в~$\mathcal U_R(\mathbf w_k^*)$}
+            С~учетом $\mathbf g^{(k)}(\mathbf w_k^*)=\mathbf 0$ и~$\mathbf d=\mathbf w-\mathbf w_k^*$:
+            \[
+                \mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)=a_k+\mathbf b_k^\top\mathbf d+\tfrac12\mathbf d^\top\mathbf A_k\mathbf d,
             \]
             \[
-                \mathbf{x}\in\mathbb{R}^{n},\quad
-                \mathbf{y}\in\mathbb{R}^{K},\quad
-                \mathbf{w}\in\mathbb{R}^{N}
+                a_k=\mathcal L_{k+1}(\mathbf w_k^*)-\mathcal L_k(\mathbf w_k^*),
+                \qquad
+                \mathbf b_k=\mathbf g^{(k+1)}(\mathbf w_k^*)=\frac{\mathbf g_{k+1}(\mathbf w_k^*)}{k+1},
             \]
             \[
-                \mathcal{L}_m(\mathbf{w})=\frac1m\sum_{i=1}^m \ell_i(\mathbf{w}),
-                \quad
-                \ell_i(\mathbf{w})=\ell(f_{\mathbf{w}}(\mathbf{x}_i),\mathbf{y}_i)
+                \mathbf A_k=\mathbf H^{(k+1)}(\mathbf w_k^*)-\mathbf H^{(k)}(\mathbf w_k^*).
             \]
-            \[
-                \mathbf{H}^{(m)}(\mathbf{w})
-                =
-                \nabla_{\mathbf{w}}^2\mathcal{L}_m(\mathbf{w})
-                =
-                \frac1m\sum_{i=1}^m\mathbf{H}_i(\mathbf{w})
-            \]
-            \vspace{-1.5em}
+            \vspace{-1.3em}
         \end{block}
-        \begin{block}{Обозначения на одном объекте}
-            \vspace{-1.4em}
+        \begin{block}{Шаг 2. Слабое градиентное рассогласование}
+            $\|\mathbf g_{k+1}(\mathbf w_k^*)\|_2\leqslant M_{\mathbf g}$, т.\,е. $\|\nabla\mathcal L_{k+1}(\mathbf w_k^*)\|_2\leqslant M_{\mathbf g}/(k+1)$: новый объект почти не нарушает стационарность точки $\mathbf w_k^*$.
+        \end{block}
+        \begin{block}{Шаг 3. Оценка слагаемых и~интегрирование по~$q$}
+            При $|\ell_i(\mathbf w_k^*)|\leqslant M_\ell$ и~$\|\mathbf H_i(\mathbf w_k^*)\|_2\leqslant M_{\mathbf H}$
             \[
-                \mathbf{z}=f_{\mathbf{w}}(\mathbf{x}),
-                \quad
-                \mathbf{J}=\frac{\partial\mathbf{z}}{\partial\mathbf{w}},
-                \quad
-                \mathbf{A}=\nabla_{\mathbf{z}}^2\ell
+                |a_k|\leqslant\frac{2M_\ell}{k+1},
+                \qquad
+                \|\mathbf b_k\|_2\leqslant\frac{M_{\mathbf g}}{k+1},
+                \qquad
+                \|\mathbf A_k\|_2\leqslant\frac{2M_{\mathbf H}}{k+1}.
             \]
-            \vspace{-1.2em}
+            \vspace{-1.3em}
         \end{block}
     \end{column}
-    \begin{column}{0.44\textwidth}
-        \begin{block}{Разложение Гаусса"--~Ньютона}
-            \vspace{-0.4em}
-            \[
-                \mathbf{H}(\mathbf{w})=\mathbf{G}(\mathbf{w})+\mathbf{R}(\mathbf{w})
-            \]
-            \[
-                \mathbf{G}=\mathbf{J}^\top\mathbf{A}\mathbf{J}
-            \]
-            \[
-                \mathbf{R}(\mathbf{w})
-                =
-                \sum_{c=1}^{K}
-                \frac{\partial\ell}{\partial z_c}\,
-                \nabla_{\mathbf{w}}^2 z_c
-            \]
-            \vspace{-1.1em}
-        \end{block}
-        \begin{block}{Ключевая идея}
-            При малых невязках $\mathbf{R}(\mathbf{w})$ мало и $\|\mathbf{G}\|_2\approx\|\mathbf{H}\|_2$: кривизна анализируется через \alert{\textbf{компоненту $\mathbf{G}(\mathbf{w})$}}.
-        \end{block}
+    \begin{column}{0.35\textwidth}
+        \centering
+        \includegraphics[width=\linewidth,height=0.84\textheight,keepaspectratio]{losses_assumption.pdf}
     \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Блочная факторизация гаусс"--~ньютоновской компоненты}
-    \vspace{-0.4em}
-    \begin{figure}
+%======================================================================
+\begin{frame}{Абсолютный одноточечный критерий\chap{3}}
+\begin{columns}[T]
+    \begin{column}{0.57\textwidth}
+        \begin{minipage}{\linewidth}\raggedright
+            Абсолютный одноточечный критерий сходимости:
+            \[
+                \Delta_1(k+1)=\bigl|\mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)\bigr|,
+            \]
+            где $\mathbf w\in\mathcal U_R(\mathbf w_k^*)$ "--- точка из окрестности радиуса $R>0$ минимума $\mathbf w_k^*$, т.\,е. $p=1$ и~$q(\tilde{\mathbf w})=\delta(\tilde{\mathbf w}-\mathbf w)$.
+        \end{minipage}
+    \end{column}
+    \begin{column}{0.40\textwidth}
         \centering
-        \resizebox{0.56\linewidth}{!}{\input{figs/gn_factorization.tikz}}
-    \end{figure}
-    \vspace{-0.8em}
-    \begin{block}{Лемма (Киселев, 2026)}
-        Сеть матрично-представима, если слой линеен по входу: $\mathbf{z}^{(p)}=T^{(p)}(\mathbf{x}^{(p)})$, $\mathbf{x}^{(p+1)}=\sigma^{(p)}(\mathbf{z}^{(p)})$. Тогда
-        \[
-            \mathbf{G}^{(p,q)}(\mathbf{w})
-            =
-            \mathbf{P}^{(p)\top}\mathbf{S}^{(p)\top}\mathbf{A}\,\mathbf{S}^{(q)}\mathbf{P}^{(q)},
-        \]
-        где $\mathbf{P}^{(p)}=\partial\mathbf{z}^{(p)}/\partial\mathbf{w}^{(p)}$ "--- якобиан слоя по своим параметрам, $\mathbf{S}^{(p)}=\partial\mathbf{z}/\partial\mathbf{z}^{(p)}$ "--- распространение возмущения до выхода.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Оценки спектральной нормы $\|\mathbf{G}\|_2$}
-    Пусть $\|\mathbf{x}\|_2\leqslant M_{\mathbf{x}}$, $\|\mathbf{A}\|_2\leqslant M_{\mathbf{A}}$, $\|\mathbf{D}^{(p)}\|_2\leqslant M_{\sigma}$, где $\mathbf{D}^{(p)}$ "--- производные активации. Сети без смещений.
-    \begin{block}{Теорема (Киселев, 2024)}
-        $L$-слойная \alert{\textbf{полносвязная}} сеть, $\|\mathbf{W}^{(p)}\|_2\leqslant M_{\mathbf{W}}$:
-        \[
-            \|\mathbf{G}(\mathbf{w})\|_2
-            \leqslant
-            L M_{\mathbf{x}}^2 M_{\mathbf{A}}\,(M_{\mathbf{W}} M_{\sigma})^{2L-2}.
-        \]
-        \vspace{-1.2em}
-    \end{block}
-    \begin{block}{Теорема (Мешков, Киселев, 2024)}
-        $L$-слойная \alert{\textbf{сверточная}} сеть, $\|\mathcal{W}^{(p)}\|_1\leqslant M_{\mathcal{W}}$, $K_{\max}=\max_p(C_{\mathrm{out}}^{(p)} k_h k_w)$:
-        \[
-            \|\mathbf{G}(\mathbf{w})\|_2
-            \leqslant
-            L M_{\mathbf{x}}^2 M_{\mathbf{A}}\,\alert{K_{\max}}\,(\alert{M_{\mathcal{W}}} M_{\sigma})^{2L-2}.
-        \]
-        \vspace{-1.2em}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Эксперимент: гаусс"--~ньютоновская компонента и матрица Гессе}
-    MNIST, 10 эпох Adam, шаг $10^{-3}$. MLP и CNN, глубина $L\in\{2,4,8\}$, ширина $h\in\{64,128,256\}$. Нормы "--- степенные итерации на мини-пакете $128$, контрольные точки: инициализация, эпохи $1$, $5$ и $10$.
-    \vspace{0.25em}
-    \begin{columns}[T]
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.88\linewidth]{hessian_figures.pdf}\\
-            Полносвязная сеть
-        \end{column}
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.88\linewidth]{hessian_figures_cnn.pdf}\\
-            Сверточная сеть
-        \end{column}
-    \end{columns}
-    \vspace{0.15em}
-    \begin{block}{Вывод}
-        На поздних эпохах $\|\mathbf{G}\|_2$ и $\|\mathbf{H}\|_2$ близки. Превышение верхней оценки над измерением растет с глубиной экспоненциально: у MLP от $10^{4}$--$10^{5}$ при $L=2$ до $10^{14}$--$10^{21}$ при $L=8$. Оценка передает зависимость от архитектуры и не дает точного числа.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Критерий сходимости поверхности функции потерь}
-    К выборке $\mathfrak{D}_k$ с эмпирическим риском $\mathcal{L}_k$ и минимумом $\mathbf{w}_k^*$ добавляется один объект. Пробное распределение $q$ сосредоточено вблизи $\mathbf{w}_k^*$.
-    \begin{block}{Определение}
-        \vspace{-0.8em}
-        \[
-            \Delta_p(k+1)
-            =
-            \int\bigl|\mathcal{L}_{k+1}(\mathbf{w})-\mathcal{L}_k(\mathbf{w})\bigr|^p q(\mathbf{w})\,d\mathbf{w}.
-        \]
-        \vspace{-1.3em}
-    \end{block}
-    \begin{block}{Утверждение (точное представление)}
-        \vspace{-0.8em}
-        \[
-            \mathcal{L}_{k+1}(\mathbf{w})-\mathcal{L}_k(\mathbf{w})
-            =
-            \frac{\ell_{k+1}(\mathbf{w})-\mathcal{L}_k(\mathbf{w})}{k+1},
-        \]
-        поэтому $\Delta_p(k+1)=\mathbb{E}_q|\ell_{k+1}-\mathcal{L}_k|^p/(k+1)^p$.
-        Если $|\ell_i|\leqslant M_{\ell}$, то $\Delta_p(k+1)\leqslant(2M_{\ell})^p/(k+1)^p$.
-        \vspace{-0.6em}
-
-        Порядок $k^{-p}$ возникает до разложения Тейлора. Квадратичная аппроксимация и матрица Гессе оценивают числитель, а не порядок.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Абсолютный одноточечный критерий сходимости}
-    \begin{columns}[T]
-        \begin{column}{0.58\textwidth}
-            Одноточечный критерий "--- изменение ландшафта в одной точке окрестности минимума радиуса $R$:
-            \[
-                \Delta_1(k+1)=\bigl|\mathcal{L}_{k+1}(\mathbf{w})-\mathcal{L}_k(\mathbf{w})\bigr|,
-            \]
-            то есть $p=1$ и $q$ "--- дельта-мера в точке $\mathbf{w}\in\mathcal{U}_R(\mathbf{w}_k^*)$.
-        \end{column}
-        \begin{column}{0.40\textwidth}
-            \centering
-            \includegraphics[width=\linewidth]{criterion_abs.pdf}
-        \end{column}
-    \end{columns}
-    \begin{block}{Теорема (Киселев, 2024)}
-        В $\mathcal{U}_R(\mathbf{w}_k^*)$ верна квадратичная аппроксимация, $\|\mathbf{g}_{k+1}(\mathbf{w}_k^*)\|_2\leqslant M_{\mathbf{g}}$, $|\ell_i(\mathbf{w}_k^*)|\leqslant M_{\ell}$ и $\|\mathbf{H}_i(\mathbf{w}_k^*)\|_2\leqslant M_{\mathbf{H}}$. Тогда
-        \[
-            \Delta_1(k+1)
-            \leqslant
-            \frac{2M_{\ell}+M_{\mathbf{g}}R+M_{\mathbf{H}}R^2}{k+1}
-            =
-            \mathcal{O}(k^{-1}).
-        \]
-        \vspace{-1.2em}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Среднеквадратичный критерий сходимости}
-    \begin{columns}[T]
-        \begin{column}{0.58\textwidth}
-            Средний квадрат того же приращения по гауссовскому пробному распределению $q=\mathcal{N}(\mathbf{w}_k^*,\sigma^2\mathbf{I}_N)$:
-            \[
-                \Delta_2(k+1)
-                =
-                \mathbb{E}_q\bigl(\mathcal{L}_{k+1}(\mathbf{w})-\mathcal{L}_k(\mathbf{w})\bigr)^2.
-            \]
-            На практике среднее заменяется выборкой Монте-Карло $\mathbf{w}_s\sim q$.
-        \end{column}
-        \begin{column}{0.40\textwidth}
-            \centering
-            \includegraphics[width=0.80\linewidth]{criterion_squared.pdf}
-        \end{column}
-    \end{columns}
-    \begin{block}{Теорема (Киселев, 2025)}
-        В предположениях предыдущей теоремы
-        \[
-            \Delta_2(k+1)
-            \leqslant
-            \frac{12M_{\ell}^2+3\sigma^2 M_{\mathbf{g}}^2+3\sigma^4(\alert{N^2+2N})M_{\mathbf{H}}^2}{(k+1)^2}
-            =
-            \mathcal{O}(k^{-2}).
-        \]
-        \vspace{-1.1em}
-
-        Множитель $N^2+2N$ растет с числом параметров, и константа теряет практический смысл.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Критерий в подпространстве наибольшей кривизны}
-    \begin{columns}[T]
-        \begin{column}{0.58\textwidth}
-            Пусть $\lambda_1^{(k)}\geqslant\ldots\geqslant\lambda_N^{(k)}$ "--- собственные значения $\mathbf{H}^{(k)}(\mathbf{w}_k^*)$, $\mathbf{U}_D=[\mathbf{u}_1,\ldots,\mathbf{u}_D]$, $\mathcal{S}_D=\mathrm{Im}\,\mathbf{U}_D$. Пробное распределение сосредоточено в $\mathbf{w}_k^*+\mathcal{S}_D$:
-            \[
-                \mathbf{w}=\mathbf{w}_k^*+\mathbf{U}_D\mathbf{z},
-                \quad
-                \mathbf{z}\sim\mathcal{N}(\mathbf{0},\sigma^2\mathbf{I}_D).
-            \]
-        \end{column}
-        \begin{column}{0.40\textwidth}
-            \centering
-            \includegraphics[width=\linewidth]{criterion_squared_subspace.pdf}
-        \end{column}
-    \end{columns}
-    \begin{block}{Теорема (Киселев, 2026)}
-        В предположениях предыдущих теорем
-        \[
-            \Delta_2^{(D)}(k+1)
-            \leqslant
-            \frac{12M_{\ell}^2+3\sigma^2 M_{\mathbf{g}}^2+3\sigma^4(\alert{D^2+2D})M_{\mathbf{H}}^2}{(k+1)^2}
-            =
-            \mathcal{O}(k^{-2}).
-        \]
-        \vspace{-1.2em}
-
-        Порядок тот же. В константе $N$ заменено размерностью подпространства $D$.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Эксперимент: стабилизация ландшафта}
-    MNIST, MLP с одним скрытым слоем ширины $64$. Для каждого $k$ от $100$ до $10\,000$ сеть обучается $100$ эпох. $\Delta_2$ "--- $200$ точек Монте-Карло при $\sigma=0{,}5$; подпространство "--- $D\in\{5,10,20\}$. Три инициализации, семена $42$, $43$, $44$.
-    \vspace{0.2em}
-    \begin{columns}[T]
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.76\linewidth]{landscape_convergence.pdf}\\
-            $\Delta_2$ и сужения; штрих "--- $k^{-2}$
-        \end{column}
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.76\linewidth]{loss_surface_2d.pdf}\\
-            Сечения при $k=1000$
-        \end{column}
-    \end{columns}
-    \vspace{0.1em}
-    \begin{block}{Вывод}
-        Показатель $\Delta_2$ равен $1{,}94$ ($R^2=1{,}00$) при теоретическом значении около $2$; штрих через одну точку не подбирался. Сужения на $D=5,10,20$ дают $1{,}80$--$1{,}83$ и лежат ниже полного критерия. Вдоль ведущих направлений поверхность поднимается, вдоль случайных остается плоской.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Достаточный размер выборки}
-    Размер $m^*$ называется $\varepsilon$-достаточным по критерию $\Delta$, если $\Delta(m)\leqslant\varepsilon$ для всех $m\geqslant m^*$. Подстановка $\|\mathbf{H}_i\|_2\leqslant M_{\mathbf{G}}(\mathcal{A})+\delta_R$ в оценки предыдущих теорем дает явные пороги.
-    \begin{block}{Теорема (Киселев, 2026). Одноточечный критерий}
-        \vspace{-0.9em}
-        \[
-            m_1^*(\varepsilon,\mathcal{A})
-            =
-            \frac{2M_{\ell}+M_{\mathbf{g}}R+\bigl(M_{\mathbf{G}}(\mathcal{A})+\delta_R\bigr)R^2}{\varepsilon}.
-        \]
-        \vspace{-1.3em}
-    \end{block}
-    \begin{block}{Теорема (Киселев, 2026). Среднеквадратичный критерий}
-        \vspace{-0.9em}
-        \[
-            m_2^*(\varepsilon,\mathcal{A})
-            =
-            \sqrt{\frac{12M_{\ell}^2+3\sigma^2 M_{\mathbf{g}}^2+3\sigma^4(N^2+2N)\bigl(M_{\mathbf{G}}(\mathcal{A})+\delta_R\bigr)^2}{\varepsilon}}.
-        \]
-        \vspace{-1.3em}
-    \end{block}
-    \begin{block}{Теорема (Киселев, 2026). Подпространство размерности $D$}
-        \vspace{-0.9em}
-        \[
-            m_3^*(\varepsilon,\mathcal{A},D)
-            =
-            \sqrt{\frac{12M_{\ell}^2+3\sigma^2 M_{\mathbf{g}}^2+3\sigma^4(D^2+2D)\bigl(M_{\mathbf{G}}(\mathcal{A})+\delta_R\bigr)^2}{\varepsilon}}.
-        \]
-        \vspace{-1.3em}
-    \end{block}
-\end{frame}
-
-\begin{frame}{Схема закона масштабирования}
-    Средний риск в точке решения раскладывается тождественно:
+        \includegraphics[width=\linewidth]{criterion_abs.pdf}
+    \end{column}
+\end{columns}
+\begin{block}{Теорема (Киселев, 2024)}
+    Пусть в~$\mathcal U_R(\mathbf w_k^*)$ справедлива квадратичная аппроксимация, $\|\mathbf g_{k+1}(\mathbf w_k^*)\|_2\leqslant M_{\mathbf g}$ и~для всех $i=1,\ldots,k+1$ верно $|\ell_i(\mathbf w_k^*)|\leqslant M_\ell$, $\|\mathbf H_i(\mathbf w_k^*)\|_2\leqslant M_{\mathbf H}$. Тогда
     \[
-        \mathbb{E}\,\mathcal{L}(\mathbf{w}_m^*)=E+\Phi(N)+\mathcal{E}(m),
+        \Delta_1(k+1)\leqslant\frac{2M_\ell+M_{\mathbf g}R+M_{\mathbf H}R^2}{k+1}=\mathcal O(k^{-1}).
     \]
-    где $E$ "--- неустранимая ошибка, $\Phi(N)$ "--- ошибка выразимости класса с $N$ параметрами, $\mathcal{E}(m)\geqslant 0$ "--- ошибка оценивания.
-    \begin{block}{Предположение (Киселев, 2026). Локальный статистический режим}
-        Существуют $\rho\in(0,1]$ и $C>0$ такие, что $\mathcal{E}(m)\leqslant C\bigl(M_{\mathbf{G}}(\mathcal{A})+\delta_R\bigr)\,m^{-\rho}$. Это структурное предположение: оно не следует из предыдущих глав.
+    \vspace{-1.2em}
+\end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Среднеквадратичный критерий\chap{3}}
+\begin{columns}[T]
+    \begin{column}{0.57\textwidth}
+        \begin{minipage}{\linewidth}\raggedright
+            Среднеквадратичный критерий сходимости:
+            \[
+                \Delta_2(k+1)=\mathbb E_{q(\mathbf w)}\Bigl[\bigl(\mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)\bigr)^2\Bigr],
+            \]
+            т.\,е. $p=2$ и~$q(\mathbf w)=\mathcal N(\mathbf w_k^*,\sigma^2\mathbf I_N)$; на практике критерий оценивается методом Монте"--~Карло по точкам $\mathbf w_s\sim q(\mathbf w)$.
+        \end{minipage}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{criterion_squared.pdf}
+    \end{column}
+\end{columns}
+\begin{block}{Теорема (Киселев, 2025)}
+    Пусть выполнены условия предыдущей теоремы. Тогда
+    \[
+        \Delta_2(k+1)\leqslant\frac{12M_\ell^2+3\sigma^2M_{\mathbf g}^2+3\sigma^4(\alert{N^2+2N})M_{\mathbf H}^2}{(k+1)^2}=\mathcal O(k^{-2}).
+    \]
+    \vspace{-1.2em}
+\end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Критерий в~подпространстве наибольшей кривизны\chap{3}}
+\begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+        \begin{minipage}{\linewidth}\raggedright
+            Обозначим $\mathbf H^{(k)}(\mathbf w_k^*)\mathbf u_i=\lambda_i^{(k)}\mathbf u_i$, $\lambda_1^{(k)}\geqslant\ldots\geqslant\lambda_N^{(k)}$, $\mathbf U_{\alert{D}}=[\mathbf u_1,\ldots,\mathbf u_{\alert{D}}]$, $\mathcal S_{D}=\operatorname{Im}\mathbf U_{\alert{D}}$. Критерий с~$\operatorname{supp}q\subset\mathbf w_k^*+\mathcal S_{\alert{D}}$:
+            \[
+                \Delta_2^{(\alert{D})}(k+1)=\mathbb E_{q(\mathbf w)}\Bigl[\bigl(\mathcal L_{k+1}(\mathbf w)-\mathcal L_k(\mathbf w)\bigr)^2\Bigr],
+            \]
+            где $\mathbf w=\mathbf w_k^*+\mathbf U_D\mathbf z$, $\mathbf z\sim\mathcal N(\mathbf 0,\sigma^2\mathbf I_{\alert{D}})$.
+        \end{minipage}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{criterion_squared_subspace.pdf}
+    \end{column}
+\end{columns}
+\begin{block}{Теорема (Киселев, 2026)}
+    Пусть выполнены условия теоремы об~одноточечном критерии. Тогда
+    \[
+        \Delta_2^{(D)}(k+1)\leqslant\frac{12M_\ell^2+3\sigma^2M_{\mathbf g}^2+3\sigma^4(\alert{D^2+2D})M_{\mathbf H}^2}{(k+1)^2}=\mathcal O(k^{-2}).
+    \]
+    \vspace{-1.2em}
+\end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Эксперимент: скорость стабилизации ландшафта\chap{3}}
+    \small
+    \textbf{Цель:} проверить, что критерии убывают с~ростом выборки с~предсказанным порядком, и~сравнить полный критерий с~подпространственным.
+    \textbf{Постановка:} MNIST, MLP с~одним скрытым слоем ширины $64$. Для каждого $k$ от $100$ до~$10\,000$ сеть обучается $100$ эпох Adam, затем вычисляются $\Delta_1$ (100 направлений радиуса $0{,}5$), $\Delta_2$ ($200$ точек Монте"--~Карло, $\sigma=0{,}5$) и~$\Delta_2^{(D)}$, $D\in\{5,10,20\}$. Три инициализации.
+    \begin{columns}[c]
+        \begin{column}{0.56\textwidth}
+            \centering
+            \includegraphics[width=0.72\linewidth]{landscape_convergence.pdf}\\
+            \footnotesize Штриховая линия "--- теоретический наклон $-2$ через одну точку ряда $\Delta_2$
+        \end{column}
+        \begin{column}{0.42\textwidth}
+            \centering
+            \footnotesize
+            \begin{tabular}{@{}lccc@{}}
+                \toprule
+                Критерий & $\hat\alpha$ в $k^{-\alpha}$ & $R^2$ & Теория \\
+                \midrule
+                $\Delta_1$ & $2{,}33$ & $0{,}63$ & $\geqslant 1$ \\
+                $\Delta_2$ & $1{,}94$ & $1{,}00$ & $\approx 2$ \\
+                $\Delta_2^{(5)}$ & $1{,}80$ & $0{,}96$ & $\approx 2$ \\
+                $\Delta_2^{(10)}$ & $1{,}83$ & $0{,}99$ & $\approx 2$ \\
+                $\Delta_2^{(20)}$ & $1{,}84$ & $0{,}99$ & $\approx 2$ \\
+                \bottomrule
+            \end{tabular}
+        \end{column}
+    \end{columns}
+    \begin{block}{Вывод}
+        $\Delta_2$ убывает со скоростью, близкой к~$\mathcal O(k^{-2})$; $\Delta_2^{(D)}$ имеет близкий порядок и~меньшие значения: кривизна в~значительной, но не полной мере сосредоточена в~маломерном подпространстве. Степенная аппроксимация $\Delta_1$ ненадежна из-за высокой вариативности.
     \end{block}
-    \begin{block}{Предложение (Киселев, 2026)}
-        \vspace{-0.8em}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Эксперимент: геометрия ландшафта вдоль главных направлений\chap{3}}
+    \small
+    \textbf{Цель:} показать анизотропию ландшафта "--- рост функции потерь вдоль ведущих собственных направлений матрицы Гессе.
+    \textbf{Постановка:} та же сеть, $k=1000$, $100$ эпох. Сечения $\mathcal L(\mathbf w+\alpha\mathbf d_1+\beta\mathbf d_2)$, $\alpha,\beta\in[-1,1]$, $\|\mathbf d_i\|=1$: (а)~случайные ортогональные направления, (б)~два ведущих собственных вектора.
+    \begin{columns}[T]
+        \begin{column}{0.49\textwidth}
+            \centering
+            \includegraphics[width=0.92\linewidth]{loss_surface_2d.pdf}\\
+            \footnotesize Линии уровня; шкалы цвета различны
+        \end{column}
+        \begin{column}{0.49\textwidth}
+            \centering
+            \includegraphics[width=0.92\linewidth]{loss_surface_3d.pdf}\\
+            \footnotesize Те же сечения, общая вертикальная ось
+        \end{column}
+    \end{columns}
+    \begin{block}{Вывод}
+        Вдоль случайных направлений функция потерь остается в~пределах $0{,}0032$--$0{,}0037$, вдоль ведущих собственных векторов ($\lambda_1\approx1{,}74$, $\lambda_2\approx1{,}58$) поднимается примерно до~$25$: ландшафт выраженно анизотропен.
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Достаточный размер выборки\chap{4}}
+\vspace{-0.6em}
+\begin{columns}[T]
+    \begin{column}{0.53\textwidth}
+        \small
+        \begin{block}{Определение}
+            Пусть $\Delta(m)$ "--- один из критериев $\Delta_1$, $\Delta_2$, $\Delta_2^{(D)}$. Размер $m^*$ называется \alert{\textbf{$\varepsilon$-достаточным}} по~критерию $\Delta$, если
+            \[
+                \Delta(m)\leqslant\varepsilon\quad\text{для всех}\ m\geqslant m^*.
+            \]
+            \vspace{-1.6em}
+        \end{block}
+        \vspace{-0.4em}
+        \begin{block}{Архитектурно-зависимая кривизна}
+            \vspace{-1.0em}
+            \[
+                M_{\mathbf G}(\mathcal A)=\sup_{\mathbf w\in\mathcal U_R(\mathbf w^*)}\sup_i\|\mathbf G_i(\mathbf w)\|_2,
+            \]
+            \[
+                \delta_R=\sup_{\mathbf w\in\mathcal U_R(\mathbf w^*)}\sup_i\|\mathbf R_i(\mathbf w)\|_2.
+            \]
+            \vspace{-1.2em}
+        \end{block}
+        \begin{block}{Утверждение}
+            Во всех оценках главы 3 можно положить $M_{\mathbf H}=M_{\mathbf G}(\mathcal A)+\delta_R$: достаточный размер выборки зависит от архитектуры через $M_{\mathbf G}(\mathcal A)$.
+        \end{block}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+        \centering
+        \begin{tikzpicture}[>=Latex,x=0.88cm,y=0.95cm,font=\footnotesize]
+            \fill[green!50!black,opacity=0.08] (3.05,0) rectangle (6.4,4.0);
+            \draw[->] (0,0) -- (6.6,0) node[below left] {$m$};
+            \draw[->] (0,0) -- (0,4.2) node[left] {$\Delta(m)$};
+            \draw[very thick,blue!70!black,domain=0.72:6.3,samples=80] plot (\x,{2.0/(\x*\x)+0.02});
+            \draw[thick,dashed,darkred,domain=1.34:6.3,samples=80] plot (\x,{7.0/(\x*\x)+0.02});
+            \draw[thick,black!60] (0,0.75) -- (6.3,0.75) node[above left] {$\varepsilon$};
+            \draw[densely dotted] (1.66,0.75) -- (1.66,0) node[below] {$m^*$};
+            \draw[densely dotted] (3.08,0.75) -- (3.08,0) node[below] {$m^*(\varepsilon,\mathcal A)$};
+            \fill[blue!70!black] (1.66,0.75) circle (1.6pt);
+            \fill[darkred] (3.08,0.75) circle (1.6pt);
+            \node[blue!70!black] at (5.7,0.4) {$\Delta(m)$};
+            \node[darkred,anchor=west,align=left] at (1.95,2.6) {оценка теоремы\\ $C(\mathcal A)/(m+1)^{p}$};
+            \node[green!40!black,align=center] at (4.75,1.6) {$\Delta(m)\leqslant\varepsilon$\\ при $m\geqslant m^*(\varepsilon,\mathcal A)$};
+        \end{tikzpicture}
+
+        \footnotesize Оценка сверху на критерий дает явный $\varepsilon$-достаточный размер $m^*(\varepsilon,\mathcal A)$; он не меньше наименьшего $m^*$.
+    \end{column}
+\end{columns}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Явные оценки достаточного размера выборки\chap{4}}
+    \footnotesize
+    Пусть в~окрестности минимума $\|\mathbf H_i(\mathbf w)\|_2\leqslant M_{\mathbf G}(\mathcal A)+\delta_R$.
+    \begin{block}{Теорема (Киселев, 2026)}
+        Пусть выполнены условия теоремы об~одноточечном критерии. Тогда размер
         \[
-            \mathbb{E}\,\mathcal{L}(\mathbf{w}_m^*)
-            \leqslant
-            E+\Phi(N)+\frac{C\bigl(M_{\mathbf{G}}(\mathcal{A})+\delta_R\bigr)}{m^{\rho}}.
+            m_1^*(\varepsilon,\mathcal A)=\frac{2M_\ell+M_{\mathbf g}R+\bigl(M_{\mathbf G}(\mathcal A)+\delta_R\bigr)R^2}{\varepsilon}
+        \]
+        является $\varepsilon$-достаточным по критерию $\Delta_1$.
+    \end{block}
+    \begin{block}{Теорема (Киселев, 2026)}
+        Пусть выполнены условия теорем о~среднеквадратичных критериях. Тогда размеры
+        \[
+            m_2^*(\varepsilon,\mathcal A)=\sqrt{\frac{C(N)}{\varepsilon}},
+            \quad
+            m_3^*(\varepsilon,\mathcal A,D)=\sqrt{\frac{C(D)}{\varepsilon}},
+            \quad
+            C(d)=12M_\ell^2+3\sigma^2M_{\mathbf g}^2+3\sigma^4(d^2+2d)\bigl(M_{\mathbf G}(\mathcal A)+\delta_R\bigr)^2,
+        \]
+        являются $\varepsilon$-достаточными по критериям $\Delta_2$ и~$\Delta_2^{(D)}$ соответственно.
+        \vspace{-0.2em}
+    \end{block}
+    \textbf{Следствие.} Для $L$-слойной полносвязной сети $M_{\mathbf G}(\mathcal A)\leqslant LM_{\mathbf x}^2M_{\mathbf A}(M_{\mathbf W}M_\sigma)^{2L-2}$, для сверточной "--- $LM_{\mathbf x}^2M_{\mathbf A}K_{\max}(M_{\mathcal W}M_\sigma)^{2L-2}$, поэтому достаточный размер явно зависит от~глубины.
+\end{frame}
+
+%======================================================================
+\begin{frame}{Эксперимент: стабилизация ландшафта и~достаточный размер\chap{4}}
+    \small
+    \textbf{Цель:} проверить предсказание теории "--- достаточный размер выборки растет с~глубиной архитектуры.
+    \textbf{Постановка:} MNIST; MLP-$L$-$h$ ($L$ линейных слоев ширины $h$) и~CNN-$L$-$c$ ($L$ сверточных слоев с~$c$ каналами, ядро $3\times3$), $L\in\{2,4,8\}$. Для каждого $m$ от~$100$ до~$30\,000$ модель обучается с~нуля ($100$ эпох Adam, три запуска), затем вычисляется $\Delta_2(m)$ и~$m^*(\varepsilon,\mathcal A)=\min\{m:\Delta_2(m)\leqslant\varepsilon\}$.
+    \begin{columns}[T]
+        \begin{column}{0.45\textwidth}
+            \centering
+            \includegraphics[width=0.70\linewidth]{exp1_delta2_convergence.pdf}\\
+            \footnotesize $\Delta_2(m)$; штриховая линия "--- наклон $-2$
+        \end{column}
+        \begin{column}{0.53\textwidth}
+            \centering
+            \includegraphics[width=0.70\linewidth]{exp1_depth_analysis.pdf}\\
+            \footnotesize $m^*$ при $\varepsilon=0{,}05$; пустой треугольник "--- порог не достигнут
+        \end{column}
+    \end{columns}
+    \begin{block}{Вывод}
+        $\Delta_2(m)$ убывает с~порядком, близким к~$\mathcal O(m^{-2})$. Внутри каждого семейства $m^*$ монотонно растет с~глубиной; для $L=8$ порог $\varepsilon=0{,}05$ не достигнут до~$30\,000$. Преимущество CNN отчетливо для мелких моделей ($m^*=100$, $200$ против $300$, $500$ при $L=2$), но не универсально.
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Схема закона масштабирования\chap{4}}
+    \small
+    Популяционный риск $\mathcal L(\mathbf w)=\mathbb E_{(\mathbf x,\mathbf y)\sim p}\,\ell(f_{\mathbf w}(\mathbf x),\mathbf y)$; $\mathcal W_N\subset\mathbb R^N$ "--- модели с~$N$ параметрами, $\mathbf w_\infty^*$ "--- минимизатор риска в~предельном классе, $\mathbf w_m^*$ "--- решение по~выборке $\mathfrak D_m$.
+    \begin{block}{Декомпозиция (тождество)}
+        \vspace{-1.0em}
+        \[
+            \mathbb E_{\mathfrak D_m}\mathcal L(\mathbf w_m^*)
+            =\underbrace{\mathcal L(\mathbf w_\infty^*)}_{E\text{ "--- неустранимая}}
+            +\underbrace{\inf_{\mathbf w\in\mathcal W_N}\mathcal L(\mathbf w)-E}_{\Phi(N)\text{ "--- выразимость}}
+            +\underbrace{\mathbb E_{\mathfrak D_m}\mathcal L(\mathbf w_m^*)-\inf_{\mathbf w\in\mathcal W_N}\mathcal L(\mathbf w)}_{\mathcal E(m)\geqslant0\text{ "--- оценивание}}.
         \]
         \vspace{-1.2em}
-
-        Для линейной регрессии предположение выполнено точно с $\rho=1$, а константа ошибки оценивания есть $\operatorname{tr}(\mathbf{H}^{-1}\mathbf{C})/2$, не $\|\mathbf{G}\|_2$.
+    \end{block}
+    \begin{block}{Предположение (локальный статистический режим)}
+        Пусть $\mathbf w_m^*$ лежит в~области, где квадратичная аппроксимация информативна, $\delta_R$ мало по~сравнению с~$M_{\mathbf G}(\mathcal A)$, а~минимум устойчив. Тогда существуют $\rho\in(0,1]$ и~$C>0$ такие, что $\mathcal E(m)\leqslant C\bigl(M_{\mathbf G}(\mathcal A)+\delta_R\bigr)m^{-\rho}$.
+    \end{block}
+    \begin{block}{Утверждение (Киселев, 2026)}
+        Пусть выполнено предположение о~локальном режиме. Тогда
+        \[
+            \mathbb E_{\mathfrak D_m}\mathcal L(\mathbf w_m^*)\leqslant E+\Phi(N)+\frac{C\bigl(M_{\mathbf G}(\mathcal A)+\delta_R\bigr)}{m^{\rho}}.
+        \]
+        \vspace{-1.3em}
     \end{block}
 \end{frame}
 
-\begin{frame}{Линейная модель с неполным набором признаков}
-    Признаки $\mathbf{x}\sim\mathcal{N}(\mathbf{0},\boldsymbol{\Lambda})$, $\boldsymbol{\Lambda}=\operatorname{diag}(\lambda_j)$, ответ $y=\sum_j\theta_j^\star x_j+\varepsilon$. Модель с $N$ параметрами видит первые $N$ признаков. $e_j=\lambda_j(\theta_j^\star)^2$, $\Phi(N)=\frac12\sum_{j>N}e_j$, $\sigma_N^2=\sigma^2+2\Phi(N)$, $E=\sigma^2/2$.
-    \begin{block}{Теорема (Киселев, 2026)}
-        При $m>N+1$
+%======================================================================
+\begin{frame}{Точно решаемый случай: линейная регрессия\chap{4}}
+    \small
+    \begin{block}{Утверждение (Киселев, 2026)}
+        Пусть $y=\mathbf w_\star^\top\mathbf x+\varepsilon$, где $\mathbf x\sim\mathcal N(\mathbf 0,\boldsymbol\Sigma)$, $\boldsymbol\Sigma\succ0$, шум $\varepsilon\sim\mathcal N(0,\sigma^2)$ не зависит от $\mathbf x$, $\ell=\frac12(y-\mathbf w^\top\mathbf x)^2$, а~$\hat{\mathbf w}_m$ "--- оценка наименьших квадратов по~$m>n+1$ объектам. Тогда
         \[
-            \mathbb{E}\,\mathcal{L}(\hat{\mathbf{w}}_{N,m})
-            =
-            \frac{\sigma^2}{2}+\Phi(N)+\frac{\sigma_N^2 N}{2(m-N-1)},
+            \mathcal E(m)=\mathbb E_{\mathfrak D_m}\mathcal L(\hat{\mathbf w}_m)-\mathcal L(\mathbf w_\star)
+            =\frac{\sigma^2n}{2(m-n-1)}
+            =\frac{\tr(\mathbf H^{-1}\mathbf C)}{2m}\Bigl(1+\frac{n+1}{m-n-1}\Bigr),
         \]
-        \[
-            \mathcal{E}(N,m)
-            =
-            \frac{\operatorname{tr}(\mathbf{H}_N^{-1}\mathbf{C}_N)}{2m}
-            \left(1+\frac{N+1}{m-N-1}\right),
-            \quad
-            \mathbf{H}_N=\boldsymbol{\Lambda}_N,\ 
-            \mathbf{C}_N=\sigma_N^2\boldsymbol{\Lambda}_N.
-        \]
-        \vspace{-0.8em}
+        где $\mathbf H=\boldsymbol\Sigma$ "--- матрица Гессе, $\mathbf C=\operatorname{Cov}\nabla\ell(\mathbf w_\star)=\sigma^2\boldsymbol\Sigma$ "--- ковариация градиентов.
     \end{block}
-    \begin{block}{Следствие (Киселев, 2026). При $e_j=c\,j^{-b}$, $b>1$}
-        $\alpha=b-1$, при фиксированном $N$ верно $\rho=1$, а при бюджете $\mathcal{C}=Nm$ вычислительно-оптимальный размер $N^*\asymp\mathcal{C}^{1/(\alpha+2)}$.
+    \begin{block}{Лемма}
+        Пусть $\mathbf H\succ0$, $\mathbf C\succeq0$, $\nabla\ell_i=\mathbf J_i^\top\mathbf s_i$, $\mathbf A_i\succeq a_{\min}\mathbf I$, $a_{\min}>0$, и~$\|\mathbf G_i(\mathbf w^*)\|_2\leqslant M_{\mathbf G}(\mathcal A)$. Тогда
+        \[
+            \tr(\mathbf H^{-1}\mathbf C)\leqslant\|\mathbf C\|_2\tr(\mathbf H^{-1})\leqslant\frac{\mathbb E\|\mathbf s\|^2}{a_{\min}}\,M_{\mathbf G}(\mathcal A)\tr(\mathbf H^{-1}).
+        \]
+        \vspace{-1.3em}
+    \end{block}
+    \begin{block}{Следствие}
+        Пусть, кроме того, $\|\mathbf x\|\leqslant M_{\mathbf x}$ и~$m\geqslant2(n+1)$. Тогда предположение о~локальном режиме выполнено \alert{\textbf{точно}}: $\rho=1$, $\delta_R=0$, $M_{\mathbf G}=M_{\mathbf x}^2$, $C=\sigma^2\tr(\boldsymbol\Sigma^{-1})$.
     \end{block}
 \end{frame}
 
-\begin{frame}{Эксперимент: проверка точных формул}
-    Слева: МНК при $n=10$ и модель с $N$ признаками, $\lambda_j=j^{-1{,}5}$, $e_j=j^{-2}$, $\sigma=0{,}5$. Справа: $D=10^6$, три пары $(a,b)$. Точки "--- Монте-Карло, линии "--- формулы, не подгонка.
-    \vspace{0.2em}
-    \begin{columns}[T]
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.92\linewidth]{ch4_exact_ols.pdf}\\
-            Сравнение с Монте-Карло
-        \end{column}
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.92\linewidth]{ch4_exact_exponents.pdf}\\
-            Показатели при $D=10^6$
-        \end{column}
-    \end{columns}
-    \vspace{0.1em}
+%======================================================================
+\begin{frame}{Эксперимент: константа локального режима\chap{4}}
+    \small
+    \textbf{Цель:} проверить асимптотику $\mathbb E\,\mathcal E(k)=\tr(\mathbf H^{-1}\mathbf C)/(2k)+o(k^{-1})$ с~константой, вычисленной по~популяционным матрицам, а~не подобранной по~кривой обучения.
+    \textbf{Постановка:} линейная и~логистическая регрессия, $n=20$, $k\in\{100,200,400,800,1600\}$, $2\,000$ повторений на~точку; отложено $k\cdot\mathbb E\,\mathcal E(k)$, отрезки "--- две стандартные ошибки; штриховая линия "--- $\tr(\mathbf H^{-1}\mathbf C)/2$.
+    \begin{center}
+        \includegraphics[width=0.52\linewidth]{ch4_local_regime.pdf}
+    \end{center}
+    \vspace{-0.6em}
     \begin{block}{Вывод}
-        Расхождение с Монте-Карло не превышает двух стандартных ошибок, в том числе у порога интерполяции. Наклоны $-0{,}51$, $-0{,}67$ и $-0{,}60$ при предсказанных $-0{,}5$, $-0{,}667$ и $-0{,}6$.
+        (а)~В~линейной регрессии Монте"--~Карло совпадает с~точной формулой. (б)~Логистическая регрессия выходит на~константу из спектра; замена $15\%$ меток ее почти не сдвигает. Где минимум невырожден и~модель не интерполирует выборку, константа совпадает с~расчетом.
     \end{block}
 \end{frame}
 
-\begin{frame}{Эксперимент: локальный режим}
-    Линейная и логистическая регрессия, $n=20$, $2\,000$ повторений. Штриховая линия "--- $\operatorname{tr}(\mathbf{H}^{-1}\mathbf{C})/2$ по популяционному спектру, по точкам не подбирается. Справа $15\%$ меток заменены.
-    \vspace{0.15em}
+%======================================================================
+\begin{frame}{Вероятностная модель линейной регрессии\chap{5}}
+    \small
+    \begin{block}{Постановка}
+        Объект $(\mathbf x,y)$: $\mathbf x\in\mathbb R^n$, $y\in\mathbb R$; выборка $\mathfrak D_m$ из~$m$ независимых реализаций, $\mathbf X_m=[\mathbf x_1,\ldots,\mathbf x_m]^\top\in\mathbb R^{m\times n}$, $\mathbf y_m\in\mathbb R^m$. Модель задается правдоподобием
+        \[
+            p(y\,|\,\mathbf x,\mathbf w)=\mathcal N(y\,|\,\mathbf w^\top\mathbf x,\sigma^2),
+            \qquad
+            L(\mathfrak D_m,\mathbf w)=p(\mathbf y_m\,|\,\mathbf X_m,\mathbf w)=\prod_{i=1}^m\mathcal N(y_i\,|\,\mathbf w^\top\mathbf x_i,\sigma^2).
+        \]
+        ОМП по подвыборке $\mathfrak D_k\subseteq\mathfrak D_m$: $\hat{\mathbf w}_k=\argmax_{\mathbf w}L(\mathfrak D_k,\mathbf w)=(\mathbf X_k^\top\mathbf X_k)^{-1}\mathbf X_k^\top\mathbf y_k$.
+    \end{block}
+    \begin{block}{Апостериорное распределение}
+        При $p(\mathbf w)=\mathcal N(\mathbf w\,|\,\mathbf m_0,\boldsymbol\Sigma_0)$:
+        \ $p_k(\mathbf w)=p(\mathbf w\,|\,\mathfrak D_k)=\mathcal N(\mathbf w\,|\,\mathbf m_k,\boldsymbol\Sigma_k)$,
+        \[
+            \boldsymbol\Sigma_k^{-1}=\boldsymbol\Sigma_0^{-1}+\frac{1}{\sigma^2}\mathbf X_k^\top\mathbf X_k,
+            \qquad
+            \mathbf m_k=\boldsymbol\Sigma_k\Bigl(\boldsymbol\Sigma_0^{-1}\mathbf m_0+\frac{1}{\sigma^2}\mathbf X_k^\top\mathbf y_k\Bigr).
+        \]
+        \vspace{-1.3em}
+    \end{block}
+    \begin{block}{Теорема (Киселев, 2025)}
+        Пусть $\|\mathbf x\|_2\leqslant M$, $|y|\leqslant M$ и~$\lambda_{\min}(\mathbf X_k^\top\mathbf X_k)=\omega(\sqrt k)$ при $k\to\infty$. Тогда в~линейной регрессии с~нормальным априорным распределением $\|\mathbf m_{k+1}-\mathbf m_k\|_2\to0$ и~$\|\boldsymbol\Sigma_{k+1}-\boldsymbol\Sigma_k\|_F\to0$.
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Стабилизация правдоподобия\chap{5}}
+\begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+        \small
+        Подвыборки $\mathfrak D_k\subseteq\mathfrak D_m$; правдоподобие на всей выборке $L(\mathfrak D_m,\cdot)$ вычисляется в~точке ОМП $\hat{\mathbf w}_k$. Математическое ожидание и~дисперсия по~$\mathfrak D_k$ оцениваются бутстрапом.
+    \end{column}
+    \begin{column}{0.43\textwidth}
+        \centering
+        \includegraphics[width=0.9\linewidth]{likelihood.pdf}
+    \end{column}
+\end{columns}
+\small
+\begin{block}{$D$-достаточность: $\forall k\geqslant m^*$}
+    \vspace{-1.0em}
+    \[
+        D(k)=\mathbb D_{\mathfrak D_k}L(\mathfrak D_m,\hat{\mathbf w}_k)\leqslant\varepsilon
+    \]
+    \vspace{-1.3em}
+\end{block}
+\begin{block}{$M$-достаточность: $\forall k\geqslant m^*$}
+    \vspace{-1.0em}
+    \[
+        M(k+1)=\bigl|\mathbb E_{\mathfrak D_{k+1}}L(\mathfrak D_m,\hat{\mathbf w}_{k+1})-\mathbb E_{\mathfrak D_k}L(\mathfrak D_m,\hat{\mathbf w}_k)\bigr|\leqslant\varepsilon
+    \]
+    \vspace{-1.3em}
+\end{block}
+\begin{block}{Теорема (Киселев, 2025)}
+    Пусть $\|\mathbf m_{k+1}-\mathbf m_k\|_2\to0$ и~$\|\boldsymbol\Sigma_{k+1}-\boldsymbol\Sigma_k\|_F\to0$ при $k\to\infty$. Тогда в~модели линейной регрессии определение $M$-достаточности корректно: $\forall\varepsilon>0\ \exists m^*\ \forall k\geqslant m^*\ M(k)\leqslant\varepsilon$.
+\end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Близость апостериорных распределений\chap{5}}
+\small
+\begin{columns}[T]
+    \begin{column}{0.62\textwidth}
+        Подвыборки $\mathfrak D_k$ и~$\mathfrak D_{k+1}$ \alert{\textbf{схожи}}, если $|\mathfrak D_k\triangle\mathfrak D_{k+1}|=1$. Близость апостериоров $p_k$, $p_{k+1}$ измеряется KL-дивергенцией и~функцией
+        \[
+            \text{s-score}(g_1,g_2)=\frac{\int g_1(\mathbf w)g_2(\mathbf w)\,d\mathbf w}{\max_{\mathbf b}\int g_1(\mathbf w-\mathbf b)g_2(\mathbf w)\,d\mathbf w}.
+        \]
+    \end{column}
+    \begin{column}{0.36\textwidth}
+        \centering
+        \includegraphics[width=0.9\linewidth]{posterior_ru_short.pdf}
+    \end{column}
+\end{columns}
+\vspace{0.6em}
+\begin{columns}[T]
+    \begin{column}{0.49\textwidth}
+        \begin{block}{$KL$-достаточность: $\forall k\geqslant m^*$}
+            \vspace{-1.0em}
+            \[
+                KL(k+1)=D_{\mathrm{KL}}(p_k\,\|\,p_{k+1})\leqslant\varepsilon
+            \]
+            \vspace{-1.3em}
+        \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+        \begin{block}{$S$-достаточность: $\forall k\geqslant m^*$}
+            \vspace{-1.0em}
+            \[
+                S(k+1)=\text{s-score}(p_k,p_{k+1})\geqslant1-\varepsilon
+            \]
+            \vspace{-1.3em}
+        \end{block}
+    \end{column}
+\end{columns}
+\begin{block}{Теорема (Киселев, 2025)}
+    Пусть в~модели линейной регрессии с~нормальным априорным распределением $\|\mathbf m_{k+1}-\mathbf m_k\|_2\to0$ при $k\to\infty$. Тогда определение $S$-достаточности корректно; если, кроме того, $\|\boldsymbol\Sigma_{k+1}-\boldsymbol\Sigma_k\|_F\to0$, то корректно и~определение $KL$-достаточности.
+\end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Эксперимент: достаточный размер выборки линейных моделей\chap{5}}
+    \small
+    \textbf{Цель:} показать, как порог $\varepsilon$ переводится в~достаточный размер выборки по~каждому из критериев.
+    \textbf{Постановка:} синтетические регрессия и~классификация ($m=500$, $n=10$, $B=100$ бутстрап-подвыборок) и~набор Liver Disorders ($m=345$, $n=5$, $B=1000$). Для каждого $\varepsilon$ вычисляется $m^*$ по~критериям $D$, $M$, $KL$, $S$ (для классификации "--- $D$ и~$M$).
+    \begin{center}
+        \includegraphics[width=0.58\linewidth]{sufficient-vs-threshold.pdf}
+    \end{center}
+    \vspace{-0.6em}
+    \begin{block}{Вывод}
+        Чем больше $\varepsilon$, тем меньше требуется объектов; все четыре критерия имеют примерно одинаковую зависимость от~$\varepsilon$, поэтому порог нужно выбирать обоснованно. На~13 выборках UCI критерии $D$ и~$M$ часто дают близкий $m^*$, а~$S$ часто консервативнее $KL$.
+    \end{block}
+\end{frame}
+
+%======================================================================
+\begin{frame}{Структура работы}
     \centering
-    \includegraphics[width=0.58\linewidth]{ch4_local_regime.pdf}
-    \vspace{0.15em}
-    \begin{block}{Вывод}
-        В линейной регрессии Монте-Карло совпадает с точной формулой и с константой из спектра. В логистической регрессии та же константа описывает и верные метки, и выборку с заменой $15\%$ меток.
-    \end{block}
+    \begin{tikzpicture}[
+        >=Latex,
+        node distance=0.55cm and 0.55cm,
+        box/.style={draw=darkred!70,line width=0.6pt,rounded corners=3pt,fill=darkred!4,align=center,
+                    minimum height=1.65cm,text width=3.0cm,font=\footnotesize},
+        tag/.style={font=\scriptsize\bfseries,text=darkred},
+        arr/.style={->,line width=0.7pt,draw=black!70},
+        lab/.style={font=\scriptsize,align=center,text=black!75}
+    ]
+        \node[box,fill=black!4,draw=black!50,text width=2.3cm] (A) {Архитектура $\mathcal A$,\\ выборка $\mathfrak D_k$};
+        \node[box,right=0.4cm of A] (B) {\textbf{Кривизна}\\[0.2em] $\mathbf H_i=\mathbf G_i+\mathbf R_i$\\ $\|\mathbf G_i(\mathbf w)\|_2\leqslant M_{\mathbf G}(\mathcal A)$};
+        \node[box,right=1.5cm of B] (C) {\textbf{Стабилизация ландшафта}\\[0.2em] $\Delta_1(k+1)=\mathcal O(k^{-1})$\\ $\Delta_2(k+1)=\mathcal O(k^{-2})$};
+        \node[box,right=0.4cm of C] (D) {\textbf{Достаточный размер}\\[0.2em] $\Delta(m)\leqslant\varepsilon$\\ $\forall m\geqslant m^*(\varepsilon,\mathcal A)$};
+        \node[box,below=0.7cm of C,text width=6.6cm] (E) {\textbf{Схема закона масштабирования}\\[0.3em] $\displaystyle\mathbb E_{\mathfrak D_m}\mathcal L(\mathbf w_m^*)\leqslant E+\Phi(N)+\frac{C\bigl(M_{\mathbf G}(\mathcal A)+\delta_R\bigr)}{m^{\rho}}$};
+        \node[box,below=0.6cm of E,text width=12.4cm,minimum height=0.9cm,xshift=-1.2cm] (F) {\textbf{Вероятностные линейные модели:} ОМП $\hat{\mathbf w}_k$ и~апостериор $p_k(\mathbf w)=p(\mathbf w\,|\,\mathfrak D_k)$;\\ критерии $D(k)$, $M(k+1)$, $KL(k+1)=D_{\mathrm{KL}}(p_k\,\|\,p_{k+1})$, $S(k+1)=\text{s-score}(p_k,p_{k+1})$};
+
+        \node[tag,above=1pt of B] {Глава 2};
+        \node[tag,above=1pt of C] {Глава 3};
+        \node[tag,above=1pt of D] {Глава 4};
+        \node[tag,above=1pt of E] {Глава 4};
+        \node[tag,left=1pt of F] {Глава 5};
+
+        \draw[arr] (A) -- (B);
+        \draw[arr] (B) -- node[lab,above] {$M_{\mathbf H}=$\\[-0.1em]$M_{\mathbf G}(\mathcal A)$\\[-0.1em]$+\,\delta_R$} (C);
+        \draw[arr] (C) -- (D);
+        \draw[arr] (B.south) |- node[lab,pos=0.25,left] {оценка\\ $\mathcal E(m)$} (E.west);
+        \draw[arr] (F.north -| D.south) -- node[lab,right,pos=0.45] {стабилизация\\ распределения\\ оптимальных\\ параметров} (D.south);
+    \end{tikzpicture}
 \end{frame}
 
-\begin{frame}{Эксперимент: сходимость критерия на сетях}
-    MNIST, Adam, $100$ эпох, три запуска. MLP-$L$-$h$ и CNN-$L$-$c$, ядро $3\times 3$. Объем выборки до $30\,000$. Справа достаточный размер при $\varepsilon=0{,}05$; пустой треугольник "--- порог не достигнут.
-    \vspace{0.2em}
-    \begin{columns}[T]
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.80\linewidth]{exp1_delta2_convergence.pdf}\\
-            $\Delta_2(m)$; штрих наклона $-2$
-        \end{column}
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.80\linewidth]{exp1_depth_analysis.pdf}\\
-            $m^*$ и глубина при $\varepsilon=0{,}05$
-        \end{column}
-    \end{columns}
-    \vspace{0.1em}
-    \begin{block}{Вывод}
-        Наклон близок к $-2$ и взят из тождества усреднения, а не подобран. При фиксированном $m$ более глубокие сети дают больший $\Delta_2$. У части глубоких сетей порог $\varepsilon=0{,}05$ до $30\,000$ объектов не достигается.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Критерии достаточного размера для линейных моделей}
-    Подвыборки $\mathfrak{D}_k\subset\mathfrak{D}_m$, $\hat{\mathbf{w}}_k$ "--- оценка максимума правдоподобия, $p_k$ "--- апостериор. Схожие подвыборки отличаются одним объектом.
-    \begin{block}{Теорема (Киселев, 2024). $M$-достаточность}
-        $M(k+1)=\bigl|\mathbb{E} L(\mathfrak{D}_m,\hat{\mathbf{w}}_{k+1})-\mathbb{E} L(\mathfrak{D}_m,\hat{\mathbf{w}}_k)\bigr|$. Если средние и ковариации $\hat{\mathbf{w}}_k$ сходятся, то для любого $\varepsilon>0$ найдется $m^*$ с $M(k)\leqslant\varepsilon$ при $k\geqslant m^*$.
-    \end{block}
-    \begin{block}{Теорема (Киселев, 2024). $KL$- и $S$-достаточность}
-        $\mathrm{KL}(k+1)=D_{\mathrm{KL}}(p_k\|p_{k+1})$, $S$ "--- s-score тех же апостериоров. Для нормальных апостериоров сходимость средних и ковариаций дает $\mathrm{KL}(k)\leqslant\varepsilon$; для $S(k)\geqslant 1-\varepsilon$ достаточно сходимости средних.
-    \end{block}
-    \begin{block}{Теорема (Киселев, 2025). Моменты}
-        При $\|\mathbf{x}\|_2\leqslant M$, $|y|\leqslant M$ и $\lambda_{\min}(\mathbf{X}_k^\top\mathbf{X}_k)=\omega(\sqrt{k})$ средние и ковариации апостериора линейной регрессии сходятся, так что условия двух предыдущих теорем выполнены.
-    \end{block}
-\end{frame}
-
-\begin{frame}{Эксперимент: достаточный размер линейных моделей}
-    Синтетические регрессия и классификация и набор Liver Disorders. $D$ и $M$ оцениваются бутстрапом правдоподобия в точке оценки, $KL$ и $S$ "--- по нормальному апостериору на схожих подвыборках.
-    \vspace{0.2em}
-    \begin{columns}[T]
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.92\linewidth]{likelihood-synthetic-regression.pdf}\\
-            Сходимость $D(k)$ и $M(k)$
-        \end{column}
-        \begin{column}{0.49\textwidth}
-            \centering
-            \includegraphics[width=0.92\linewidth]{sufficient-vs-threshold.pdf}\\
-            $m^*(\varepsilon)$
-        \end{column}
-    \end{columns}
-    \vspace{0.1em}
-    \begin{block}{Вывод}
-        $D(k)$ и $M(k)$ стремятся к нулю, $m^*(\varepsilon)$ убывает с ростом порога. Пороги разных критериев не имеют общего масштаба, поэтому размеры при одном $\varepsilon$ не сравниваются. Там, где найдены оба, $S$-достаточный размер не меньше $KL$-достаточного.
-    \end{block}
-\end{frame}
-
+%======================================================================
 \begin{frame}{Положения, выносимые на защиту}
     \begin{enumerate}
-        \item Теоремы о верхних оценках спектральной нормы гаусс"--~ньютоновской компоненты матрицы Гессе для полносвязных и сверточных архитектур нейронных сетей.
-        \item Критерии стабилизации ландшафта функции потерь: порядок $\mathcal{O}(k^{-1})$ и $\mathcal{O}(k^{-2})$ следует из усреднения по объектам, а оценки констант получены по локальной квадратичной аппроксимации в одной точке, в полном пространстве параметров и в подпространстве главных собственных направлений матрицы Гессе.
-        \item Схема законов масштабирования, в которой ошибка оценивания задается отношением шума градиентов к кривизне, и ее точный вид для линейной модели с неполным набором признаков.
+        \item Теоремы о~верхних оценках спектральной нормы гаусс"--~ньютоновской компоненты матрицы Гессе для полносвязных и~сверточных архитектур нейронных сетей.
+        \item Критерии стабилизации ландшафта функции потерь: порядок $\mathcal O(k^{-1})$ и~$\mathcal O(k^{-2})$ следует из усреднения по объектам, а~оценки констант получены по локальной квадратичной аппроксимации в~одной точке, в~полном пространстве параметров и~в~подпространстве главных собственных направлений матрицы Гессе.
+        \item Схема законов масштабирования, в~которой ошибка оценивания задается отношением шума градиентов к~кривизне, и~ее точный вид для линейной модели с~неполным набором признаков.
         \item Критерии достаточного размера выборки для параметрических моделей, основанные на стабилизации ландшафта функции потерь.
         \item Критерии достаточного размера выборки для вероятностных линейных моделей, основанные на стабилизации распределения оптимальных параметров при увеличении объема данных.
     \end{enumerate}
 \end{frame}
 
-\begin{frame}{Публикации и апробация}
-    Основные результаты изложены в 10~научных работах, из которых 4 "--- в рецензируемых периодических научных журналах, а остальные 6 "--- в сборниках трудов конференций и тезисах докладов.
-    Результаты докладывались на конференциях:
-    \begin{columns}[T]
-        \begin{column}{0.49\textwidth}
-            \begin{enumerate}
-                \setlength{\itemsep}{0pt}
-                \setlength{\parsep}{0pt}
-                \setlength{\topsep}{0pt}
-                \item 16-я конференция <<Интеллектуализация обработки информации>> (ИОИ-2026), Витебск, 28~сентября"--~2~октября 2026~г.
-                \item Международная конференция <<Иванниковские чтения>>, Этномир, 28--30~мая 2026~г.
-                \item 68-я Всероссийская научная конференция МФТИ, Москва, 30~марта"--~4~апреля 2026~г.
-                \item Открытая конференция ИСП РАН, Москва, 9--10~декабря 2025~г.
-            \end{enumerate}
-        \end{column}
-        \begin{column}{0.49\textwidth}
-            \begin{enumerate}
-                \setcounter{enumi}{4}
-                \setlength{\itemsep}{0pt}
-                \setlength{\parsep}{0pt}
-                \setlength{\topsep}{0pt}
-                \item 22-я конференция <<Математические методы распознавания образов>> (ММРО-2025), Муром, 22--26~сентября 2025~г.
-                \item 67-я Всероссийская научная конференция МФТИ, Москва, 31~марта"--~5~апреля 2025~г.
-                \item Открытая конференция ИСП РАН, Москва, 11--12~декабря 2024~г.
-                \item 66-я конференция МФТИ, Москва, 1--6~апреля 2024~г.
-            \end{enumerate}
-        \end{column}
-    \end{columns}
-\end{frame}
-
-\begin{frame}
-    \begin{center}
-        \Large Спасибо за внимание\\[1.2em]
-        \normalsize
-        Масштабирование параметрических моделей машинного обучения\\
-        на основе локальной геометрии оптимизационной поверхности
-    \end{center}
+%======================================================================
+\begin{frame}{Публикации и~апробация}
+    \fontsize{6.5pt}{7.7pt}\selectfont
+    {\usebeamercolor[fg]{block title}Публикации в~рецензируемых журналах (ВАК, Web of Science, Scopus)}\par
+    \begin{enumerate}
+        \setlength{\itemsep}{0pt}
+        \item \textit{\textbf{Kiselev N.}, Meshkov V., Grabovoy A.} Robust Convergence of Loss Landscapes through Distributional Averaging // \textit{Proceedings of the ISP RAS}, 2026.
+        \item \textit{\textbf{Kiselev N.}, Grabovoy A.} Sample Size Determination: Posterior Distributions Proximity // \textit{Computational Management Science}, 2025.
+        \item \textit{\textbf{Kiselev N.}, Grabovoy A.} Sample Size Determination: Likelihood Bootstrapping // \textit{Computational Mathematics and Mathematical Physics}, 2025.
+        \item \textit{\textbf{Kiselev N.}, Grabovoy A.} Unraveling the Hessian: A Key to Smooth Convergence in Loss Function Landscapes // \textit{Doklady Mathematics}, 2024.
+    \end{enumerate}
+    {\usebeamercolor[fg]{block title}Выступления с~докладом}\par
+    \begin{enumerate}
+        \setlength{\itemsep}{0pt}
+        \item Подпространство наибольшей кривизны в задаче стабилизации ландшафта функции потерь // \textit{16-я Международная конференция <<Интеллектуализация обработки информации>>}, 28~сентября 2026~г.
+        \item Адаптивный выбор дисперсии гауссовского сэмплирования для оценки сходимости ландшафта потерь методом Монте-Карло // \textit{Международная конференция <<Иванниковские чтения>>}, 29~мая 2026~г.
+        \item Среднеквадратичный критерий сходимости ландшафта функции потерь на основе перехода к~подпространству главных собственных векторов матрицы Гессе // \textit{68-я Всероссийская научная конференция МФТИ}, 4~апреля 2026~г.
+        \item Устойчивая сходимость поверхности функции потерь через усреднение по распределению // \textit{Открытая конференция ИСП РАН}, 10~декабря 2025~г.
+        \item Достаточный размер выборки и~его связь со сходимостью поверхности функции потерь // \textit{22-я Всероссийская конференция с~международным участием <<Математические методы распознавания образов>>}, 25~сентября 2025~г.
+        \item Сходимость поверхности функции потерь как признак достаточного размера выборки // \textit{67-я Всероссийская научная конференция МФТИ}, 5~апреля 2025~г.
+        \item Анализ сходимости поверхности функции потерь сверточных нейросетевых моделей на основе гессиана // \textit{Открытая конференция ИСП РАН}, 12~декабря 2024~г.
+        \item Определение достаточного размера выборки по апостериорному распределению параметров модели // \textit{66-я Всероссийская научная конференция МФТИ}, 6~апреля 2024~г.
+    \end{enumerate}
 \end{frame}
 
 \end{document}
