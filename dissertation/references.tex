@@ -12,11 +12,9 @@
 %\insertbiblioauthor                        % Подключаем Bib-базы: работы автора единым списком 
 % \insertbiblioauthorgrouped                 % Подключаем Bib-базы: работы автора сгруппированные (ВАК, WoS, Scopus и т.д.)
 
-\begin{refcontext}[labelprefix=A]
-\insertbiblioauthorgrouped
-\end{refcontext}
-\clearpage
-\insertbiblioexternal
+% Общий список литературы: работы автора и внешние источники вместе, в алфавитном порядке
+\printbibliography[heading=pubgroup, section=0, keyword=bibliofull, title=\bibtitlefull, resetnumbers=true]
+\printbibliography[heading=nobibheading, section=0, keyword=bibliofull, env=countexternal]
 
 \ifdefmacro{\microtypesetup}{\microtypesetup{protrusion=true}}{}
 \urlstyle{tt}                               % возвращаем установки шрифта ссылок URL
